@@ -31,13 +31,13 @@ export default function PaymentSuccessPage() {
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
+  const orderInvoiceNumber = searchParams.get("order");
 
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Webhook Stripe có thể xử lý chậm hơn vài giây so với
+    // IPN SePay có thể xử lý chậm hơn vài giây so với
     // lúc user quay lại trang này, nên thử poll vài lần.
     let attempts = 0;
     const maxAttempts = 6;
@@ -71,11 +71,11 @@ function PaymentSuccessContent() {
     >
       <h1>Thanh toán thành công</h1>
 
-      <p>Cảm ơn bạn. Thanh toán của bạn đã được gửi tới Stripe.</p>
+      <p>Cảm ơn bạn. Thanh toán của bạn đang được xác nhận qua SePay.</p>
 
-      {sessionId && (
+      {orderInvoiceNumber && (
         <p>
-          <strong>Stripe Session ID:</strong> {sessionId}
+          <strong>Mã đơn hàng:</strong> {orderInvoiceNumber}
         </p>
       )}
 
@@ -96,7 +96,7 @@ function PaymentSuccessContent() {
               gap: 8,
             }}
           >
-            <CheckCircle2 size={18} /> Tài khoản của bạn đã lên PRO.
+            <CheckCircle2 size={18} /> Tài khoản của bạn đã được nâng cấp.
           </p>
         )}
 
@@ -104,7 +104,7 @@ function PaymentSuccessContent() {
           <p>
             Hệ thống chưa xác nhận thanh toán. Nếu bạn đã thanh toán
             thành công, vui lòng đợi thêm ít phút rồi tải lại trang
-            chủ — webhook có thể cần thêm thời gian xử lý.
+            chủ — hệ thống có thể cần thêm thời gian xử lý.
           </p>
         )}
       </div>

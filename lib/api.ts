@@ -5,6 +5,21 @@
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
+// Fail fast in production if the env var was forgotten — better to
+// see a loud console error at startup than have every request
+// silently try (and fail) to hit localhost in prod.
+if (
+  process.env.NODE_ENV === "production" &&
+  !process.env.NEXT_PUBLIC_API_URL
+) {
+  // eslint-disable-next-line no-console
+  console.error(
+    "[api] NEXT_PUBLIC_API_URL is not set in a production build — " +
+      "falling back to http://127.0.0.1:8000, which is almost " +
+      "certainly wrong. Set NEXT_PUBLIC_API_URL in the deploy env."
+  );
+}
+
 const TOKEN_KEY = "contract_ai_token";
 
 // ---------------------------------------------------------------
@@ -41,7 +56,8 @@ async function request<T>(
   const token = getToken();
 
   const headers: Record<string, string> = {
-    ...(options.body instanceof URLSearchParams
+    ...(options.body instanceof URLSearchParams ||
+    options.body instanceof FormData
       ? {}
       : { "Content-Type": "application/json" }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -85,6 +101,8 @@ export interface UserMe {
   plan: string;
   requests_used: number;
   requests_limit: number;
+  review_used: number;
+  review_limit: number;
 }
 
 export interface Token {
@@ -100,6 +118,23 @@ export interface ContractOut {
   created_at: string;
 }
 
+export interface ContractReviewOut {
+  id: number;
+  user_id: number;
+  original_filename: string;
+  analysis_result: string;
+  revised_contract_text: string | null;
+  revised_contract_type: string | null;
+  revised_contract_title: string | null;
+  created_at: string;
+}
+
+export interface ContractTypeFields {
+  contract_type: string;
+  title: string;
+  required_fields: string[];
+}
+
 export interface BillingStatus {
   plan: string;
   requests_used: number;
@@ -109,8 +144,7 @@ export interface BillingStatus {
 
 export interface CheckoutResponse {
   checkout_url: string;
-  plan: string;
-  subscription_status: string | null;
+  order_invoice_number: string;
 }
 
 // ---------------------------------------------------------------
@@ -148,8 +182,18 @@ export function getMe() {
 }
 
 // ---------------------------------------------------------------
-// Contracts
+// Contracts (tạo hợp đồng)
 // ---------------------------------------------------------------
+// Fetches the current required_fields + title for a contract type
+// directly from the backend, so the form always matches whatever
+// clauses the backend actually uses — no hardcoded field lists to
+// keep in sync by hand.
+export function getContractTypeFields(contractType: string) {
+  return request<ContractTypeFields>(
+    `/contract-types/${contractType}/fields`
+  );
+}
+
 export function generateContract(payload: Record<string, string>) {
   return request<ContractOut>("/generate-contract", {
     method: "POST",
@@ -210,12 +254,109 @@ export function downloadContractPdf(id: number, fileName: string) {
 }
 
 // ---------------------------------------------------------------
+// Contract reviews (review hợp đồng đã upload)
+// ---------------------------------------------------------------
+// Multipart upload — can't go through the JSON-only request()
+// helper above (it always sets Content-Type: application/json).
+// Uses fetch directly, same auth-header + error-handling pattern.
+export async function reviewContract(
+  file: File
+): Promise<ContractReviewOut> {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_URL}/review-contract`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || detail;
+    } catch {
+      // response wasn't JSON — keep statusText
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  return res.json();
+}
+
+export function myContractReviews() {
+  return request<ContractReviewOut[]>("/my-contract-reviews");
+}
+
+export function getContractReview(id: number) {
+  return request<ContractReviewOut>(`/contract-reviews/${id}`);
+}
+
+export function downloadRevisedContractDocx(id: number) {
+  return downloadFile(
+    `/contract-reviews/${id}/download-docx`,
+    `hop-dong-da-sua-${id}.docx`
+  );
+}
+
+export function downloadRevisedContractPdf(id: number) {
+  return downloadFile(
+    `/contract-reviews/${id}/download-pdf`,
+    `hop-dong-da-sua-${id}.pdf`
+  );
+}
+
+// ---------------------------------------------------------------
 // Billing
 // ---------------------------------------------------------------
-export function startCheckout() {
-  return request<CheckoutResponse>("/billing/checkout", {
-    method: "POST",
-  });
+
+// Domains SePay is allowed to redirect the browser to. Adjust this
+// list to match SePay's real checkout host(s) — this is a
+// defense-in-depth check on the client so that a compromised/
+// tampered backend response (or a MITM on a non-HTTPS link) can't
+// silently redirect a paying user to a look-alike phishing page.
+// The backend must still be the source of truth: ideally it signs
+// or restricts the checkout_url it generates. This is a second
+// layer, not a replacement for that.
+const ALLOWED_CHECKOUT_HOSTS = ["my.sepay.vn", "sepay.vn"];
+
+export function isSafeCheckoutUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return (
+      u.protocol === "https:" &&
+      ALLOWED_CHECKOUT_HOSTS.some(
+        (host) => u.hostname === host || u.hostname.endsWith(`.${host}`)
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
+const CHECKOUT_TIMEOUT_MS = 15000;
+
+export async function startCheckout(
+  planKey: string
+): Promise<CheckoutResponse> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CHECKOUT_TIMEOUT_MS);
+
+  try {
+    return await request<CheckoutResponse>(
+      `/billing/sepay/checkout?plan_key=${encodeURIComponent(planKey)}`,
+      { method: "POST", signal: controller.signal }
+    );
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiError(0, "Yêu cầu thanh toán quá thời gian chờ, vui lòng thử lại.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export function getBillingStatus() {
