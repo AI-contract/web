@@ -32,6 +32,7 @@ const CONTRACT_TYPES: { value: string; label: string }[] = [
   { value: "labor", label: "Hợp đồng lao động" },
   { value: "nda", label: "Thỏa thuận bảo mật (NDA)" },
   { value: "sale", label: "Hợp đồng mua bán" },
+  { value: "probation", label: "Hợp đồng thử việc" },
 ];
 
 // ---- friendly labels for known field keys ----
@@ -79,6 +80,22 @@ const FIELD_LABELS: Record<string, string> = {
   WORK_LOCATION: "Địa điểm làm việc",
   SALARY: "Lương",
   ALLOWANCES: "Phụ cấp",
+
+  // ---- new fields (added with the expanded clause_library) ----
+  CONTRACT_TERM_TYPE: "Loại hợp đồng (xác định/không xác định thời hạn)",
+  START_DATE: "Ngày bắt đầu hợp đồng",
+  END_DATE: "Ngày kết thúc hợp đồng",
+  PROBATION_DAYS: "Số ngày thử việc",
+  PROBATION_SALARY_PERCENT: "Lương thử việc (% lương chính thức)",
+  FINAL_PAYMENT_DAYS: "Số ngày thanh toán sau khi chấm dứt HĐ",
+  WORKING_HOURS_PER_DAY: "Số giờ làm việc/ngày",
+  WORKING_HOURS_PER_WEEK: "Số giờ làm việc/tuần",
+  MAX_LIABILITY_MONTHS: "Mức bồi thường tối đa (số tháng lương)",
+  DISPUTE_LOCATION: "Nơi giải quyết tranh chấp",
+  PENALTY_CAP_PERCENT: "Mức phạt tối đa (% giá trị hợp đồng)",
+  LIABILITY_CAP_MONTHS: "Giới hạn trách nhiệm (số tháng phí gần nhất)",
+  CONTRACT_TERM_MONTHS: "Thời hạn hợp đồng (tháng)",
+  MAX_LIABILITY_AMOUNT: "Mức trách nhiệm bồi thường tối đa (VNĐ)",
 };
 
 // Fields long enough to deserve a <textarea> instead of a one-line
@@ -90,6 +107,25 @@ const LONG_TEXT_FIELDS = new Set([
   "JOB_DESCRIPTION",
   "SPECIFICATIONS",
 ]);
+
+// Fields that must hold a bare number or percentage — nothing else.
+// These get a placeholder showing the expected format so people
+// don't type e.g. "45 ngày." into a field that's later combined
+// with a fixed unit already written in the clause template (which
+// used to produce duplicated text like "45 ngày. ngày, trừ...").
+const NUMERIC_HINT_FIELDS: Record<string, string> = {
+  NOTICE_DAYS: "Chỉ nhập số, ví dụ: 45",
+  PENALTY_RATE: "Chỉ nhập số, ví dụ: 8",
+  PROBATION_DAYS: "Chỉ nhập số, ví dụ: 30",
+  PROBATION_SALARY_PERCENT: "Chỉ nhập số, ví dụ: 85",
+  FINAL_PAYMENT_DAYS: "Chỉ nhập số, ví dụ: 7",
+  WORKING_HOURS_PER_DAY: "Chỉ nhập số, ví dụ: 8",
+  WORKING_HOURS_PER_WEEK: "Chỉ nhập số, ví dụ: 48",
+  MAX_LIABILITY_MONTHS: "Chỉ nhập số, ví dụ: 3",
+  PENALTY_CAP_PERCENT: "Chỉ nhập số, ví dụ: 20",
+  LIABILITY_CAP_MONTHS: "Chỉ nhập số, ví dụ: 12",
+  CONTRACT_TERM_MONTHS: "Chỉ nhập số, ví dụ: 12",
+};
 
 function humanizeFieldKey(key: string): string {
   return key
@@ -145,11 +181,6 @@ export default function Home() {
   const [lastReview, setLastReview] = useState<ContractReviewOut | null>(
     null
   );
-  // FIX: this was missing the "<" after useState, which is a syntax
-  // error and would fail to compile:
-  //   const [reviewResultTab, setReviewResultTab] = useState
-  //     "analysis" | "revised"
-  //   >("analysis");
   const [reviewResultTab, setReviewResultTab] = useState<
     "analysis" | "revised"
   >("analysis");
@@ -516,6 +547,7 @@ export default function Home() {
                             onChange={(e) =>
                               handleChange(key, e.target.value)
                             }
+                            placeholder={NUMERIC_HINT_FIELDS[key]}
                             className="w-full border rounded-lg px-3 py-2"
                           />
                         </div>
