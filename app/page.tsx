@@ -397,6 +397,17 @@ export default function Home() {
 
         <nav className="space-y-1">
           <button
+            onClick={() => setTab("intro")}
+            className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
+              tab === "intro"
+                ? "border-[#9C7A3C] bg-white/5 text-white"
+                : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <Info size={18} />
+            <span className="text-sm">Giới thiệu về Legal AI</span>
+          </button>
+          <button
             onClick={() => setTab("generate")}
             className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
               tab === "generate"
@@ -417,17 +428,6 @@ export default function Home() {
           >
             <ScanSearch size={18} />
             <span className="text-sm">Review hợp đồng</span>
-          </button>
-          <button
-            onClick={() => setTab("intro")}
-            className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
-              tab === "intro"
-                ? "border-[#9C7A3C] bg-white/5 text-white"
-                : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            <Info size={18} />
-            <span className="text-sm">Giới thiệu về Legal AI</span>
           </button>
         </nav>
 
@@ -516,7 +516,7 @@ export default function Home() {
               <div className="mb-10">
                 <div className="flex items-center gap-3 mb-3">
                   <BookOpen size={28} className="text-[#9C7A3C]" strokeWidth={1.5} />
-                  <h2 className="text-4xl font-serif font-semibold text-[#1C2333] tracking-tight">
+                  <h2 className="text-4xl font-semibold text-[#1C2333] tracking-tight">
                     {contractTitle
                       ? `Tạo ${contractTitle.toLowerCase()}`
                       : "Tạo hợp đồng"}
@@ -616,7 +616,7 @@ export default function Home() {
               {/* Just-generated result */}
               {lastContract && (
                 <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-6 mb-10">
-                  <h3 className="text-xl font-serif font-semibold mb-4 text-[#1C2333]">
+                  <h3 className="text-xl font-semibold mb-4 text-[#1C2333]">
                     Hợp đồng vừa tạo: {lastContract.file_name}
                   </h3>
                   <div className="bg-[#FAF8F3] rounded-md border border-[#DCD7C9] p-4 text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
@@ -651,7 +651,7 @@ export default function Home() {
 
               {/* Contract list */}
               <div>
-                <h3 className="text-2xl font-serif font-semibold mb-4 text-[#1C2333]">
+                <h3 className="text-2xl font-semibold mb-4 text-[#1C2333]">
                   Hợp đồng của tôi
                 </h3>
 
@@ -703,7 +703,7 @@ export default function Home() {
               <div className="mb-10">
                 <div className="flex items-center gap-3 mb-3">
                   <Scale size={28} className="text-[#9C7A3C]" strokeWidth={1.5} />
-                  <h2 className="text-4xl font-serif font-semibold text-[#1C2333] tracking-tight">
+                  <h2 className="text-4xl font-semibold text-[#1C2333] tracking-tight">
                     Review hợp đồng
                   </h2>
                 </div>
@@ -776,7 +776,7 @@ export default function Home() {
               {/* Just-reviewed result */}
               {lastReview && (
                 <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-6 mb-10">
-                  <h3 className="text-xl font-serif font-semibold mb-4 text-[#1C2333]">
+                  <h3 className="text-xl font-semibold mb-4 text-[#1C2333]">
                     Kết quả: {lastReview.original_filename}
                   </h3>
 
@@ -836,7 +836,7 @@ export default function Home() {
 
               {/* Review list */}
               <div>
-                <h3 className="text-2xl font-serif font-semibold mb-4 text-[#1C2333]">
+                <h3 className="text-2xl font-semibold mb-4 text-[#1C2333]">
                   Lịch sử review
                 </h3>
 
@@ -904,7 +904,7 @@ export default function Home() {
               <div className="mb-10">
                 <div className="flex items-center gap-3 mb-3">
                   <Info size={28} className="text-[#9C7A3C]" strokeWidth={1.5} />
-                  <h2 className="text-4xl font-serif font-semibold text-[#1C2333] tracking-tight">
+                  <h2 className="text-4xl font-semibold text-[#1C2333] tracking-tight">
                     Giới thiệu về Legal AI
                   </h2>
                 </div>
@@ -915,7 +915,7 @@ export default function Home() {
               </div>
 
               <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-8 mb-8">
-                <h3 className="text-2xl font-serif font-semibold mb-2 text-[#1C2333] flex items-center gap-2.5">
+                <h3 className="text-2xl font-semibold mb-2 text-[#1C2333] flex items-center gap-2.5">
                   <BookOpen size={22} className="text-[#9C7A3C]" strokeWidth={1.75} />
                   Tạo hợp đồng
                 </h3>
@@ -956,7 +956,7 @@ export default function Home() {
               </div>
 
               <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-8 mb-10">
-                <h3 className="text-2xl font-serif font-semibold mb-2 text-[#1C2333] flex items-center gap-2.5">
+                <h3 className="text-2xl font-semibold mb-2 text-[#1C2333] flex items-center gap-2.5">
                   <Scale size={22} className="text-[#9C7A3C]" strokeWidth={1.75} />
                   Review hợp đồng
                 </h3>
