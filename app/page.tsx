@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen } from "lucide-react";
+import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info } from "lucide-react";
 import {
   ApiError,
   ContractOut,
@@ -139,7 +139,7 @@ function labelForField(key: string): string {
 }
 
 // ---- top-level tab ----
-type Tab = "generate" | "review";
+type Tab = "generate" | "review" | "intro";
 
 export default function Home() {
   const router = useRouter();
@@ -418,6 +418,17 @@ export default function Home() {
             <ScanSearch size={18} />
             <span className="text-sm">Review hợp đồng</span>
           </button>
+          <button
+            onClick={() => setTab("intro")}
+            className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
+              tab === "intro"
+                ? "border-[#9C7A3C] bg-white/5 text-white"
+                : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
+            }`}
+          >
+            <Info size={18} />
+            <span className="text-sm">Giới thiệu về Legal AI</span>
+          </button>
         </nav>
 
         {/* Ảnh minh họa gốc (SVG tự vẽ, không phải ảnh stock nên
@@ -687,7 +698,7 @@ export default function Home() {
                 </div>
               </div>
             </>
-          ) : (
+          ) : tab === "review" ? (
             <>
               <div className="mb-10">
                 <div className="flex items-center gap-3 mb-3">
@@ -886,6 +897,104 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-10">
+                <div className="flex items-center gap-3 mb-3">
+                  <Info size={28} className="text-[#9C7A3C]" strokeWidth={1.5} />
+                  <h2 className="text-4xl font-serif font-semibold text-[#1C2333] tracking-tight">
+                    Giới thiệu về Legal AI
+                  </h2>
+                </div>
+                <p className="text-[#5B6472] text-lg">
+                  Nền tảng AI hỗ trợ soạn thảo và rà soát hợp đồng dựa trên
+                  thư viện điều khoản chuẩn theo pháp luật Việt Nam.
+                </p>
+              </div>
+
+              <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-8 mb-8">
+                <h3 className="text-2xl font-serif font-semibold mb-2 text-[#1C2333] flex items-center gap-2.5">
+                  <BookOpen size={22} className="text-[#9C7A3C]" strokeWidth={1.75} />
+                  Tạo hợp đồng
+                </h3>
+                <p className="text-[#5B6472] mb-6">
+                  Soạn nhanh 5 loại hợp đồng (Dịch vụ, Lao động, Mua bán, NDA,
+                  Thử việc) từ thư viện điều khoản chuẩn.
+                </p>
+                <ol className="space-y-5">
+                  {[
+                    {
+                      title: "Chọn loại hợp đồng",
+                      desc: "Ở mục \"Loại hợp đồng\", chọn loại bạn cần soạn: Dịch vụ, Lao động, Mua bán, NDA hoặc Thử việc.",
+                    },
+                    {
+                      title: "Điền thông tin hai bên và các điều khoản",
+                      desc: "Form sẽ tự hiển thị đúng các trường cần thiết cho loại hợp đồng đã chọn (thông tin Bên A/Bên B, giá trị, thời hạn, các điều khoản riêng...).",
+                    },
+                    {
+                      title: "Nhấn \"Tạo hợp đồng\"",
+                      desc: "AI sẽ ghép thông tin bạn nhập vào đúng thứ tự Điều khoản chuẩn của thư viện, tạo thành văn bản hợp đồng hoàn chỉnh.",
+                    },
+                    {
+                      title: "Tải về hoặc xem lại",
+                      desc: "Tải file DOCX/PDF ngay sau khi tạo, hoặc xem lại bất kỳ lúc nào trong mục \"Hợp đồng của tôi\" bên dưới form.",
+                    },
+                  ].map((step, i) => (
+                    <li key={i} className="flex gap-4">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#9C7A3C]/50 text-[#9C7A3C] text-sm font-serif font-semibold">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <p className="font-medium text-[#1C2333]">{step.title}</p>
+                        <p className="text-sm text-[#5B6472] mt-0.5">{step.desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-8 mb-10">
+                <h3 className="text-2xl font-serif font-semibold mb-2 text-[#1C2333] flex items-center gap-2.5">
+                  <Scale size={22} className="text-[#9C7A3C]" strokeWidth={1.75} />
+                  Review hợp đồng
+                </h3>
+                <p className="text-[#5B6472] mb-6">
+                  Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề
+                  xuất bản chỉnh sửa. Tính năng này dành cho gói PRO và
+                  ENTERPRISE.
+                </p>
+                <ol className="space-y-5">
+                  {[
+                    {
+                      title: "Tải lên hợp đồng",
+                      desc: "Chọn file hợp đồng cần rà soát, định dạng PDF hoặc DOCX.",
+                    },
+                    {
+                      title: "Nhấn \"Phân tích hợp đồng\"",
+                      desc: "AI đọc toàn bộ nội dung, đối chiếu với quy định pháp luật và các rủi ro thường gặp trong loại hợp đồng đó.",
+                    },
+                    {
+                      title: "Xem \"Đánh giá rủi ro\"",
+                      desc: "Các điều khoản có vấn đề (thiếu chặt chẽ, bất lợi, trái quy định...) được liệt kê kèm giải thích cụ thể.",
+                    },
+                    {
+                      title: "Xem và tải \"Bản đã chỉnh sửa\"",
+                      desc: "AI đề xuất phiên bản đã sửa lại các điều khoản rủi ro; tải về DOCX hoặc PDF để sử dụng ngay.",
+                    },
+                  ].map((step, i) => (
+                    <li key={i} className="flex gap-4">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#9C7A3C]/50 text-[#9C7A3C] text-sm font-serif font-semibold">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <p className="font-medium text-[#1C2333]">{step.title}</p>
+                        <p className="text-sm text-[#5B6472] mt-0.5">{step.desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
               </div>
             </>
           )}
