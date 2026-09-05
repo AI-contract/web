@@ -90,12 +90,12 @@ const FIELD_LABELS: Record<string, string> = {
   FINAL_PAYMENT_DAYS: "Số ngày thanh toán sau khi chấm dứt HĐ",
   WORKING_HOURS_PER_DAY: "Số giờ làm việc/ngày",
   WORKING_HOURS_PER_WEEK: "Số giờ làm việc/tuần",
-  MAX_LIABILITY_MONTHS: "Mức bồi thường tối đa (số tháng lương)",
   DISPUTE_LOCATION: "Nơi giải quyết tranh chấp",
   PENALTY_CAP_PERCENT: "Mức phạt tối đa (% giá trị hợp đồng)",
-  LIABILITY_CAP_MONTHS: "Giới hạn trách nhiệm (số tháng phí gần nhất)",
   CONTRACT_TERM_MONTHS: "Thời hạn hợp đồng (tháng)",
   MAX_LIABILITY_AMOUNT: "Mức trách nhiệm bồi thường tối đa (VNĐ)",
+  ADVANCE_PAYMENT_AMOUNT: "Số tiền tạm ứng",
+  TERMINATION_NOTICE_DAYS: "Số ngày báo trước khi chấm dứt (theo yêu cầu)",
 };
 
 // Fields long enough to deserve a <textarea> instead of a one-line
@@ -121,10 +121,9 @@ const NUMERIC_HINT_FIELDS: Record<string, string> = {
   FINAL_PAYMENT_DAYS: "Chỉ nhập số, ví dụ: 7",
   WORKING_HOURS_PER_DAY: "Chỉ nhập số, ví dụ: 8",
   WORKING_HOURS_PER_WEEK: "Chỉ nhập số, ví dụ: 48",
-  MAX_LIABILITY_MONTHS: "Chỉ nhập số, ví dụ: 3",
   PENALTY_CAP_PERCENT: "Chỉ nhập số, ví dụ: 20",
-  LIABILITY_CAP_MONTHS: "Chỉ nhập số, ví dụ: 12",
   CONTRACT_TERM_MONTHS: "Chỉ nhập số, ví dụ: 12",
+  TERMINATION_NOTICE_DAYS: "Chỉ nhập số, ví dụ: 30",
 };
 
 function humanizeFieldKey(key: string): string {
