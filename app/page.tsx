@@ -371,7 +371,7 @@ export default function Home() {
 
   if (!authChecked) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-100">
+      <main className="min-h-screen flex items-center justify-center bg-[#FAF8F3]">
         <Loader2 className="animate-spin" size={32} />
       </main>
     );
@@ -382,38 +382,41 @@ export default function Home() {
   const reviewBlockedForFree = !!user && user.plan === "FREE";
 
   return (
-    <main className="min-h-screen bg-gray-100 flex">
+    <main className="min-h-screen bg-[#FAF8F3] flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-blue-700 text-white p-6 hidden md:flex md:flex-col">
-        <h1 className="text-3xl font-bold mb-10">Legal AI</h1>
+      <aside className="w-64 bg-[#16213E] text-white p-6 hidden md:flex md:flex-col border-r border-black/20">
+        <div className="mb-10">
+          <h1 className="text-2xl font-serif font-semibold tracking-tight">Legal AI</h1>
+          <div className="mt-3 h-px w-10 bg-[#9C7A3C]" />
+        </div>
 
-        <nav className="space-y-2 flex-1">
+        <nav className="space-y-1 flex-1">
           <button
             onClick={() => setTab("generate")}
-            className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-left transition ${
+            className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
               tab === "generate"
-                ? "bg-white text-blue-700"
-                : "text-blue-100 hover:bg-blue-800"
+                ? "border-[#9C7A3C] bg-white/5 text-white"
+                : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
             }`}
           >
-            <FileText size={20} />
-            <span>Tạo hợp đồng</span>
+            <FileText size={18} />
+            <span className="text-sm">Tạo hợp đồng</span>
           </button>
           <button
             onClick={() => setTab("review")}
-            className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-left transition ${
+            className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
               tab === "review"
-                ? "bg-white text-blue-700"
-                : "text-blue-100 hover:bg-blue-800"
+                ? "border-[#9C7A3C] bg-white/5 text-white"
+                : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
             }`}
           >
-            <ScanSearch size={20} />
-            <span>Review hợp đồng</span>
+            <ScanSearch size={18} />
+            <span className="text-sm">Review hợp đồng</span>
           </button>
         </nav>
 
         {user && (
-          <div className="border-t border-blue-500 pt-4 text-sm text-blue-100 space-y-2">
+          <div className="border-t border-white/10 pt-4 text-sm text-slate-300 space-y-2">
             <div>{user.email}</div>
             <div>
               Gói:{" "}
@@ -437,14 +440,14 @@ export default function Home() {
                 <button
                   onClick={() => handleUpgrade("PRO_MONTHLY")}
                   disabled={upgrading}
-                  className="w-full bg-white text-blue-700 rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
+                  className="w-full bg-[#9C7A3C] hover:bg-[#8A6B34] text-white rounded-md py-2 mt-2 font-medium disabled:opacity-50 transition"
                 >
                   {upgrading ? "Đang chuyển hướng..." : "Nâng cấp PRO"}
                 </button>
                 <button
                   onClick={() => handleUpgrade("ENTERPRISE_MONTHLY")}
                   disabled={upgrading}
-                  className="w-full bg-blue-900 text-white rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
+                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-md py-2 mt-2 font-medium disabled:opacity-50 transition"
                 >
                   {upgrading ? "Đang chuyển hướng..." : "Nâng cấp ENTERPRISE"}
                 </button>
@@ -454,14 +457,14 @@ export default function Home() {
               <button
                 onClick={() => handleUpgrade("ENTERPRISE_MONTHLY")}
                 disabled={upgrading}
-                className="w-full bg-blue-900 text-white rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
+                className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-md py-2 mt-2 font-medium disabled:opacity-50 transition"
               >
                 {upgrading ? "Đang chuyển hướng..." : "Nâng cấp ENTERPRISE"}
               </button>
             )}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 text-blue-200 hover:text-white mt-2"
+              className="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-white mt-2"
             >
               <LogOut size={16} /> Đăng xuất
             </button>
@@ -475,12 +478,12 @@ export default function Home() {
           {tab === "generate" ? (
             <>
               <div className="mb-10">
-                <h2 className="text-4xl font-bold mb-3">
+                <h2 className="text-4xl font-serif font-semibold mb-3 text-[#1C2333] tracking-tight">
                   {contractTitle
                     ? `Tạo ${contractTitle.toLowerCase()}`
                     : "Tạo hợp đồng"}
                 </h2>
-                <p className="text-gray-500 text-lg">
+                <p className="text-[#5B6472] text-lg">
                   Điền thông tin để AI tạo hợp đồng từ thư viện điều khoản.
                 </p>
               </div>
@@ -488,7 +491,7 @@ export default function Home() {
               {/* Generate form */}
               <form
                 onSubmit={handleGenerate}
-                className="bg-white rounded-3xl shadow-xl p-8 mb-10"
+                className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-8 mb-10"
               >
                 {/* Contract type selector */}
                 <div className="mb-6">
@@ -498,7 +501,7 @@ export default function Home() {
                   <select
                     value={contractType}
                     onChange={(e) => handleContractTypeChange(e.target.value)}
-                    className="w-full md:w-1/2 border rounded-lg px-3 py-2 bg-white"
+                    className="w-full md:w-1/2 border border-[#DCD7C9] rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
                   >
                     {CONTRACT_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -509,7 +512,7 @@ export default function Home() {
                 </div>
 
                 {loadingFields && (
-                  <p className="text-gray-500 text-sm flex items-center gap-2 mb-4">
+                  <p className="text-[#5B6472] text-sm flex items-center gap-2 mb-4">
                     <Loader2 size={16} className="animate-spin" />
                     Đang tải danh sách trường thông tin...
                   </p>
@@ -533,7 +536,7 @@ export default function Home() {
                               handleChange(key, e.target.value)
                             }
                             rows={3}
-                            className="w-full border rounded-lg px-3 py-2"
+                            className="w-full border border-[#DCD7C9] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
                           />
                         </div>
                       ) : (
@@ -547,7 +550,7 @@ export default function Home() {
                               handleChange(key, e.target.value)
                             }
                             placeholder={NUMERIC_HINT_FIELDS[key]}
-                            className="w-full border rounded-lg px-3 py-2"
+                            className="w-full border border-[#DCD7C9] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
                           />
                         </div>
                       )
@@ -562,7 +565,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={generating || loadingFields || !!fieldsError}
-                  className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-medium disabled:opacity-50 flex items-center gap-2"
+                  className="mt-6 bg-[#16213E] hover:bg-[#0E1629] text-white px-8 py-3 rounded-md font-medium disabled:opacity-50 flex items-center gap-2 transition"
                 >
                   {generating && (
                     <Loader2 size={18} className="animate-spin" />
@@ -573,11 +576,11 @@ export default function Home() {
 
               {/* Just-generated result */}
               {lastContract && (
-                <div className="bg-white rounded-2xl shadow p-6 mb-10 border">
-                  <h3 className="text-xl font-semibold mb-4">
+                <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-6 mb-10">
+                  <h3 className="text-xl font-serif font-semibold mb-4 text-[#1C2333]">
                     Hợp đồng vừa tạo: {lastContract.file_name}
                   </h3>
-                  <div className="bg-gray-50 rounded-xl p-4 text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                  <div className="bg-[#FAF8F3] rounded-md border border-[#DCD7C9] p-4 text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
                     {lastContract.analysis_result}
                   </div>
                   <div className="flex gap-3 mt-4">
@@ -588,7 +591,7 @@ export default function Home() {
                           lastContract.file_name
                         )
                       }
-                      className="border rounded-lg px-4 py-2 text-sm hover:bg-gray-50"
+                      className="border border-[#DCD7C9] rounded-md px-4 py-2 text-sm hover:bg-[#FAF8F3] transition"
                     >
                       Tải DOCX
                     </button>
@@ -599,7 +602,7 @@ export default function Home() {
                           lastContract.file_name
                         )
                       }
-                      className="border rounded-lg px-4 py-2 text-sm hover:bg-gray-50"
+                      className="border border-[#DCD7C9] rounded-md px-4 py-2 text-sm hover:bg-[#FAF8F3] transition"
                     >
                       Tải PDF
                     </button>
@@ -609,27 +612,27 @@ export default function Home() {
 
               {/* Contract list */}
               <div>
-                <h3 className="text-2xl font-semibold mb-4">
+                <h3 className="text-2xl font-serif font-semibold mb-4 text-[#1C2333]">
                   Hợp đồng của tôi
                 </h3>
 
                 {loadingList && (
-                  <p className="text-gray-500">Đang tải...</p>
+                  <p className="text-[#5B6472]">Đang tải...</p>
                 )}
 
                 {!loadingList && contracts.length === 0 && (
-                  <p className="text-gray-500">Chưa có hợp đồng nào.</p>
+                  <p className="text-[#5B6472]">Chưa có hợp đồng nào.</p>
                 )}
 
                 <div className="space-y-3">
                   {contracts.map((c) => (
                     <div
                       key={c.id}
-                      className="bg-white rounded-xl shadow-sm border p-4 flex items-center justify-between"
+                      className="bg-white rounded-md border border-[#DCD7C9] p-4 flex items-center justify-between"
                     >
                       <div>
                         <div className="font-medium">{c.file_name}</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-[#5B6472]">
                           {new Date(c.created_at).toLocaleString("vi-VN")}
                         </div>
                       </div>
@@ -638,7 +641,7 @@ export default function Home() {
                           onClick={() =>
                             downloadContractDocx(c.id, c.file_name)
                           }
-                          className="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50"
+                          className="border border-[#DCD7C9] rounded-md px-3 py-1.5 text-sm hover:bg-[#FAF8F3] transition"
                         >
                           DOCX
                         </button>
@@ -646,7 +649,7 @@ export default function Home() {
                           onClick={() =>
                             downloadContractPdf(c.id, c.file_name)
                           }
-                          className="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50"
+                          className="border border-[#DCD7C9] rounded-md px-3 py-1.5 text-sm hover:bg-[#FAF8F3] transition"
                         >
                           PDF
                         </button>
@@ -659,24 +662,24 @@ export default function Home() {
           ) : (
             <>
               <div className="mb-10">
-                <h2 className="text-4xl font-bold mb-3">
+                <h2 className="text-4xl font-serif font-semibold mb-3 text-[#1C2333] tracking-tight">
                   Review hợp đồng
                 </h2>
-                <p className="text-gray-500 text-lg">
+                <p className="text-[#5B6472] text-lg">
                   Tải lên hợp đồng (PDF hoặc DOCX) để AI đánh giá rủi ro
                   pháp lý và soạn lại bản đã chỉnh sửa.
                 </p>
               </div>
 
               {reviewBlockedForFree && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 mb-6 text-sm">
+                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-md p-4 mb-6 text-sm">
                   Tính năng review hợp đồng chỉ dành cho gói PRO trở lên.
                   Nâng cấp để sử dụng.
                 </div>
               )}
 
               {!reviewBlockedForFree && reviewLimitReached && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 mb-6 text-sm">
+                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-md p-4 mb-6 text-sm">
                   Bạn đã dùng hết lượt review hợp đồng trong tháng này. Vui
                   lòng thử lại vào tháng sau hoặc nâng cấp gói.
                 </div>
@@ -685,7 +688,7 @@ export default function Home() {
               {/* Upload form */}
               <form
                 onSubmit={handleReview}
-                className="bg-white rounded-3xl shadow-xl p-8 mb-10"
+                className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-8 mb-10"
               >
                 <label className="block text-sm font-medium mb-2">
                   Chọn file hợp đồng (PDF hoặc DOCX, tối đa 10MB)
@@ -711,7 +714,7 @@ export default function Home() {
                     reviewBlockedForFree ||
                     reviewLimitReached
                   }
-                  className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-medium disabled:opacity-50 flex items-center gap-2"
+                  className="mt-6 bg-[#16213E] hover:bg-[#0E1629] text-white px-8 py-3 rounded-md font-medium disabled:opacity-50 flex items-center gap-2 transition"
                 >
                   {reviewing ? (
                     <Loader2 size={18} className="animate-spin" />
@@ -721,7 +724,7 @@ export default function Home() {
                   {reviewing ? "Đang phân tích..." : "Phân tích hợp đồng"}
                 </button>
                 {reviewing && (
-                  <p className="text-gray-500 text-sm mt-3">
+                  <p className="text-[#5B6472] text-sm mt-3">
                     Có thể mất khoảng 1-2 phút vì AI cần đọc, đánh giá rủi
                     ro, và soạn lại toàn văn hợp đồng.
                   </p>
@@ -730,8 +733,8 @@ export default function Home() {
 
               {/* Just-reviewed result */}
               {lastReview && (
-                <div className="bg-white rounded-2xl shadow p-6 mb-10 border">
-                  <h3 className="text-xl font-semibold mb-4">
+                <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-6 mb-10">
+                  <h3 className="text-xl font-serif font-semibold mb-4 text-[#1C2333]">
                     Kết quả: {lastReview.original_filename}
                   </h3>
 
@@ -740,8 +743,8 @@ export default function Home() {
                       onClick={() => setReviewResultTab("analysis")}
                       className={`px-4 py-2 rounded-lg text-sm font-medium ${
                         reviewResultTab === "analysis"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          ? "bg-[#16213E] text-white"
+                          : "bg-[#FAF8F3] text-[#5B6472] hover:bg-[#F0EDE4] border border-[#DCD7C9]"
                       }`}
                     >
                       Đánh giá rủi ro
@@ -751,15 +754,15 @@ export default function Home() {
                       disabled={!lastReview.revised_contract_text}
                       className={`px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 ${
                         reviewResultTab === "revised"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          ? "bg-[#16213E] text-white"
+                          : "bg-[#FAF8F3] text-[#5B6472] hover:bg-[#F0EDE4] border border-[#DCD7C9]"
                       }`}
                     >
                       Bản đã chỉnh sửa
                     </button>
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl p-4 text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                  <div className="bg-[#FAF8F3] rounded-md border border-[#DCD7C9] p-4 text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
                     {reviewResultTab === "analysis"
                       ? lastReview.analysis_result
                       : lastReview.revised_contract_text}
@@ -772,7 +775,7 @@ export default function Home() {
                           onClick={() =>
                             downloadRevisedContractDocx(lastReview.id)
                           }
-                          className="border rounded-lg px-4 py-2 text-sm hover:bg-gray-50"
+                          className="border border-[#DCD7C9] rounded-md px-4 py-2 text-sm hover:bg-[#FAF8F3] transition"
                         >
                           Tải DOCX
                         </button>
@@ -780,7 +783,7 @@ export default function Home() {
                           onClick={() =>
                             downloadRevisedContractPdf(lastReview.id)
                           }
-                          className="border rounded-lg px-4 py-2 text-sm hover:bg-gray-50"
+                          className="border border-[#DCD7C9] rounded-md px-4 py-2 text-sm hover:bg-[#FAF8F3] transition"
                         >
                           Tải PDF
                         </button>
@@ -791,29 +794,29 @@ export default function Home() {
 
               {/* Review list */}
               <div>
-                <h3 className="text-2xl font-semibold mb-4">
+                <h3 className="text-2xl font-serif font-semibold mb-4 text-[#1C2333]">
                   Lịch sử review
                 </h3>
 
                 {loadingReviews && (
-                  <p className="text-gray-500">Đang tải...</p>
+                  <p className="text-[#5B6472]">Đang tải...</p>
                 )}
 
                 {!loadingReviews && reviews.length === 0 && (
-                  <p className="text-gray-500">Chưa có review nào.</p>
+                  <p className="text-[#5B6472]">Chưa có review nào.</p>
                 )}
 
                 <div className="space-y-3">
                   {reviews.map((r) => (
                     <div
                       key={r.id}
-                      className="bg-white rounded-xl shadow-sm border p-4 flex items-center justify-between"
+                      className="bg-white rounded-md border border-[#DCD7C9] p-4 flex items-center justify-between"
                     >
                       <div>
                         <div className="font-medium">
                           {r.revised_contract_title || r.original_filename}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-[#5B6472]">
                           {new Date(r.created_at).toLocaleString("vi-VN")}
                         </div>
                       </div>
@@ -824,7 +827,7 @@ export default function Home() {
                             setReviewResultTab("analysis");
                             window.scrollTo({ top: 0, behavior: "smooth" });
                           }}
-                          className="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50"
+                          className="border border-[#DCD7C9] rounded-md px-3 py-1.5 text-sm hover:bg-[#FAF8F3] transition"
                         >
                           Xem
                         </button>
@@ -834,7 +837,7 @@ export default function Home() {
                               onClick={() =>
                                 downloadRevisedContractDocx(r.id)
                               }
-                              className="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50"
+                              className="border border-[#DCD7C9] rounded-md px-3 py-1.5 text-sm hover:bg-[#FAF8F3] transition"
                             >
                               DOCX
                             </button>
@@ -842,7 +845,7 @@ export default function Home() {
                               onClick={() =>
                                 downloadRevisedContractPdf(r.id)
                               }
-                              className="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50"
+                              className="border border-[#DCD7C9] rounded-md px-3 py-1.5 text-sm hover:bg-[#FAF8F3] transition"
                             >
                               PDF
                             </button>
