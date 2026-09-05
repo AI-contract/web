@@ -385,7 +385,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-black text-white p-6 hidden md:flex md:flex-col">
+      <aside className="w-64 bg-blue-700 text-white p-6 hidden md:flex md:flex-col">
         <h1 className="text-3xl font-bold mb-10">Legal AI</h1>
 
         <nav className="space-y-2 flex-1">
@@ -393,8 +393,8 @@ export default function Home() {
             onClick={() => setTab("generate")}
             className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-left transition ${
               tab === "generate"
-                ? "bg-white text-black"
-                : "text-gray-300 hover:bg-gray-800"
+                ? "bg-white text-blue-700"
+                : "text-blue-100 hover:bg-blue-800"
             }`}
           >
             <FileText size={20} />
@@ -404,8 +404,8 @@ export default function Home() {
             onClick={() => setTab("review")}
             className={`w-full flex items-center gap-3 rounded-lg px-3 py-2 text-left transition ${
               tab === "review"
-                ? "bg-white text-black"
-                : "text-gray-300 hover:bg-gray-800"
+                ? "bg-white text-blue-700"
+                : "text-blue-100 hover:bg-blue-800"
             }`}
           >
             <ScanSearch size={20} />
@@ -414,7 +414,7 @@ export default function Home() {
         </nav>
 
         {user && (
-          <div className="border-t border-gray-700 pt-4 text-sm text-gray-300 space-y-2">
+          <div className="border-t border-blue-500 pt-4 text-sm text-blue-100 space-y-2">
             <div>{user.email}</div>
             <div>
               Gói:{" "}
@@ -438,14 +438,14 @@ export default function Home() {
                 <button
                   onClick={() => handleUpgrade("PRO_MONTHLY")}
                   disabled={upgrading}
-                  className="w-full bg-white text-black rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
+                  className="w-full bg-white text-blue-700 rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
                 >
                   {upgrading ? "Đang chuyển hướng..." : "Nâng cấp PRO"}
                 </button>
                 <button
                   onClick={() => handleUpgrade("ENTERPRISE_MONTHLY")}
                   disabled={upgrading}
-                  className="w-full bg-gray-700 text-white rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
+                  className="w-full bg-blue-900 text-white rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
                 >
                   {upgrading ? "Đang chuyển hướng..." : "Nâng cấp ENTERPRISE"}
                 </button>
@@ -455,14 +455,14 @@ export default function Home() {
               <button
                 onClick={() => handleUpgrade("ENTERPRISE_MONTHLY")}
                 disabled={upgrading}
-                className="w-full bg-gray-700 text-white rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
+                className="w-full bg-blue-900 text-white rounded-lg py-2 mt-2 font-medium disabled:opacity-50"
               >
                 {upgrading ? "Đang chuyển hướng..." : "Nâng cấp ENTERPRISE"}
               </button>
             )}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-white mt-2"
+              className="w-full flex items-center justify-center gap-2 text-blue-200 hover:text-white mt-2"
             >
               <LogOut size={16} /> Đăng xuất
             </button>
@@ -563,7 +563,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={generating || loadingFields || !!fieldsError}
-                  className="mt-6 bg-black text-white px-8 py-3 rounded-2xl font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                  className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-medium disabled:opacity-50 flex items-center gap-2"
                 >
                   {generating && (
                     <Loader2 size={18} className="animate-spin" />
@@ -712,7 +712,7 @@ export default function Home() {
                     reviewBlockedForFree ||
                     reviewLimitReached
                   }
-                  className="mt-6 bg-black text-white px-8 py-3 rounded-2xl font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                  className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-medium disabled:opacity-50 flex items-center gap-2"
                 >
                   {reviewing ? (
                     <Loader2 size={18} className="animate-spin" />
@@ -741,7 +741,7 @@ export default function Home() {
                       onClick={() => setReviewResultTab("analysis")}
                       className={`px-4 py-2 rounded-lg text-sm font-medium ${
                         reviewResultTab === "analysis"
-                          ? "bg-black text-white"
+                          ? "bg-blue-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
@@ -752,7 +752,7 @@ export default function Home() {
                       disabled={!lastReview.revised_contract_text}
                       className={`px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 ${
                         reviewResultTab === "revised"
-                          ? "bg-black text-white"
+                          ? "bg-blue-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
