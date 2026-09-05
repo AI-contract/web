@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ScanSearch, LogOut, Loader2, Upload } from "lucide-react";
+import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen } from "lucide-react";
 import {
   ApiError,
   ContractOut,
@@ -386,11 +386,16 @@ export default function Home() {
       {/* Sidebar */}
       <aside className="w-64 bg-[#16213E] text-white p-6 hidden md:flex md:flex-col border-r border-black/20">
         <div className="mb-10">
-          <h1 className="text-2xl font-serif font-semibold tracking-tight">Legal AI</h1>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#9C7A3C]/15 border border-[#9C7A3C]/40">
+              <Scale size={18} className="text-[#C6A15C]" strokeWidth={1.75} />
+            </span>
+            <h1 className="text-2xl font-serif font-semibold tracking-tight">Legal AI</h1>
+          </div>
           <div className="mt-3 h-px w-10 bg-[#9C7A3C]" />
         </div>
 
-        <nav className="space-y-1 flex-1">
+        <nav className="space-y-1">
           <button
             onClick={() => setTab("generate")}
             className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
@@ -414,6 +419,26 @@ export default function Home() {
             <span className="text-sm">Review hợp đồng</span>
           </button>
         </nav>
+
+        {/* Ảnh minh họa gốc (SVG tự vẽ, không phải ảnh stock nên
+            không phát sinh vấn đề bản quyền) - đặt 2 file .svg vào
+            frontend/public/images/ */}
+        <div className="flex-1 flex flex-col justify-center gap-4 py-6">
+          <div className="rounded-md overflow-hidden">
+            <img
+              src="/images/scales-of-justice.svg"
+              alt="Cán cân công lý"
+              className="w-full h-28 object-cover"
+            />
+          </div>
+          <div className="rounded-md overflow-hidden">
+            <img
+              src="/images/law-book.svg"
+              alt="Sách luật"
+              className="w-full h-28 object-cover"
+            />
+          </div>
+        </div>
 
         {user && (
           <div className="border-t border-white/10 pt-4 text-sm text-slate-300 space-y-2">
@@ -478,11 +503,14 @@ export default function Home() {
           {tab === "generate" ? (
             <>
               <div className="mb-10">
-                <h2 className="text-4xl font-serif font-semibold mb-3 text-[#1C2333] tracking-tight">
-                  {contractTitle
-                    ? `Tạo ${contractTitle.toLowerCase()}`
-                    : "Tạo hợp đồng"}
-                </h2>
+                <div className="flex items-center gap-3 mb-3">
+                  <BookOpen size={28} className="text-[#9C7A3C]" strokeWidth={1.5} />
+                  <h2 className="text-4xl font-serif font-semibold text-[#1C2333] tracking-tight">
+                    {contractTitle
+                      ? `Tạo ${contractTitle.toLowerCase()}`
+                      : "Tạo hợp đồng"}
+                  </h2>
+                </div>
                 <p className="text-[#5B6472] text-lg">
                   Điền thông tin để AI tạo hợp đồng từ thư viện điều khoản.
                 </p>
@@ -662,9 +690,12 @@ export default function Home() {
           ) : (
             <>
               <div className="mb-10">
-                <h2 className="text-4xl font-serif font-semibold mb-3 text-[#1C2333] tracking-tight">
-                  Review hợp đồng
-                </h2>
+                <div className="flex items-center gap-3 mb-3">
+                  <Scale size={28} className="text-[#9C7A3C]" strokeWidth={1.5} />
+                  <h2 className="text-4xl font-serif font-semibold text-[#1C2333] tracking-tight">
+                    Review hợp đồng
+                  </h2>
+                </div>
                 <p className="text-[#5B6472] text-lg">
                   Tải lên hợp đồng (PDF hoặc DOCX) để AI đánh giá rủi ro
                   pháp lý và soạn lại bản đã chỉnh sửa.
