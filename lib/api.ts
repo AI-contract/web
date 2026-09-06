@@ -147,6 +147,15 @@ export interface CheckoutResponse {
   order_invoice_number: string;
 }
 
+// Yêu cầu review lưu theo tài khoản (mục tiêu review đã chọn +
+// văn bản pháp luật/yêu cầu riêng do người dùng tự nhập). Backend
+// cần trả về { goals: [], custom_instructions: "" } cho tài khoản
+// chưa từng lưu gì (không phải lỗi 404).
+export interface ReviewPreferences {
+  goals: string[];
+  custom_instructions: string;
+}
+
 // ---------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------
@@ -259,12 +268,28 @@ export function downloadContractPdf(id: number, fileName: string) {
 // Multipart upload — can't go through the JSON-only request()
 // helper above (it always sets Content-Type: application/json).
 // Uses fetch directly, same auth-header + error-handling pattern.
+//
+// `options.goals`/`options.custom_instructions`: yêu cầu review cho
+// LẦN NÀY cụ thể (có thể khác với bản đã lưu mặc định ở
+// ReviewPreferences, vì người dùng có thể sửa ngay trước khi nhấn
+// "Phân tích hợp đồng"). Gửi `goals` dưới dạng chuỗi JSON qua
+// multipart form field — backend cần đọc field "goals" (str) rồi
+// json.loads(...) thành list[str], thay vì List[str] trực tiếp
+// (multipart form không hỗ trợ mảng JSON gốc).
 export async function reviewContract(
-  file: File
+  file: File,
+  options?: { goals?: string[]; custom_instructions?: string }
 ): Promise<ContractReviewOut> {
   const token = getToken();
   const formData = new FormData();
   formData.append("file", file);
+
+  if (options?.goals && options.goals.length > 0) {
+    formData.append("goals", JSON.stringify(options.goals));
+  }
+  if (options?.custom_instructions) {
+    formData.append("custom_instructions", options.custom_instructions);
+  }
 
   const res = await fetch(`${API_URL}/review-contract`, {
     method: "POST",
@@ -306,6 +331,22 @@ export function downloadRevisedContractPdf(id: number) {
     `/contract-reviews/${id}/download-pdf`,
     `hop-dong-da-sua-${id}.pdf`
   );
+}
+
+// Yêu cầu review đã lưu mặc định cho tài khoản (mục tiêu + văn bản
+// pháp luật/yêu cầu riêng). Áp dụng sẵn (pre-fill) mỗi khi vào tab
+// Review; người dùng vẫn sửa được cho từng lần review cụ thể mà
+// không ảnh hưởng tới bản đã lưu cho tới khi bấm "Lưu làm mặc định"
+// lần nữa.
+export function getReviewPreferences() {
+  return request<ReviewPreferences>("/review-preferences");
+}
+
+export function saveReviewPreferences(prefs: ReviewPreferences) {
+  return request<ReviewPreferences>("/review-preferences", {
+    method: "PUT",
+    body: JSON.stringify(prefs),
+  });
 }
 
 // ---------------------------------------------------------------

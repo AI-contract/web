@@ -16,12 +16,26 @@ import {
   generateContract,
   getContractTypeFields,
   getMe,
+  getReviewPreferences,
   isSafeCheckoutUrl,
   myContracts,
   myContractReviews,
   reviewContract,
+  saveReviewPreferences,
   startCheckout,
 } from "@/lib/api";
+
+// ---- preset "mục tiêu review" - chọn nhanh, có thể chọn nhiều ----
+// (danh sách gợi ý; người dùng vẫn có thể ghi thêm yêu cầu/căn cứ
+// pháp luật riêng ở ô văn bản tự do bên dưới)
+const REVIEW_GOAL_PRESETS = [
+  "Bảo vệ quyền lợi Bên A",
+  "Bảo vệ quyền lợi Bên B",
+  "Bảo vệ quyền lợi Bên mua",
+  "Bảo vệ quyền lợi Bên bán",
+  "Hạn chế rủi ro pháp lý cho Bên A",
+  "Hạn chế rủi ro pháp lý cho Bên B",
+];
 
 // ---- contract types available ----
 // (the set of contract_type identifiers is fixed by the backend's
@@ -187,6 +201,37 @@ export default function Home() {
   const [reviews, setReviews] = useState<ContractReviewOut[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
 
+  // ---- yêu cầu review: mục tiêu (chọn nhanh) + văn bản pháp luật/
+  // yêu cầu riêng (tự do) - tải mặc định đã lưu theo tài khoản khi
+  // vào trang, nhưng vẫn sửa được cho từng lần review cụ thể ----
+  const [reviewGoals, setReviewGoals] = useState<string[]>([]);
+  const [reviewInstructions, setReviewInstructions] = useState("");
+  const [savingReviewPrefs, setSavingReviewPrefs] = useState(false);
+  const [reviewPrefsSaved, setReviewPrefsSaved] = useState(false);
+
+  const toggleReviewGoal = (goal: string) => {
+    setReviewPrefsSaved(false);
+    setReviewGoals((prev) =>
+      prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
+    );
+  };
+
+  const handleSaveReviewPrefs = async () => {
+    setSavingReviewPrefs(true);
+    setReviewPrefsSaved(false);
+    try {
+      await saveReviewPreferences({
+        goals: reviewGoals,
+        custom_instructions: reviewInstructions,
+      });
+      setReviewPrefsSaved(true);
+    } catch {
+      // non-fatal — mặc định chỉ áp dụng cho lần review này thôi
+    } finally {
+      setSavingReviewPrefs(false);
+    }
+  };
+
   const loadFieldsFor = (type: string, cancelledRef: { current: boolean }) => {
     setLoadingFields(true);
     setFieldsError(null);
@@ -234,6 +279,19 @@ export default function Home() {
         router.push("/login");
       });
   }, [router]);
+
+  // ---- tải yêu cầu review đã lưu mặc định cho tài khoản (nếu có) ----
+  useEffect(() => {
+    if (!authChecked) return;
+    getReviewPreferences()
+      .then((prefs) => {
+        setReviewGoals(prefs.goals ?? []);
+        setReviewInstructions(prefs.custom_instructions ?? "");
+      })
+      .catch(() => {
+        // non-fatal — chưa từng lưu mặc định thì cứ để trống
+      });
+  }, [authChecked]);
 
   const refreshContracts = () => {
     setLoadingList(true);
@@ -322,7 +380,10 @@ export default function Home() {
     setReviewing(true);
 
     try {
-      const review = await reviewContract(selectedFile);
+      const review = await reviewContract(selectedFile, {
+        goals: reviewGoals,
+        custom_instructions: reviewInstructions,
+      });
       setLastReview(review);
       setReviewResultTab("analysis");
       setSelectedFile(null);
@@ -743,6 +804,63 @@ export default function Home() {
                   disabled={reviewBlockedForFree || reviewLimitReached}
                   className="block w-full text-sm border rounded-lg px-3 py-2 bg-white disabled:opacity-50"
                 />
+
+                <div className="mt-6 pt-6 border-t border-[#DCD7C9]">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-[#1C2333]">
+                      Yêu cầu review
+                    </label>
+                    {reviewPrefsSaved && (
+                      <span className="text-xs text-[#9C7A3C]">
+                        Đã lưu làm mặc định
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-[#5B6472] mb-3">
+                    Chọn mục tiêu review và/hoặc ghi rõ văn bản pháp luật, yêu
+                    cầu riêng để AI căn cứ vào đó khi đánh giá hợp đồng. Có
+                    thể lưu làm mặc định để áp dụng cho các lần review sau.
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {REVIEW_GOAL_PRESETS.map((goal) => (
+                      <button
+                        key={goal}
+                        type="button"
+                        onClick={() => toggleReviewGoal(goal)}
+                        className={`px-3 py-1.5 rounded-full text-xs border transition ${
+                          reviewGoals.includes(goal)
+                            ? "bg-[#16213E] text-white border-[#16213E]"
+                            : "bg-white text-[#5B6472] border-[#DCD7C9] hover:bg-[#FAF8F3]"
+                        }`}
+                      >
+                        {goal}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={reviewInstructions}
+                    onChange={(e) => {
+                      setReviewPrefsSaved(false);
+                      setReviewInstructions(e.target.value);
+                    }}
+                    placeholder="Ví dụ: Căn cứ Bộ luật Lao động 2019, Nghị định 145/2020; ưu tiên chỉ ra điều khoản bất lợi cho Bên A về nghĩa vụ bồi thường..."
+                    rows={3}
+                    className="w-full border border-[#DCD7C9] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleSaveReviewPrefs}
+                    disabled={savingReviewPrefs}
+                    className="mt-3 border border-[#DCD7C9] rounded-md px-3 py-1.5 text-xs hover:bg-[#FAF8F3] transition disabled:opacity-50"
+                  >
+                    {savingReviewPrefs
+                      ? "Đang lưu..."
+                      : "Lưu làm mặc định cho tài khoản"}
+                  </button>
+                </div>
 
                 {reviewError && (
                   <p className="text-red-600 text-sm mt-4">{reviewError}</p>
