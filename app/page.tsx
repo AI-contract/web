@@ -1403,25 +1403,33 @@ export default function Home() {
           </div>
         )}
 
-        <button
-          onClick={() => setAssistantOpen((v) => !v)}
-          className="relative h-14 w-14 rounded-full bg-gradient-to-br from-[#233457] to-[#0E1629] hover:from-[#2A3E68] hover:to-[#16213E] text-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
-          aria-label="Trợ lý ảo"
-        >
-          {!assistantOpen && assistantMessages.length === 0 && (
-            <span className="absolute inset-0 rounded-full bg-[#9C7A3C]/50 animate-ping" />
-          )}
-          {assistantOpen ? (
-            <X size={22} />
-          ) : (
-            <Bot size={24} strokeWidth={1.75} />
-          )}
+        <div className="flex items-center justify-end gap-2">
           {!assistantOpen && (
-            <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-[#0E1629]">
-              <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping" />
+            <span className="bg-white text-[#16213E] text-sm font-medium px-3 py-1.5 rounded-full shadow-md border border-[#DCD7C9] whitespace-nowrap">
+              Trợ lý AI
             </span>
           )}
-        </button>
+
+          <button
+            onClick={() => setAssistantOpen((v) => !v)}
+            className="relative h-14 w-14 rounded-full bg-gradient-to-br from-[#233457] to-[#0E1629] hover:from-[#2A3E68] hover:to-[#16213E] text-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shrink-0"
+            aria-label="Trợ lý AI"
+          >
+            {!assistantOpen && assistantMessages.length === 0 && (
+              <span className="absolute inset-0 rounded-full bg-[#9C7A3C]/50 animate-ping" />
+            )}
+            {assistantOpen ? (
+              <X size={22} />
+            ) : (
+              <Bot size={24} strokeWidth={1.75} />
+            )}
+            {!assistantOpen && (
+              <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-[#0E1629]">
+                <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping" />
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </main>
   );
