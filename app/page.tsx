@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, MessageCircle, X, Send } from "lucide-react";
+import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, Bot, X, Send } from "lucide-react";
 import {
   ApiError,
   askAssistant,
@@ -1235,7 +1235,9 @@ export default function Home() {
           <div className="mb-3 w-80 sm:w-96 h-[28rem] bg-white rounded-lg border border-[#DCD7C9] shadow-xl flex flex-col overflow-hidden">
             <div className="bg-[#16213E] text-white px-4 py-3 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <Scale size={16} className="text-[#9C7A3C]" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#9C7A3C]/20 border border-[#9C7A3C]/50">
+                  <Bot size={15} className="text-[#C6A15C]" />
+                </span>
                 <span className="font-serif font-semibold">
                   Trợ lý Legal AI
                 </span>
@@ -1259,12 +1261,17 @@ export default function Home() {
               {assistantMessages.map((m, i) => (
                 <div
                   key={i}
-                  className={`flex ${
+                  className={`flex items-end gap-2 ${
                     m.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
+                  {m.role === "assistant" && (
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#9C7A3C]/20 border border-[#9C7A3C]/50">
+                      <Bot size={13} className="text-[#C6A15C]" />
+                    </span>
+                  )}
                   <div
-                    className={`max-w-[85%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap ${
+                    className={`max-w-[80%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap ${
                       m.role === "user"
                         ? "bg-[#16213E] text-white"
                         : "bg-white border border-[#DCD7C9] text-[#1C2333]"
@@ -1275,7 +1282,10 @@ export default function Home() {
                 </div>
               ))}
               {assistantSending && (
-                <div className="flex justify-start">
+                <div className="flex items-end gap-2 justify-start">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#9C7A3C]/20 border border-[#9C7A3C]/50">
+                    <Bot size={13} className="text-[#C6A15C]" />
+                  </span>
                   <div className="bg-white border border-[#DCD7C9] rounded-md px-3 py-2">
                     <Loader2
                       size={16}
@@ -1311,10 +1321,22 @@ export default function Home() {
 
         <button
           onClick={() => setAssistantOpen((v) => !v)}
-          className="h-14 w-14 rounded-full bg-[#16213E] hover:bg-[#0E1629] text-white shadow-lg flex items-center justify-center transition"
+          className="relative h-14 w-14 rounded-full bg-gradient-to-br from-[#233457] to-[#0E1629] hover:from-[#2A3E68] hover:to-[#16213E] text-white shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
           aria-label="Trợ lý ảo"
         >
-          {assistantOpen ? <X size={22} /> : <MessageCircle size={22} />}
+          {!assistantOpen && assistantMessages.length === 0 && (
+            <span className="absolute inset-0 rounded-full bg-[#9C7A3C]/50 animate-ping" />
+          )}
+          {assistantOpen ? (
+            <X size={22} />
+          ) : (
+            <Bot size={24} strokeWidth={1.75} />
+          )}
+          {!assistantOpen && (
+            <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-[#0E1629]">
+              <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping" />
+            </span>
+          )}
         </button>
       </div>
     </main>
