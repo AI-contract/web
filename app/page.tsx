@@ -111,7 +111,6 @@ const FIELD_LABELS: Record<string, string> = {
   CONTRACT_TERM_MONTHS: "Thời hạn hợp đồng (tháng)",
   MAX_LIABILITY_AMOUNT: "Mức trách nhiệm bồi thường tối đa (VNĐ)",
   ADVANCE_PAYMENT_AMOUNT: "Số tiền tạm ứng",
-  TERMINATION_NOTICE_DAYS: "Số ngày báo trước khi chấm dứt (theo yêu cầu)",
 };
 
 // Fields long enough to deserve a <textarea> instead of a one-line
@@ -139,7 +138,6 @@ const NUMERIC_HINT_FIELDS: Record<string, string> = {
   WORKING_HOURS_PER_WEEK: "Chỉ nhập số, ví dụ: 48",
   PENALTY_CAP_PERCENT: "Chỉ nhập số, ví dụ: 20",
   CONTRACT_TERM_MONTHS: "Chỉ nhập số, ví dụ: 12",
-  TERMINATION_NOTICE_DAYS: "Chỉ nhập số, ví dụ: 30",
 };
 
 function humanizeFieldKey(key: string): string {
