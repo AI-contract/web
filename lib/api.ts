@@ -404,4 +404,29 @@ export function getBillingStatus() {
   return request<BillingStatus>("/billing/status");
 }
 
+// ---------------------------------------------------------------
+// Trợ lý ảo (widget góc dưới phải, hỗ trợ khách hàng dùng nền tảng)
+// ---------------------------------------------------------------
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface AssistantAskResponse {
+  reply: string;
+}
+
+// `history` nên bao gồm cả câu hỏi mới nhất của người dùng (widget tự
+// thêm vào state trước khi gọi hàm này) — backend chỉ dùng để lấy ngữ
+// cảnh, không lưu lại vào DB.
+export function askAssistant(history: ChatMessage[]) {
+  return request<AssistantAskResponse>("/assistant/ask", {
+    method: "POST",
+    body: JSON.stringify({
+      message: history[history.length - 1]?.content ?? "",
+      history,
+    }),
+  });
+}
+
 export { ApiError };

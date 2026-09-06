@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info } from "lucide-react";
+import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, MessageCircle, X, Send } from "lucide-react";
 import {
   ApiError,
+  askAssistant,
+  ChatMessage,
   ContractOut,
   ContractReviewOut,
   UserMe,
@@ -229,6 +231,53 @@ export default function Home() {
       // non-fatal — mặc định chỉ áp dụng cho lần review này thôi
     } finally {
       setSavingReviewPrefs(false);
+    }
+  };
+
+  // ---- trợ lý ảo (widget góc dưới phải) ----
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantMessages, setAssistantMessages] = useState<ChatMessage[]>(
+    []
+  );
+  const [assistantInput, setAssistantInput] = useState("");
+  const [assistantSending, setAssistantSending] = useState(false);
+  const assistantEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!assistantOpen) return;
+    assistantEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [assistantMessages, assistantOpen]);
+
+  const handleAssistantSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const question = assistantInput.trim();
+    if (!question || assistantSending) return;
+
+    const nextMessages: ChatMessage[] = [
+      ...assistantMessages,
+      { role: "user", content: question },
+    ];
+    setAssistantMessages(nextMessages);
+    setAssistantInput("");
+    setAssistantSending(true);
+
+    try {
+      const res = await askAssistant(nextMessages);
+      setAssistantMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: res.reply },
+      ]);
+    } catch {
+      setAssistantMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Xin lỗi, trợ lý đang gặp sự cố. Bạn thử lại sau ít phút nhé.",
+        },
+      ]);
+    } finally {
+      setAssistantSending(false);
     }
   };
 
@@ -1179,6 +1228,95 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* Trợ lý ảo - widget góc dưới bên phải */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {assistantOpen && (
+          <div className="mb-3 w-80 sm:w-96 h-[28rem] bg-white rounded-lg border border-[#DCD7C9] shadow-xl flex flex-col overflow-hidden">
+            <div className="bg-[#16213E] text-white px-4 py-3 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <Scale size={16} className="text-[#9C7A3C]" />
+                <span className="font-serif font-semibold">
+                  Trợ lý Legal AI
+                </span>
+              </div>
+              <button
+                onClick={() => setAssistantOpen(false)}
+                className="text-slate-300 hover:text-white"
+                aria-label="Đóng"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF8F3]">
+              {assistantMessages.length === 0 && (
+                <p className="text-sm text-[#5B6472]">
+                  Xin chào! Mình có thể giúp bạn về cách tạo hợp đồng,
+                  review hợp đồng, hoặc bảng giá các gói. Bạn cần hỏi gì?
+                </p>
+              )}
+              {assistantMessages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`flex ${
+                    m.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "bg-[#16213E] text-white"
+                        : "bg-white border border-[#DCD7C9] text-[#1C2333]"
+                    }`}
+                  >
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {assistantSending && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-[#DCD7C9] rounded-md px-3 py-2">
+                    <Loader2
+                      size={16}
+                      className="animate-spin text-[#9C7A3C]"
+                    />
+                  </div>
+                </div>
+              )}
+              <div ref={assistantEndRef} />
+            </div>
+
+            <form
+              onSubmit={handleAssistantSend}
+              className="border-t border-[#DCD7C9] p-3 flex gap-2 bg-white shrink-0"
+            >
+              <input
+                value={assistantInput}
+                onChange={(e) => setAssistantInput(e.target.value)}
+                placeholder="Nhập câu hỏi..."
+                className="flex-1 border border-[#DCD7C9] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+              />
+              <button
+                type="submit"
+                disabled={assistantSending || !assistantInput.trim()}
+                className="bg-[#16213E] hover:bg-[#0E1629] text-white rounded-md px-3 disabled:opacity-50 transition"
+                aria-label="Gửi"
+              >
+                <Send size={16} />
+              </button>
+            </form>
+          </div>
+        )}
+
+        <button
+          onClick={() => setAssistantOpen((v) => !v)}
+          className="h-14 w-14 rounded-full bg-[#16213E] hover:bg-[#0E1629] text-white shadow-lg flex items-center justify-center transition"
+          aria-label="Trợ lý ảo"
+        >
+          {assistantOpen ? <X size={22} /> : <MessageCircle size={22} />}
+        </button>
+      </div>
     </main>
   );
 }
