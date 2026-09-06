@@ -1114,6 +1114,67 @@ export default function Home() {
                   ))}
                 </ol>
               </div>
+
+              <div className="bg-white rounded-lg border border-[#DCD7C9] shadow-sm p-8 mb-10">
+                <h3 className="text-2xl font-semibold mb-2 text-[#1C2333] flex items-center gap-2.5">
+                  <Scale size={22} className="text-[#9C7A3C]" strokeWidth={1.75} />
+                  Bảng giá
+                </h3>
+                <p className="text-[#5B6472] mb-6">
+                  Phí đăng ký gói PRO và ENTERPRISE, kèm ưu đãi khi đăng ký
+                  theo năm.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    {
+                      name: "PRO",
+                      monthly: "500.000đ",
+                      yearly: "5.000.000đ",
+                      savings:
+                        "Tiết kiệm 1.000.000đ/năm — tương đương 2 tháng miễn phí",
+                    },
+                    {
+                      name: "ENTERPRISE",
+                      monthly: "1.000.000đ",
+                      yearly: "10.000.000đ",
+                      savings:
+                        "Tiết kiệm 2.000.000đ/năm — tương đương 2 tháng miễn phí",
+                    },
+                  ].map((plan) => (
+                    <div
+                      key={plan.name}
+                      className="rounded-md border border-[#DCD7C9] p-6"
+                    >
+                      <p className="text-sm font-medium text-[#9C7A3C] tracking-wide uppercase mb-1">
+                        Gói {plan.name}
+                      </p>
+                      <p className="text-3xl font-semibold text-[#1C2333]">
+                        {plan.monthly}
+                        <span className="text-base font-normal text-[#5B6472]">
+                          {" "}
+                          /tháng
+                        </span>
+                      </p>
+                      <div className="mt-4 pt-4 border-t border-[#DCD7C9]">
+                        <p className="text-sm text-[#5B6472]">
+                          Đăng ký theo năm
+                        </p>
+                        <p className="text-xl font-semibold text-[#1C2333]">
+                          {plan.yearly}
+                          <span className="text-sm font-normal text-[#5B6472]">
+                            {" "}
+                            /năm
+                          </span>
+                        </p>
+                        <p className="text-xs text-[#9C7A3C] mt-1">
+                          {plan.savings}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </>
           )}
         </div>
