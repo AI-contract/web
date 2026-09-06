@@ -349,6 +349,24 @@ export function saveReviewPreferences(prefs: ReviewPreferences) {
   });
 }
 
+// Hồ sơ Bên A lưu theo tài khoản - tự điền lại các field PARTY_A_*
+// cho lần tạo hợp đồng sau (bất kể loại hợp đồng nào, vì tên field
+// giống nhau ở cả 5 loại).
+export interface PartyAProfile {
+  fields: Record<string, string>;
+}
+
+export function getPartyAProfile() {
+  return request<PartyAProfile>("/party-a-profile");
+}
+
+export function savePartyAProfile(fields: Record<string, string>) {
+  return request<PartyAProfile>("/party-a-profile", {
+    method: "PUT",
+    body: JSON.stringify({ fields }),
+  });
+}
+
 // ---------------------------------------------------------------
 // Billing
 // ---------------------------------------------------------------

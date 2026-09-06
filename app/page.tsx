@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, Bot, X, Send } from "lucide-react";
 import {
@@ -18,11 +18,13 @@ import {
   generateContract,
   getContractTypeFields,
   getMe,
+  getPartyAProfile,
   getReviewPreferences,
   isSafeCheckoutUrl,
   myContracts,
   myContractReviews,
   reviewContract,
+  savePartyAProfile,
   saveReviewPreferences,
   startCheckout,
 } from "@/lib/api";
@@ -171,6 +173,18 @@ export default function Home() {
     null
   );
 
+  // ---- hồ sơ Bên A: lưu lại để tự điền cho các lần tạo hợp đồng sau
+  // (dùng chung được cho cả 5 loại vì tên field PARTY_A_* giống nhau) ----
+  const [partyAProfile, setPartyAProfile] = useState<Record<string, string>>(
+    {}
+  );
+  const partyAProfileRef = useRef<Record<string, string>>({});
+  const [savePartyA, setSavePartyA] = useState(false);
+
+  useEffect(() => {
+    partyAProfileRef.current = partyAProfile;
+  }, [partyAProfile]);
+
   const [contracts, setContracts] = useState<ContractOut[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
@@ -288,6 +302,22 @@ export default function Home() {
         if (cancelledRef.current) return;
         setCurrentFields(data.required_fields);
         setContractTitle(data.title);
+
+        // Tự điền các field PARTY_A_* từ hồ sơ đã lưu (nếu có) - chỉ
+        // điền vào field đang trống, không ghi đè gì người dùng đã gõ.
+        setForm((prev) => {
+          const next = { ...prev };
+          for (const key of data.required_fields) {
+            if (
+              key.startsWith("PARTY_A_") &&
+              !next[key] &&
+              partyAProfileRef.current[key]
+            ) {
+              next[key] = partyAProfileRef.current[key];
+            }
+          }
+          return next;
+        });
       })
       .catch((err) => {
         if (cancelledRef.current) return;
@@ -337,6 +367,18 @@ export default function Home() {
       })
       .catch(() => {
         // non-fatal — chưa từng lưu mặc định thì cứ để trống
+      });
+  }, [authChecked]);
+
+  // ---- tải hồ sơ Bên A đã lưu cho tài khoản (nếu có) ----
+  useEffect(() => {
+    if (!authChecked) return;
+    getPartyAProfile()
+      .then((profile) => {
+        setPartyAProfile(profile.fields ?? {});
+      })
+      .catch(() => {
+        // non-fatal — chưa từng lưu thì cứ để form trống như cũ
       });
   }, [authChecked]);
 
@@ -402,6 +444,23 @@ export default function Home() {
       setLastContract(contract);
       refreshContracts();
       refreshUser();
+
+      // Lưu hồ sơ Bên A nếu người dùng có tick chọn - không chặn kết
+      // quả tạo hợp đồng nếu bước lưu này lỗi (chỉ là tiện ích phụ).
+      if (savePartyA) {
+        const partyAFields: Record<string, string> = {};
+        for (const key of currentFields) {
+          if (key.startsWith("PARTY_A_") && form[key]) {
+            partyAFields[key] = form[key];
+          }
+        }
+        try {
+          const saved = await savePartyAProfile(partyAFields);
+          setPartyAProfile(saved.fields);
+        } catch {
+          // non-fatal
+        }
+      }
     } catch (err) {
       const message =
         err instanceof ApiError
@@ -671,9 +730,14 @@ export default function Home() {
 
                 {!loadingFields && !fieldsError && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentFields.map((key) =>
-                      LONG_TEXT_FIELDS.has(key) ? (
-                        <div key={key} className="md:col-span-2">
+                    {currentFields.map((key, index) => {
+                      const isLastPartyAField =
+                        key.startsWith("PARTY_A_") &&
+                        (index === currentFields.length - 1 ||
+                          !currentFields[index + 1].startsWith("PARTY_A_"));
+
+                      const fieldEl = LONG_TEXT_FIELDS.has(key) ? (
+                        <div className="md:col-span-2">
                           <label className="block text-sm font-medium mb-1">
                             {labelForField(key)}
                           </label>
@@ -687,7 +751,7 @@ export default function Home() {
                           />
                         </div>
                       ) : (
-                        <div key={key}>
+                        <div>
                           <label className="block text-sm font-medium mb-1">
                             {labelForField(key)}
                           </label>
@@ -700,8 +764,30 @@ export default function Home() {
                             className="w-full border border-[#DCD7C9] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
                           />
                         </div>
-                      )
-                    )}
+                      );
+
+                      return (
+                        <Fragment key={key}>
+                          {fieldEl}
+                          {isLastPartyAField && (
+                            <div className="md:col-span-2 -mt-1">
+                              <label className="flex items-center gap-2 text-sm text-[#5B6472] cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={savePartyA}
+                                  onChange={(e) =>
+                                    setSavePartyA(e.target.checked)
+                                  }
+                                  className="rounded border-[#DCD7C9] text-[#16213E] focus:ring-[#9C7A3C]"
+                                />
+                                Lưu thông tin Bên A này cho các lần tạo
+                                hợp đồng sau
+                              </label>
+                            </div>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                   </div>
                 )}
 
