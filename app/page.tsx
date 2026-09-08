@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, Bot, X, Send } from "lucide-react";
+import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, Bot, X, Send, Phone, Mail, MapPin, Calendar, Clock, Percent, Wallet, Landmark, Hash, Briefcase, Building2, User, UserCheck, CreditCard, Package, Truck, ShieldCheck, FileSignature } from "lucide-react";
 import {
   ApiError,
   askAssistant,
@@ -152,6 +152,46 @@ function humanizeFieldKey(key: string): string {
 
 function labelForField(key: string): string {
   return FIELD_LABELS[key] || humanizeFieldKey(key);
+}
+
+// Icon minh họa đặt bên trong ô nhập, chọn theo từ khóa trong tên field -
+// thứ tự kiểm tra từ cụ thể đến chung chung, dừng ở match đầu tiên.
+function iconForField(key: string) {
+  if (key === "PARTY_A_NAME") return Building2;
+  if (key === "PARTY_B_NAME") return User;
+  if (key.includes("PHONE")) return Phone;
+  if (key.includes("EMAIL")) return Mail;
+  if (key.includes("ADDRESS")) return MapPin;
+  if (key.includes("REPRESENTATIVE")) return UserCheck;
+  if (key.includes("POSITION") || key.includes("JOB_TITLE"))
+    return Briefcase;
+  if (key.includes("BUSINESS_REG_NUMBER")) return Hash;
+  if (key.includes("ID_NUMBER")) return CreditCard;
+  if (key.includes("BANK_ACCOUNT")) return Landmark;
+  if (key.includes("PAYMENT_METHOD")) return CreditCard;
+  if (key.includes("GOODS_NAME")) return Package;
+  if (key.includes("QUANTITY")) return Hash;
+  if (key.includes("WARRANTY")) return ShieldCheck;
+  if (key.includes("DELIVERY_TERM")) return Truck;
+  if (key.includes("LOCATION")) return MapPin;
+  if (
+    key.includes("VALUE") ||
+    key.includes("SALARY") ||
+    key.includes("ALLOWANCES") ||
+    key.includes("AMOUNT")
+  )
+    return Wallet;
+  if (key.includes("PERCENT") || key === "PENALTY_RATE") return Percent;
+  if (key.includes("DATE") || key === "PARTY_B_DOB") return Calendar;
+  if (
+    key.includes("DAYS") ||
+    key.includes("MONTHS") ||
+    key.includes("TERM") ||
+    key.includes("PERIOD") ||
+    key.includes("HOURS")
+  )
+    return Clock;
+  return FileText;
 }
 
 // ---- top-level tab ----
@@ -731,43 +771,84 @@ export default function Home() {
                 {!loadingFields && !fieldsError && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {currentFields.map((key, index) => {
+                      const isFirstPartyAField =
+                        key.startsWith("PARTY_A_") &&
+                        (index === 0 ||
+                          !currentFields[index - 1].startsWith("PARTY_A_"));
+                      const isFirstPartyBField =
+                        key.startsWith("PARTY_B_") &&
+                        (index === 0 ||
+                          !currentFields[index - 1].startsWith("PARTY_B_"));
                       const isLastPartyAField =
                         key.startsWith("PARTY_A_") &&
                         (index === currentFields.length - 1 ||
                           !currentFields[index + 1].startsWith("PARTY_A_"));
+
+                      const Icon = iconForField(key);
 
                       const fieldEl = LONG_TEXT_FIELDS.has(key) ? (
                         <div className="md:col-span-2">
                           <label className="block text-sm font-medium mb-1">
                             {labelForField(key)}
                           </label>
-                          <textarea
-                            value={form[key] || ""}
-                            onChange={(e) =>
-                              handleChange(key, e.target.value)
-                            }
-                            rows={3}
-                            className="w-full border border-[#DCD7C9] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
-                          />
+                          <div className="relative">
+                            <Icon
+                              size={16}
+                              className="absolute left-3 top-3 text-[#9C7A3C]/70 pointer-events-none"
+                            />
+                            <textarea
+                              value={form[key] || ""}
+                              onChange={(e) =>
+                                handleChange(key, e.target.value)
+                              }
+                              rows={3}
+                              className="w-full border border-[#DCD7C9] rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div>
                           <label className="block text-sm font-medium mb-1">
                             {labelForField(key)}
                           </label>
-                          <input
-                            value={form[key] || ""}
-                            onChange={(e) =>
-                              handleChange(key, e.target.value)
-                            }
-                            placeholder={NUMERIC_HINT_FIELDS[key]}
-                            className="w-full border border-[#DCD7C9] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
-                          />
+                          <div className="relative">
+                            <Icon
+                              size={16}
+                              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9C7A3C]/70 pointer-events-none"
+                            />
+                            <input
+                              value={form[key] || ""}
+                              onChange={(e) =>
+                                handleChange(key, e.target.value)
+                              }
+                              placeholder={NUMERIC_HINT_FIELDS[key]}
+                              className="w-full border border-[#DCD7C9] rounded-md pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                            />
+                          </div>
                         </div>
                       );
 
                       return (
                         <Fragment key={key}>
+                          {isFirstPartyAField && (
+                            <div className="md:col-span-2 flex items-center gap-2 pt-2 pb-1 border-t border-[#DCD7C9] first:border-t-0 first:pt-0">
+                              <Building2
+                                size={16}
+                                className="text-[#9C7A3C]"
+                              />
+                              <span className="text-xs font-semibold tracking-wide uppercase text-[#9C7A3C]">
+                                Thông tin Bên A
+                              </span>
+                            </div>
+                          )}
+                          {isFirstPartyBField && (
+                            <div className="md:col-span-2 flex items-center gap-2 pt-4 pb-1 border-t border-[#DCD7C9]">
+                              <User size={16} className="text-[#9C7A3C]" />
+                              <span className="text-xs font-semibold tracking-wide uppercase text-[#9C7A3C]">
+                                Thông tin Bên B
+                              </span>
+                            </div>
+                          )}
                           {fieldEl}
                           {isLastPartyAField && (
                             <div className="md:col-span-2 -mt-1">
@@ -863,10 +944,18 @@ export default function Home() {
                       key={c.id}
                       className="bg-white rounded-md border border-[#DCD7C9] p-4 flex items-center justify-between"
                     >
-                      <div>
-                        <div className="font-medium">{c.file_name}</div>
-                        <div className="text-sm text-[#5B6472]">
-                          {new Date(c.created_at).toLocaleString("vi-VN")}
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#9C7A3C]/10 border border-[#9C7A3C]/30">
+                          <FileSignature size={16} className="text-[#9C7A3C]" />
+                        </span>
+                        <div>
+                          <div className="font-medium">
+                            {CONTRACT_TYPES.find((t) => t.value === c.file_name)
+                              ?.label || c.file_name}
+                          </div>
+                          <div className="text-sm text-[#5B6472]">
+                            {new Date(c.created_at).toLocaleString("vi-VN")}
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -1105,12 +1194,17 @@ export default function Home() {
                       key={r.id}
                       className="bg-white rounded-md border border-[#DCD7C9] p-4 flex items-center justify-between"
                     >
-                      <div>
-                        <div className="font-medium">
-                          {r.revised_contract_title || r.original_filename}
-                        </div>
-                        <div className="text-sm text-[#5B6472]">
-                          {new Date(r.created_at).toLocaleString("vi-VN")}
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#9C7A3C]/10 border border-[#9C7A3C]/30">
+                          <ScanSearch size={16} className="text-[#9C7A3C]" />
+                        </span>
+                        <div>
+                          <div className="font-medium">
+                            {r.revised_contract_title || r.original_filename}
+                          </div>
+                          <div className="text-sm text-[#5B6472]">
+                            {new Date(r.created_at).toLocaleString("vi-VN")}
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
