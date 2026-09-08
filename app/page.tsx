@@ -179,9 +179,13 @@ const FIELD_LABEL_OVERRIDES_BY_TYPE: Record<
     PARTY_B_ADDRESS: "Địa chỉ trụ sở chính Bên B",
   },
   labor: {
+    PARTY_A_NAME: "NGƯỜI SỬ DỤNG LAO ĐỘNG (BÊN A)",
+    PARTY_B_NAME: "NGƯỜI LAO ĐỘNG (BÊN B)",
     PARTY_B_ADDRESS: "Địa chỉ cư trú Bên B",
   },
   probation: {
+    PARTY_A_NAME: "NGƯỜI SỬ DỤNG LAO ĐỘNG (BÊN A)",
+    PARTY_B_NAME: "NGƯỜI LAO ĐỘNG (BÊN B)",
     PARTY_B_ADDRESS: "Địa chỉ cư trú Bên B",
   },
 };
