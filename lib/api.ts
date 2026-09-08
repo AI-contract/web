@@ -367,6 +367,22 @@ export function savePartyAProfile(fields: Record<string, string>) {
   });
 }
 
+// Hồ sơ Bên B - cùng cơ chế với hồ sơ Bên A ở trên.
+export interface PartyBProfile {
+  fields: Record<string, string>;
+}
+
+export function getPartyBProfile() {
+  return request<PartyBProfile>("/party-b-profile");
+}
+
+export function savePartyBProfile(fields: Record<string, string>) {
+  return request<PartyBProfile>("/party-b-profile", {
+    method: "PUT",
+    body: JSON.stringify({ fields }),
+  });
+}
+
 // ---------------------------------------------------------------
 // Billing
 // ---------------------------------------------------------------

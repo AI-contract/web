@@ -19,12 +19,14 @@ import {
   getContractTypeFields,
   getMe,
   getPartyAProfile,
+  getPartyBProfile,
   getReviewPreferences,
   isSafeCheckoutUrl,
   myContracts,
   myContractReviews,
   reviewContract,
   savePartyAProfile,
+  savePartyBProfile,
   saveReviewPreferences,
   startCheckout,
 } from "@/lib/api";
@@ -59,20 +61,20 @@ const CONTRACT_TYPES: { value: string; label: string }[] = [
 // so a new clause variable never breaks the form — it just shows a
 // slightly less polished label until someone adds a proper entry.
 const FIELD_LABELS: Record<string, string> = {
+  SIGNING_DATE: "Ngày ký hợp đồng",
+  SIGNING_LOCATION: "Địa điểm ký hợp đồng",
   PARTY_A_NAME: "Tên Bên A",
   PARTY_A_REPRESENTATIVE: "Người đại diện Bên A",
-  PARTY_A_ADDRESS: "Địa chỉ Bên A",
+  PARTY_A_ADDRESS: "Địa chỉ trụ sở chính Bên A",
   PARTY_A_PHONE: "Số điện thoại Bên A",
   PARTY_A_POSITION: "Chức vụ Bên A",
-  PARTY_A_BUSINESS_REG_NUMBER: "Mã số doanh nghiệp Bên A",
-  PARTY_A_BUSINESS_REG_DATE: "Ngày đăng ký kinh doanh Bên A",
+  PARTY_A_BUSINESS_REG_NUMBER: "Mã số doanh nghiệp/Mã số thuế Bên A",
   PARTY_B_NAME: "Tên / Họ tên Bên B",
   PARTY_B_REPRESENTATIVE: "Người đại diện Bên B",
   PARTY_B_ADDRESS: "Địa chỉ Bên B",
   PARTY_B_PHONE: "Số điện thoại Bên B",
   PARTY_B_POSITION: "Chức vụ Bên B",
-  PARTY_B_BUSINESS_REG_NUMBER: "Mã số doanh nghiệp Bên B",
-  PARTY_B_BUSINESS_REG_DATE: "Ngày đăng ký kinh doanh Bên B",
+  PARTY_B_BUSINESS_REG_NUMBER: "Mã số doanh nghiệp/Mã số thuế Bên B",
   PARTY_B_DOB: "Ngày sinh Bên B",
   PARTY_B_ID_NUMBER: "Số CCCD/CMND Bên B",
   PARTY_B_ID_ISSUE_DATE: "Ngày cấp CCCD/CMND",
@@ -150,8 +152,46 @@ function humanizeFieldKey(key: string): string {
     .join(" ");
 }
 
-function labelForField(key: string): string {
-  return FIELD_LABELS[key] || humanizeFieldKey(key);
+// Nhãn field khác nhau tùy loại hợp đồng, dùng khi cùng 1 tên field
+// (PARTY_A_NAME, PARTY_B_ADDRESS...) cần hiển thị khác nhau tùy ngữ
+// cảnh - vd "BÊN A"/"BÊN B" chỉ áp dụng cho service/nda/sale (không
+// áp dụng cho labor/probation, nơi vẫn giữ "Tên Bên A"/"Tên/Họ tên
+// Bên B" cho rõ ràng vì Bên B là cá nhân); "Địa chỉ trụ sở chính"
+// cho nhóm Bên B là công ty, "Địa chỉ cư trú" cho nhóm Bên B là cá
+// nhân. Không khớp type nào thì rơi về FIELD_LABELS mặc định.
+const FIELD_LABEL_OVERRIDES_BY_TYPE: Record<
+  string,
+  Record<string, string>
+> = {
+  service: {
+    PARTY_A_NAME: "BÊN A",
+    PARTY_B_NAME: "BÊN B",
+    PARTY_B_ADDRESS: "Địa chỉ trụ sở chính Bên B",
+  },
+  nda: {
+    PARTY_A_NAME: "BÊN A",
+    PARTY_B_NAME: "BÊN B",
+    PARTY_B_ADDRESS: "Địa chỉ trụ sở chính Bên B",
+  },
+  sale: {
+    PARTY_A_NAME: "BÊN A",
+    PARTY_B_NAME: "BÊN B",
+    PARTY_B_ADDRESS: "Địa chỉ trụ sở chính Bên B",
+  },
+  labor: {
+    PARTY_B_ADDRESS: "Địa chỉ cư trú Bên B",
+  },
+  probation: {
+    PARTY_B_ADDRESS: "Địa chỉ cư trú Bên B",
+  },
+};
+
+function labelForField(key: string, contractType: string): string {
+  return (
+    FIELD_LABEL_OVERRIDES_BY_TYPE[contractType]?.[key] ||
+    FIELD_LABELS[key] ||
+    humanizeFieldKey(key)
+  );
 }
 
 // Icon minh họa đặt bên trong ô nhập, chọn theo từ khóa trong tên field -
@@ -224,6 +264,22 @@ export default function Home() {
   useEffect(() => {
     partyAProfileRef.current = partyAProfile;
   }, [partyAProfile]);
+
+  // ---- hồ sơ Bên B: cùng cơ chế với Bên A ở trên. Lưu ý: bộ field
+  // Bên B khác nhau giữa nhóm hợp đồng có Bên B là công ty (service/
+  // nda/sale) và nhóm có Bên B là cá nhân (labor/probation) - chỉ
+  // những field thực sự xuất hiện ở loại hợp đồng đang chọn mới được
+  // tự điền, nhưng NAME/PHONE/ADDRESS trùng tên ở cả 2 nhóm nên có
+  // thể tự điền chéo không đúng ngữ cảnh - vẫn sửa lại được như thường.
+  const [partyBProfile, setPartyBProfile] = useState<Record<string, string>>(
+    {}
+  );
+  const partyBProfileRef = useRef<Record<string, string>>({});
+  const [savePartyB, setSavePartyB] = useState(false);
+
+  useEffect(() => {
+    partyBProfileRef.current = partyBProfile;
+  }, [partyBProfile]);
 
   const [contracts, setContracts] = useState<ContractOut[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -343,17 +399,20 @@ export default function Home() {
         setCurrentFields(data.required_fields);
         setContractTitle(data.title);
 
-        // Tự điền các field PARTY_A_* từ hồ sơ đã lưu (nếu có) - chỉ
-        // điền vào field đang trống, không ghi đè gì người dùng đã gõ.
+        // Tự điền các field PARTY_A_*/PARTY_B_* từ hồ sơ đã lưu (nếu
+        // có) - chỉ điền vào field đang trống, không ghi đè gì người
+        // dùng đã gõ.
         setForm((prev) => {
           const next = { ...prev };
           for (const key of data.required_fields) {
-            if (
-              key.startsWith("PARTY_A_") &&
-              !next[key] &&
-              partyAProfileRef.current[key]
-            ) {
-              next[key] = partyAProfileRef.current[key];
+            if (key.startsWith("PARTY_A_") && !next[key]) {
+              if (partyAProfileRef.current[key]) {
+                next[key] = partyAProfileRef.current[key];
+              }
+            } else if (key.startsWith("PARTY_B_") && !next[key]) {
+              if (partyBProfileRef.current[key]) {
+                next[key] = partyBProfileRef.current[key];
+              }
             }
           }
           return next;
@@ -416,6 +475,18 @@ export default function Home() {
     getPartyAProfile()
       .then((profile) => {
         setPartyAProfile(profile.fields ?? {});
+      })
+      .catch(() => {
+        // non-fatal — chưa từng lưu thì cứ để form trống như cũ
+      });
+  }, [authChecked]);
+
+  // ---- tải hồ sơ Bên B đã lưu cho tài khoản (nếu có) ----
+  useEffect(() => {
+    if (!authChecked) return;
+    getPartyBProfile()
+      .then((profile) => {
+        setPartyBProfile(profile.fields ?? {});
       })
       .catch(() => {
         // non-fatal — chưa từng lưu thì cứ để form trống như cũ
@@ -497,6 +568,22 @@ export default function Home() {
         try {
           const saved = await savePartyAProfile(partyAFields);
           setPartyAProfile(saved.fields);
+        } catch {
+          // non-fatal
+        }
+      }
+
+      // Lưu hồ sơ Bên B nếu người dùng có tick chọn - cùng cơ chế.
+      if (savePartyB) {
+        const partyBFields: Record<string, string> = {};
+        for (const key of currentFields) {
+          if (key.startsWith("PARTY_B_") && form[key]) {
+            partyBFields[key] = form[key];
+          }
+        }
+        try {
+          const saved = await savePartyBProfile(partyBFields);
+          setPartyBProfile(saved.fields);
         } catch {
           // non-fatal
         }
@@ -775,6 +862,7 @@ export default function Home() {
                         key.startsWith("PARTY_A_") &&
                         (index === 0 ||
                           !currentFields[index - 1].startsWith("PARTY_A_"));
+                      const isSigningInfoField = key === "SIGNING_DATE";
                       const isFirstPartyBField =
                         key.startsWith("PARTY_B_") &&
                         (index === 0 ||
@@ -783,13 +871,17 @@ export default function Home() {
                         key.startsWith("PARTY_A_") &&
                         (index === currentFields.length - 1 ||
                           !currentFields[index + 1].startsWith("PARTY_A_"));
+                      const isLastPartyBField =
+                        key.startsWith("PARTY_B_") &&
+                        (index === currentFields.length - 1 ||
+                          !currentFields[index + 1].startsWith("PARTY_B_"));
 
                       const Icon = iconForField(key);
 
                       const fieldEl = LONG_TEXT_FIELDS.has(key) ? (
                         <div className="md:col-span-2">
                           <label className="block text-sm font-medium mb-1">
-                            {labelForField(key)}
+                            {labelForField(key, contractType)}
                           </label>
                           <div className="relative">
                             <Icon
@@ -809,7 +901,7 @@ export default function Home() {
                       ) : (
                         <div>
                           <label className="block text-sm font-medium mb-1">
-                            {labelForField(key)}
+                            {labelForField(key, contractType)}
                           </label>
                           <div className="relative">
                             <Icon
@@ -830,6 +922,14 @@ export default function Home() {
 
                       return (
                         <Fragment key={key}>
+                          {isSigningInfoField && (
+                            <div className="md:col-span-2 flex items-center gap-2 pb-1">
+                              <Calendar size={16} className="text-[#9C7A3C]" />
+                              <span className="text-xs font-semibold tracking-wide uppercase text-[#9C7A3C]">
+                                Thông tin ký kết
+                              </span>
+                            </div>
+                          )}
                           {isFirstPartyAField && (
                             <div className="md:col-span-2 flex items-center gap-2 pt-2 pb-1 border-t border-[#DCD7C9] first:border-t-0 first:pt-0">
                               <Building2
@@ -862,6 +962,22 @@ export default function Home() {
                                   className="rounded border-[#DCD7C9] text-[#16213E] focus:ring-[#9C7A3C]"
                                 />
                                 Lưu thông tin Bên A này cho các lần tạo
+                                hợp đồng sau
+                              </label>
+                            </div>
+                          )}
+                          {isLastPartyBField && (
+                            <div className="md:col-span-2 -mt-1">
+                              <label className="flex items-center gap-2 text-sm text-[#5B6472] cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={savePartyB}
+                                  onChange={(e) =>
+                                    setSavePartyB(e.target.checked)
+                                  }
+                                  className="rounded border-[#DCD7C9] text-[#16213E] focus:ring-[#9C7A3C]"
+                                />
+                                Lưu thông tin Bên B này cho các lần tạo
                                 hợp đồng sau
                               </label>
                             </div>
