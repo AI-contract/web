@@ -67,13 +67,13 @@ const FIELD_LABELS: Record<string, string> = {
   PARTY_A_REPRESENTATIVE: "Người đại diện Bên A",
   PARTY_A_ADDRESS: "Địa chỉ trụ sở chính Bên A",
   PARTY_A_PHONE: "Số điện thoại Bên A",
-  PARTY_A_POSITION: "Chức vụ Bên A",
+  PARTY_A_POSITION: "Chức vụ Người đại diện Bên A",
   PARTY_A_BUSINESS_REG_NUMBER: "Mã số doanh nghiệp/Mã số thuế Bên A",
   PARTY_B_NAME: "Tên / Họ tên Bên B",
   PARTY_B_REPRESENTATIVE: "Người đại diện Bên B",
   PARTY_B_ADDRESS: "Địa chỉ Bên B",
   PARTY_B_PHONE: "Số điện thoại Bên B",
-  PARTY_B_POSITION: "Chức vụ Bên B",
+  PARTY_B_POSITION: "Chức vụ Người đại diện Bên B",
   PARTY_B_BUSINESS_REG_NUMBER: "Mã số doanh nghiệp/Mã số thuế Bên B",
   PARTY_B_DOB: "Ngày sinh Bên B",
   PARTY_B_ID_NUMBER: "Số CCCD/CMND Bên B",
@@ -112,7 +112,7 @@ const FIELD_LABELS: Record<string, string> = {
   WORKING_HOURS_PER_WEEK: "Số giờ làm việc/tuần",
   DISPUTE_LOCATION: "Nơi giải quyết tranh chấp",
   PENALTY_CAP_PERCENT: "Mức phạt tối đa (% giá trị hợp đồng)",
-  CONTRACT_TERM_MONTHS: "Thời hạn hợp đồng (tháng)",
+  CONTRACT_TERM_MONTHS: "Thời hạn hợp đồng",
   MAX_LIABILITY_AMOUNT: "Mức trách nhiệm bồi thường tối đa (VNĐ)",
   ADVANCE_PAYMENT_AMOUNT: "Số tiền tạm ứng",
 };
@@ -141,7 +141,7 @@ const NUMERIC_HINT_FIELDS: Record<string, string> = {
   WORKING_HOURS_PER_DAY: "Chỉ nhập số, ví dụ: 8",
   WORKING_HOURS_PER_WEEK: "Chỉ nhập số, ví dụ: 48",
   PENALTY_CAP_PERCENT: "Chỉ nhập số, ví dụ: 20",
-  CONTRACT_TERM_MONTHS: "Chỉ nhập số, ví dụ: 12",
+  CONTRACT_TERM_MONTHS: "VD: 01 năm; 01 tháng",
 };
 
 function humanizeFieldKey(key: string): string {
@@ -1374,13 +1374,13 @@ export default function Home() {
                       Nền tảng AI pháp lý
                     </p>
                     <h2 className="text-3xl md:text-4xl font-semibold mb-4 leading-tight">
-                      Soạn thảo &amp; rà soát hợp đồng bằng AI, chuẩn theo
-                      pháp luật Việt Nam
+                      Soạn thảo &amp; Review hợp đồng chuẩn theo pháp luật
+                      Việt Nam
                     </h2>
                     <p className="text-slate-300 text-lg">
                       Tạo nhanh 5 loại hợp đồng phổ biến từ thư viện điều
-                      khoản chuẩn, hoặc để AI rà soát rủi ro pháp lý và tự
-                      soạn lại bản chỉnh sửa — chỉ trong vài phút.
+                      khoản chuẩn; Rà soát rủi ro pháp lý và kèm bản chỉnh
+                      sửa — chỉ trong vài phút.
                     </p>
                   </div>
                   <div className="hidden md:block">
@@ -1401,7 +1401,7 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                   {[
                     "Tạo hợp đồng từ thư viện điều khoản chuẩn, đủ 5 loại hợp đồng phổ biến (Dịch vụ, Lao động, Mua bán, NDA, Thử việc).",
-                    "AI rà soát rủi ro pháp lý và tự soạn lại bản hợp đồng đã chỉnh sửa.",
+                    "Rà soát rủi ro pháp lý của hợp đồng và tự soạn lại bản đã chỉnh sửa.",
                     "Tùy chọn yêu cầu review theo mục tiêu bảo vệ quyền lợi và căn cứ pháp luật riêng.",
                     "Lưu hồ sơ Bên A/Bên B, tự động điền sẵn cho các lần tạo hợp đồng sau.",
                     "Trợ lý AI hỗ trợ giải đáp thắc mắc ngay trong quá trình sử dụng.",
