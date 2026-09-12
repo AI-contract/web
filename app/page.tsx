@@ -16,9 +16,15 @@ import {
 const HOTLINE = "0972.44.15.66";
 const HOTLINE_TEL = "tel:+84972441566";
 
-type Lang = "vi" | "en";
+type Lang = "vi" | "en" | "zh";
 
-// ---- văn bản tĩnh, chuyển ngữ Việt/Anh ----
+const LANG_LABELS: Record<Lang, string> = {
+  vi: "VI",
+  en: "EN",
+  zh: "中文",
+};
+
+// ---- văn bản tĩnh, chuyển ngữ Việt/Anh/Trung ----
 const T: Record<Lang, Record<string, string>> = {
   vi: {
     navFeatures: "Tính năng",
@@ -67,6 +73,29 @@ const T: Record<Lang, Record<string, string>> = {
     ctaBottomSubtitle: "3 free contract generations, no payment card required.",
     footerTagline: "AI platform for drafting & reviewing contracts.",
     hotline: "Hotline",
+  },
+  zh: {
+    navFeatures: "功能",
+    navHow: "使用流程",
+    navPricing: "价格",
+    login: "登录",
+    tryFree: "免费试用",
+    heroTag: "AI 法律平台",
+    heroTitle: "起草与审查符合越南法律的合同",
+    heroSubtitle:
+      "通过标准条款库快速生成 5 种常见合同类型；审查法律风险并附修订版本——只需几分钟。",
+    ctaLearnFeatures: "了解功能",
+    featuresTag: "功能",
+    featuresTitle: "Legal AI 主要功能",
+    howTag: "使用流程",
+    howTitle: "只需简单 4 步",
+    pricingTag: "价格",
+    pricingTitle: "选择适合您的套餐",
+    ctaStart: "立即开始",
+    ctaBottomTitle: "今天就创建您的第一份合同",
+    ctaBottomSubtitle: "免费生成 3 份合同，无需支付卡信息。",
+    footerTagline: "AI 平台，助您起草与审查合同。",
+    hotline: "热线",
   },
 };
 
@@ -122,6 +151,28 @@ const FEATURES: Record<
       icon: Bot,
       title: "Live AI assistant",
       desc: "Get answers about features, pricing, and your account right while you work — no waiting for support.",
+    },
+  ],
+  zh: [
+    {
+      icon: FileSignature,
+      title: "通过标准条款库生成合同",
+      desc: "快速起草 5 种常见合同：服务、劳动、买卖、保密协议、试用——填写信息，AI 按标准条款顺序自动组合。",
+    },
+    {
+      icon: ScanSearch,
+      title: "审查合同的法律风险",
+      desc: "上传现有合同，AI 指出存在风险、不利或缺失的条款——并自动生成修订版本。",
+    },
+    {
+      icon: Scale,
+      title: "按自定义目标审查",
+      desc: "选择审查目标（保护甲方/乙方权益、降低法律风险等）或注明具体法律依据，供 AI 在评估时优先参考。",
+    },
+    {
+      icon: Bot,
+      title: "AI 助手实时支持",
+      desc: "在使用过程中随时解答关于功能、价格、账户的疑问，无需等待人工支持。",
     },
   ],
 };
@@ -218,6 +269,46 @@ const PRICING: Record<
       highlight: false,
     },
   ],
+  zh: [
+    {
+      name: "FREE",
+      price: "0越南盾",
+      period: "",
+      desc: "试用生成合同",
+      features: [
+        "3 次生成合同（终身）",
+        "支持全部 5 种合同类型",
+        "不含审查功能",
+      ],
+      highlight: false,
+    },
+    {
+      name: "PRO",
+      price: "500,000越南盾",
+      period: "/月",
+      yearly: "或 5,000,000越南盾/年——节省 2 个月",
+      desc: "适合个人及小型企业",
+      features: [
+        "无限次生成合同",
+        "合同审查：每月 1 次",
+        "保存甲方/乙方信息",
+      ],
+      highlight: true,
+    },
+    {
+      name: "ENTERPRISE",
+      price: "1,000,000越南盾",
+      period: "/月",
+      yearly: "或 10,000,000越南盾/年——节省 2 个月",
+      desc: "适合经常使用的企业",
+      features: [
+        "无限次生成合同",
+        "无限次合同审查",
+        "保存甲方/乙方信息",
+      ],
+      highlight: false,
+    },
+  ],
 };
 
 const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
@@ -257,12 +348,32 @@ const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
       desc: "Export as DOCX or PDF, formatted to legal standards.",
     },
   ],
+  zh: [
+    {
+      title: "选择合同类型",
+      desc: "服务、劳动、买卖、保密协议或试用。",
+    },
+    {
+      title: "填写信息",
+      desc: "表单会自动显示所选类型所需的字段。",
+    },
+    {
+      title: "AI 起草／审查",
+      desc: "生成完整合同，或进行法律风险分析。",
+    },
+    {
+      title: "下载使用",
+      desc: "导出 DOCX 或 PDF 文件，符合法律文本规范。",
+    },
+  ],
 };
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lang, setLang] = useState<Lang>("vi");
   const t = T[lang];
+
+  const nextLang: Record<Lang, Lang> = { vi: "en", en: "zh", zh: "vi" };
 
   return (
     <main className="min-h-screen bg-[#FAF8F3] text-[#1C2333]">
@@ -299,12 +410,12 @@ export default function LandingPage() {
 
           <div className="hidden md:flex items-center gap-3">
             <button
-              onClick={() => setLang((l) => (l === "vi" ? "en" : "vi"))}
+              onClick={() => setLang((l) => nextLang[l])}
               className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white transition border border-white/20 rounded-md px-2.5 py-1.5"
               aria-label="Switch language"
             >
               <Languages size={14} />
-              {lang === "vi" ? "EN" : "VI"}
+              {LANG_LABELS[lang]}
             </button>
             <a
               href="/login"
@@ -349,11 +460,11 @@ export default function LandingPage() {
               {t.hotline}: {HOTLINE}
             </a>
             <button
-              onClick={() => setLang((l) => (l === "vi" ? "en" : "vi"))}
+              onClick={() => setLang((l) => nextLang[l])}
               className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"
             >
               <Languages size={14} />
-              {lang === "vi" ? "English" : "Tiếng Việt"}
+              {lang === "vi" ? "English" : lang === "en" ? "中文" : "Tiếng Việt"}
             </button>
             <a
               href="/login"
