@@ -16,12 +16,14 @@ import {
 const HOTLINE = "0972.44.15.66";
 const HOTLINE_TEL = "tel:+84972441566";
 
-type Lang = "vi" | "en" | "zh";
+type Lang = "vi" | "en" | "zh" | "ko" | "ja";
 
 const LANG_LABELS: Record<Lang, string> = {
   vi: "VI",
   en: "EN",
   zh: "中文",
+  ko: "한국어",
+  ja: "日本語",
 };
 
 // ---- văn bản tĩnh, chuyển ngữ Việt/Anh/Trung ----
@@ -96,6 +98,52 @@ const T: Record<Lang, Record<string, string>> = {
     ctaBottomSubtitle: "免费生成 3 份合同，无需支付卡信息。",
     footerTagline: "AI 平台，助您起草与审查合同。",
     hotline: "热线",
+  },
+  ko: {
+    navFeatures: "기능",
+    navHow: "이용 방법",
+    navPricing: "요금제",
+    login: "로그인",
+    tryFree: "무료로 체험하기",
+    heroTag: "AI 법률 플랫폼",
+    heroTitle: "베트남 법률에 맞는 계약서 작성 & 검토",
+    heroSubtitle:
+      "표준 조항 라이브러리로 5가지 계약서 유형을 빠르게 생성하고, 법적 리스크를 검토하여 수정본까지 몇 분 안에 받아보세요.",
+    ctaLearnFeatures: "기능 알아보기",
+    featuresTag: "기능",
+    featuresTitle: "Legal AI의 주요 기능",
+    howTag: "이용 방법",
+    howTitle: "간단한 4단계",
+    pricingTag: "요금제",
+    pricingTitle: "나에게 맞는 요금제를 선택하세요",
+    ctaStart: "지금 시작하기",
+    ctaBottomTitle: "오늘 첫 계약서를 만들어보세요",
+    ctaBottomSubtitle: "계약서 생성 3회 무료, 결제 카드 등록 불필요.",
+    footerTagline: "계약서 작성 및 검토를 지원하는 AI 플랫폼.",
+    hotline: "핫라인",
+  },
+  ja: {
+    navFeatures: "機能",
+    navHow: "使い方",
+    navPricing: "料金",
+    login: "ログイン",
+    tryFree: "無料で試す",
+    heroTag: "AI法務プラットフォーム",
+    heroTitle: "ベトナム法に準拠した契約書の作成・レビュー",
+    heroSubtitle:
+      "標準条項ライブラリから5種類の一般的な契約書を素早く作成。法的リスクをレビューし、修正版も数分で取得できます。",
+    ctaLearnFeatures: "機能を見る",
+    featuresTag: "機能",
+    featuresTitle: "Legal AIの主な機能",
+    howTag: "使い方",
+    howTitle: "簡単4ステップ",
+    pricingTag: "料金",
+    pricingTitle: "ご自身に合ったプランを選択",
+    ctaStart: "今すぐ始める",
+    ctaBottomTitle: "今日、最初の契約書を作成しましょう",
+    ctaBottomSubtitle: "契約書作成3回無料、クレジットカード登録不要。",
+    footerTagline: "契約書の作成・レビューを支援するAIプラットフォーム。",
+    hotline: "ホットライン",
   },
 };
 
@@ -173,6 +221,50 @@ const FEATURES: Record<
       icon: Bot,
       title: "AI 助手实时支持",
       desc: "在使用过程中随时解答关于功能、价格、账户的疑问，无需等待人工支持。",
+    },
+  ],
+  ko: [
+    {
+      icon: FileSignature,
+      title: "표준 조항 라이브러리로 계약서 생성",
+      desc: "서비스, 근로, 매매, NDA, 수습 등 5가지 계약서를 빠르게 작성 — 정보만 입력하면 AI가 표준 조항 순서대로 조합합니다.",
+    },
+    {
+      icon: ScanSearch,
+      title: "계약서의 법적 리스크 검토",
+      desc: "기존 계약서를 업로드하면 AI가 위험하거나 불리하거나 누락된 조항을 짚어내고, 수정본을 자동으로 작성합니다.",
+    },
+    {
+      icon: Scale,
+      title: "목표에 맞춘 맞춤형 검토 요청",
+      desc: "보호하고 싶은 당사자(갑/을)나 법적 리스크 최소화 등 목표를 선택하거나, 참고할 법적 근거를 직접 입력해 AI가 우선 반영하도록 할 수 있습니다.",
+    },
+    {
+      icon: Bot,
+      title: "실시간 AI 어시스턴트 지원",
+      desc: "사용 중 기능, 요금제, 계정 관련 궁금증을 바로 해결 — 상담원을 기다릴 필요가 없습니다.",
+    },
+  ],
+  ja: [
+    {
+      icon: FileSignature,
+      title: "標準条項ライブラリから契約書を作成",
+      desc: "サービス、労働、売買、NDA、試用の5種類の契約書を素早く作成。情報を入力するだけでAIが標準条項の正しい順序で組み立てます。",
+    },
+    {
+      icon: ScanSearch,
+      title: "契約書の法的リスクをレビュー",
+      desc: "既存の契約書をアップロードすると、AIがリスクのある条項・不利な条項・不足している条項を指摘し、修正版を自動作成します。",
+    },
+    {
+      icon: Scale,
+      title: "目的に応じたカスタムレビュー",
+      desc: "甲・乙どちらの利益を保護するか、法的リスクを最小化するかなどの目的を選択、または独自の法的根拠を記載してAIに優先させることができます。",
+    },
+    {
+      icon: Bot,
+      title: "AIアシスタントによるリアルタイムサポート",
+      desc: "利用中に機能・料金・アカウントに関する質問にすぐ答えます。サポート対応を待つ必要はありません。",
     },
   ],
 };
@@ -309,6 +401,86 @@ const PRICING: Record<
       highlight: false,
     },
   ],
+  ko: [
+    {
+      name: "FREE",
+      price: "0동",
+      period: "",
+      desc: "계약서 생성 체험",
+      features: [
+        "계약서 생성 3회 (평생)",
+        "5가지 계약서 유형 모두 지원",
+        "검토 기능 없음",
+      ],
+      highlight: false,
+    },
+    {
+      name: "PRO",
+      price: "500,000동",
+      period: "/월",
+      yearly: "또는 5,000,000동/년 — 2개월 절약",
+      desc: "개인 및 소규모 사업자용",
+      features: [
+        "계약서 무제한 생성",
+        "계약서 검토: 월 1회",
+        "갑/을 정보 저장",
+      ],
+      highlight: true,
+    },
+    {
+      name: "ENTERPRISE",
+      price: "1,000,000동",
+      period: "/월",
+      yearly: "또는 10,000,000동/년 — 2개월 절약",
+      desc: "이용 빈도가 높은 기업용",
+      features: [
+        "계약서 무제한 생성",
+        "계약서 무제한 검토",
+        "갑/을 정보 저장",
+      ],
+      highlight: false,
+    },
+  ],
+  ja: [
+    {
+      name: "FREE",
+      price: "0ドン",
+      period: "",
+      desc: "契約書作成を試す",
+      features: [
+        "契約書生成3回（生涯)",
+        "5種類の契約書すべてに対応",
+        "レビュー機能なし",
+      ],
+      highlight: false,
+    },
+    {
+      name: "PRO",
+      price: "500,000ドン",
+      period: "/月",
+      yearly: "または年額5,000,000ドン — 2ヶ月分お得",
+      desc: "個人・小規模事業者向け",
+      features: [
+        "契約書作成無制限",
+        "契約書レビュー：月1回",
+        "甲・乙情報を保存",
+      ],
+      highlight: true,
+    },
+    {
+      name: "ENTERPRISE",
+      price: "1,000,000ドン",
+      period: "/月",
+      yearly: "または年額10,000,000ドン — 2ヶ月分お得",
+      desc: "利用頻度の高い企業向け",
+      features: [
+        "契約書作成無制限",
+        "契約書レビュー無制限",
+        "甲・乙情報を保存",
+      ],
+      highlight: false,
+    },
+  ],
 };
 
 const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
@@ -366,6 +538,42 @@ const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
       desc: "导出 DOCX 或 PDF 文件，符合法律文本规范。",
     },
   ],
+  ko: [
+    {
+      title: "계약서 유형 선택",
+      desc: "서비스, 근로, 매매, NDA, 수습 중 선택.",
+    },
+    {
+      title: "정보 입력",
+      desc: "선택한 유형에 필요한 항목이 폼에 자동으로 표시됩니다.",
+    },
+    {
+      title: "AI 작성 / 검토",
+      desc: "완성된 계약서를 받거나, 법적 리스크 분석을 확인하세요.",
+    },
+    {
+      title: "다운로드하여 사용",
+      desc: "법적 문서 규격에 맞춘 DOCX 또는 PDF 파일로 내보냅니다.",
+    },
+  ],
+  ja: [
+    {
+      title: "契約書の種類を選択",
+      desc: "サービス、労働、売買、NDA、試用のいずれかを選択。",
+    },
+    {
+      title: "情報を入力",
+      desc: "選択した種類に必要な項目がフォームに自動表示されます。",
+    },
+    {
+      title: "AIが作成／レビュー",
+      desc: "完成した契約書を取得、または法的リスク分析を確認できます。",
+    },
+    {
+      title: "ダウンロードして利用",
+      desc: "法的文書の規格に沿ったDOCXまたはPDFファイルを出力します。",
+    },
+  ],
 };
 
 export default function LandingPage() {
@@ -373,7 +581,13 @@ export default function LandingPage() {
   const [lang, setLang] = useState<Lang>("vi");
   const t = T[lang];
 
-  const nextLang: Record<Lang, Lang> = { vi: "en", en: "zh", zh: "vi" };
+  const nextLang: Record<Lang, Lang> = {
+    vi: "en",
+    en: "zh",
+    zh: "ko",
+    ko: "ja",
+    ja: "vi",
+  };
 
   return (
     <main className="min-h-screen bg-[#FAF8F3] text-[#1C2333]">
@@ -464,7 +678,17 @@ export default function LandingPage() {
               className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"
             >
               <Languages size={14} />
-              {lang === "vi" ? "English" : lang === "en" ? "中文" : "Tiếng Việt"}
+              {
+                lang === "vi"
+                  ? "English"
+                  : lang === "en"
+                  ? "中文"
+                  : lang === "zh"
+                  ? "한국어"
+                  : lang === "ko"
+                  ? "日本語"
+                  : "Tiếng Việt"
+              }
             </button>
             <a
               href="/login"

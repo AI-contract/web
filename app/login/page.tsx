@@ -6,15 +6,17 @@ import Link from "next/link";
 import { Scale, Languages } from "lucide-react";
 import { login, ApiError } from "@/lib/api";
 
-type Lang = "vi" | "en" | "zh";
+type Lang = "vi" | "en" | "zh" | "ko" | "ja";
 
 const LANG_OPTIONS: { value: Lang; label: string }[] = [
   { value: "vi", label: "VI" },
   { value: "en", label: "EN" },
   { value: "zh", label: "中文" },
+  { value: "ko", label: "한국어" },
+  { value: "ja", label: "日本語" },
 ];
 
-// ---- văn bản tĩnh của trang đăng nhập, dịch đủ VI/EN/中文 ----
+// ---- văn bản tĩnh của trang đăng nhập, dịch đủ VI/EN/中文/한국어/日本語 ----
 const T: Record<
   Lang,
   {
@@ -61,6 +63,28 @@ const T: Record<
     noAccount: "还没有账户？",
     register: "注册",
     errConnect: "无法连接到服务器",
+  },
+  ko: {
+    logoName: "Legal AI",
+    title: "로그인",
+    emailLabel: "이메일",
+    passwordLabel: "비밀번호",
+    loggingIn: "로그인 중...",
+    login: "로그인",
+    noAccount: "계정이 없으신가요?",
+    register: "회원가입",
+    errConnect: "서버에 연결할 수 없습니다",
+  },
+  ja: {
+    logoName: "Legal AI",
+    title: "ログイン",
+    emailLabel: "メールアドレス",
+    passwordLabel: "パスワード",
+    loggingIn: "ログイン中...",
+    login: "ログイン",
+    noAccount: "アカウントをお持ちでない方",
+    register: "新規登録",
+    errConnect: "サーバーに接続できませんでした",
   },
 };
 

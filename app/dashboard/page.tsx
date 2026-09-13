@@ -35,18 +35,22 @@ import {
 // ---- ngôn ngữ giao diện (menu/nhãn chính) - KHÔNG áp dụng cho
 // FIELD_LABELS/FIELD_LABEL_OVERRIDES_BY_TYPE, vì văn bản hợp đồng
 // luôn được soạn bằng tiếng Việt theo quy định pháp luật. ----
-export type Lang = "vi" | "en" | "zh";
+export type Lang = "vi" | "en" | "zh" | "ko" | "ja";
 
 const LANG_OPTIONS: { value: Lang; label: string }[] = [
   { value: "vi", label: "VI" },
   { value: "en", label: "EN" },
   { value: "zh", label: "中文" },
+  { value: "ko", label: "한국어" },
+  { value: "ja", label: "日本語" },
 ];
 
 const LOCALE_MAP: Record<Lang, string> = {
   vi: "vi-VN",
   en: "en-US",
   zh: "zh-CN",
+  ko: "ko-KR",
+  ja: "ja-JP",
 };
 
 // ---- preset "mục tiêu review" - chọn nhanh, có thể chọn nhiều ----
@@ -62,6 +66,8 @@ const REVIEW_GOAL_PRESETS: { value: string; label: Record<Lang, string> }[] = [
       vi: "Bảo vệ quyền lợi Bên A",
       en: "Protect Party A's interests",
       zh: "保护甲方权益",
+      ko: "갑(A) 당사자 권익 보호",
+      ja: "甲（A）当事者の利益を保護",
     },
   },
   {
@@ -70,6 +76,8 @@ const REVIEW_GOAL_PRESETS: { value: string; label: Record<Lang, string> }[] = [
       vi: "Bảo vệ quyền lợi Bên B",
       en: "Protect Party B's interests",
       zh: "保护乙方权益",
+      ko: "을(B) 당사자 권익 보호",
+      ja: "乙（B）当事者の利益を保護",
     },
   },
   {
@@ -78,6 +86,8 @@ const REVIEW_GOAL_PRESETS: { value: string; label: Record<Lang, string> }[] = [
       vi: "Bảo vệ quyền lợi Bên mua",
       en: "Protect the Buyer's interests",
       zh: "保护买方权益",
+      ko: "매수인 권익 보호",
+      ja: "買主の利益を保護",
     },
   },
   {
@@ -86,6 +96,8 @@ const REVIEW_GOAL_PRESETS: { value: string; label: Record<Lang, string> }[] = [
       vi: "Bảo vệ quyền lợi Bên bán",
       en: "Protect the Seller's interests",
       zh: "保护卖方权益",
+      ko: "매도인 권익 보호",
+      ja: "売主の利益を保護",
     },
   },
   {
@@ -94,6 +106,8 @@ const REVIEW_GOAL_PRESETS: { value: string; label: Record<Lang, string> }[] = [
       vi: "Hạn chế rủi ro pháp lý cho Bên A",
       en: "Minimize legal risk for Party A",
       zh: "降低甲方的法律风险",
+      ko: "갑(A)의 법적 리스크 최소화",
+      ja: "甲（A）の法的リスクを最小化",
     },
   },
   {
@@ -102,6 +116,8 @@ const REVIEW_GOAL_PRESETS: { value: string; label: Record<Lang, string> }[] = [
       vi: "Hạn chế rủi ro pháp lý cho Bên B",
       en: "Minimize legal risk for Party B",
       zh: "降低乙方的法律风险",
+      ko: "을(B)의 법적 리스크 최소화",
+      ja: "乙（B）の法的リスクを最小化",
     },
   },
 ];
@@ -120,6 +136,8 @@ const CONTRACT_TYPES: { value: string; label: Record<Lang, string> }[] = [
       vi: "Hợp đồng dịch vụ",
       en: "Service Contract",
       zh: "服务合同",
+      ko: "용역 계약서",
+      ja: "サービス契約書",
     },
   },
   {
@@ -128,6 +146,8 @@ const CONTRACT_TYPES: { value: string; label: Record<Lang, string> }[] = [
       vi: "Hợp đồng lao động",
       en: "Labor Contract",
       zh: "劳动合同",
+      ko: "근로 계약서",
+      ja: "労働契約書",
     },
   },
   {
@@ -136,6 +156,8 @@ const CONTRACT_TYPES: { value: string; label: Record<Lang, string> }[] = [
       vi: "Thỏa thuận bảo mật (NDA)",
       en: "Non-Disclosure Agreement (NDA)",
       zh: "保密协议（NDA）",
+      ko: "비밀유지계약서 (NDA)",
+      ja: "秘密保持契約書（NDA）",
     },
   },
   {
@@ -144,6 +166,8 @@ const CONTRACT_TYPES: { value: string; label: Record<Lang, string> }[] = [
       vi: "Hợp đồng mua bán",
       en: "Sale Contract",
       zh: "买卖合同",
+      ko: "매매 계약서",
+      ja: "売買契約書",
     },
   },
   {
@@ -152,6 +176,8 @@ const CONTRACT_TYPES: { value: string; label: Record<Lang, string> }[] = [
       vi: "Hợp đồng thử việc",
       en: "Probation Contract",
       zh: "试用合同",
+      ko: "수습 계약서",
+      ja: "試用契約書",
     },
   },
 ];
@@ -244,46 +270,64 @@ const NUMERIC_HINT_FIELDS: Record<string, Record<Lang, string>> = {
     vi: "Chỉ nhập số, ví dụ: 45",
     en: "Numbers only, e.g.: 45",
     zh: "仅填数字，例如：45",
+    ko: "숫자만 입력, 예: 45",
+    ja: "数字のみ入力、例：45",
   },
   PENALTY_RATE: {
     vi: "Chỉ nhập số, ví dụ: 8",
     en: "Numbers only, e.g.: 8",
     zh: "仅填数字，例如：8",
+    ko: "숫자만 입력, 예: 8",
+    ja: "数字のみ入力、例：8",
   },
   PROBATION_DAYS: {
     vi: "Chỉ nhập số, ví dụ: 30",
     en: "Numbers only, e.g.: 30",
     zh: "仅填数字，例如：30",
+    ko: "숫자만 입력, 예: 30",
+    ja: "数字のみ入力、例：30",
   },
   PROBATION_SALARY_PERCENT: {
     vi: "Chỉ nhập số, ví dụ: 85",
     en: "Numbers only, e.g.: 85",
     zh: "仅填数字，例如：85",
+    ko: "숫자만 입력, 예: 85",
+    ja: "数字のみ入力、例：85",
   },
   FINAL_PAYMENT_DAYS: {
     vi: "Chỉ nhập số, ví dụ: 7",
     en: "Numbers only, e.g.: 7",
     zh: "仅填数字，例如：7",
+    ko: "숫자만 입력, 예: 7",
+    ja: "数字のみ入力、例：7",
   },
   WORKING_HOURS_PER_DAY: {
     vi: "Chỉ nhập số, ví dụ: 8",
     en: "Numbers only, e.g.: 8",
     zh: "仅填数字，例如：8",
+    ko: "숫자만 입력, 예: 8",
+    ja: "数字のみ入力、例：8",
   },
   WORKING_HOURS_PER_WEEK: {
     vi: "Chỉ nhập số, ví dụ: 48",
     en: "Numbers only, e.g.: 48",
     zh: "仅填数字，例如：48",
+    ko: "숫자만 입력, 예: 48",
+    ja: "数字のみ入力、例：48",
   },
   PENALTY_CAP_PERCENT: {
     vi: "Chỉ nhập số, ví dụ: 20",
     en: "Numbers only, e.g.: 20",
     zh: "仅填数字，例如：20",
+    ko: "숫자만 입력, 예: 20",
+    ja: "数字のみ入力、例：20",
   },
   CONTRACT_TERM_MONTHS: {
     vi: "VD: 01 năm; 01 tháng",
     en: "E.g.: 1 year; 1 month",
     zh: "例如：1 年；1 个月",
+    ko: "예: 1년; 1개월",
+    ja: "例：1年；1ヶ月",
   },
 };
 
@@ -903,6 +947,294 @@ const UI_TEXT: Record<Lang, {
     errCheckoutInvalid: "支付链接无效，请重试或联系客服。",
     errCheckoutStart: "无法发起支付，请稍后再试。",
   },
+  ko: {
+    navIntro: "Legal AI 소개",
+    navGenerate: "계약서 생성",
+    navReview: "계약서 검토",
+    scalesAlt: "정의의 저울",
+    lawBookAlt: "법률 서적",
+    planLabel: "요금제",
+    contractsUsed: (used, limit) => `계약서 생성 ${used}/${limit}회`,
+    reviewUnavailableFree: "검토: 이용 불가 (FREE 요금제)",
+    reviewUsed: (used, limit) => `이번 달 검토 ${used}/${limit}회`,
+    redirecting: "이동 중...",
+    upgradePro: "PRO로 업그레이드",
+    upgradeEnterprise: "ENTERPRISE로 업그레이드",
+    logout: "로그아웃",
+
+    generateTitleDefault: "계약서 생성",
+    generateTitlePrefix: "생성:",
+    generateSubtitle: "정보를 입력하면 AI가 조항 라이브러리를 기반으로 계약서를 생성합니다.",
+    contractTypeLabel: "계약서 유형",
+    loadingFieldsText: "필요한 항목을 불러오는 중...",
+    signingInfoHeader: "서명 정보",
+    partyAHeader: "갑(A) 당사자 정보",
+    partyBHeader: "을(B) 당사자 정보",
+    savePartyACheckbox: "이 갑(A) 당사자 정보를 다음 계약서 생성 시에도 저장",
+    savePartyBCheckbox: "이 을(B) 당사자 정보를 다음 계약서 생성 시에도 저장",
+    generatingBtn: "생성 중...",
+    createBtn: "계약서 생성",
+    justGeneratedTitle: (fileName) => `방금 생성된 계약서: ${fileName}`,
+    downloadDocx: "DOCX 다운로드",
+    downloadPdf: "PDF 다운로드",
+    myContractsTitle: "내 계약서",
+    loadingText: "불러오는 중...",
+    noContracts: "아직 생성된 계약서가 없습니다.",
+    docxBtn: "DOCX",
+    pdfBtn: "PDF",
+
+    reviewTitle: "계약서 검토",
+    reviewSubtitle:
+      "계약서(PDF 또는 DOCX)를 업로드하면 AI가 법적 리스크를 평가하고 수정본을 작성합니다.",
+    reviewBlockedFree:
+      "계약서 검토 기능은 PRO 요금제 이상에서만 이용할 수 있습니다. 업그레이드 후 이용해 주세요.",
+    reviewLimitReached:
+      "이번 달 계약서 검토 횟수를 모두 사용하셨습니다. 다음 달에 다시 시도하거나 요금제를 업그레이드해 주세요.",
+    chooseFileLabel: "계약서 파일 선택 (PDF 또는 DOCX, 최대 10MB)",
+    reviewRequestLabel: "검토 요청",
+    savedAsDefault: "기본값으로 저장됨",
+    reviewRequestDesc:
+      "검토 목표를 선택하거나 참고할 법적 근거·요청 사항을 직접 작성하면 AI가 계약서를 평가할 때 반영합니다. 이후 검토에도 적용되도록 기본값으로 저장할 수 있습니다.",
+    instructionsPlaceholder:
+      "예: 2019년 노동법, 시행령 145/2020호에 근거하여, 갑(A)에게 불리한 배상 의무 조항을 우선적으로 지적해 주세요...",
+    savingBtn: "저장 중...",
+    saveDefaultBtn: "계정 기본값으로 저장",
+    analyzingBtn: "분석 중...",
+    analyzeBtn: "계약서 분석",
+    analyzingHint:
+      "AI가 문서를 읽고 리스크를 평가한 뒤 전체 계약서를 다시 작성하므로 약 1~2분이 소요될 수 있습니다.",
+    resultTitle: (fileName) => `결과: ${fileName}`,
+    riskTabBtn: "리스크 평가",
+    revisedTabBtn: "수정본",
+    historyTitle: "검토 기록",
+    noReviews: "아직 검토 기록이 없습니다.",
+    viewBtn: "보기",
+
+    heroTag: "AI 법률 플랫폼",
+    heroTitle: "베트남 법률에 맞는 계약서 작성 & 검토",
+    heroSubtitle:
+      "표준 조항 라이브러리로 5가지 계약서 유형을 빠르게 생성하고, 법적 리스크를 검토하여 수정본까지 몇 분 안에 받아보세요.",
+    featuresTitle: "Legal AI의 주요 기능",
+    featuresList: [
+      "표준 조항 라이브러리를 통해 5가지 일반 계약서 유형(용역, 근로, 매매, NDA, 수습)을 모두 생성.",
+      "계약서의 법적 리스크를 검토하고 수정본을 자동으로 작성.",
+      "보호 목표와 자체 법적 근거에 따라 맞춤 검토 요청 가능.",
+      "갑(A)/을(B) 정보를 저장해 다음 계약서 생성 시 자동으로 채워줌.",
+      "이용 중 궁금한 점을 바로 답해주는 AI 어시스턴트 지원.",
+      "법적 문서 규격에 맞춘 DOCX 또는 PDF 형식으로 계약서 다운로드.",
+    ],
+    generateSectionTitle: "계약서 생성",
+    generateSectionDesc:
+      "표준 조항 라이브러리로 5가지 계약서(용역, 근로, 매매, NDA, 수습)를 빠르게 작성.",
+    generateSteps: [
+      {
+        title: "계약서 유형 선택",
+        desc: "'계약서 유형'에서 필요한 유형을 선택하세요: 용역, 근로, 매매, NDA 또는 수습.",
+      },
+      {
+        title: "양 당사자 정보 및 조항 입력",
+        desc: "선택한 계약서 유형에 필요한 항목(갑/을 정보, 금액, 기간, 세부 조항 등)이 폼에 자동으로 표시됩니다.",
+      },
+      {
+        title: "'계약서 생성' 클릭",
+        desc: "AI가 입력한 정보를 라이브러리의 표준 조항 순서대로 조합하여 완성된 계약서 문서를 만듭니다.",
+      },
+      {
+        title: "다운로드 또는 나중에 확인",
+        desc: "생성 즉시 DOCX/PDF를 다운로드하거나, 폼 아래 '내 계약서'에서 언제든지 다시 확인할 수 있습니다.",
+      },
+    ],
+    reviewSectionTitle: "계약서 검토",
+    reviewSectionDesc:
+      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. 이 기능은 PRO 및 ENTERPRISE 요금제에서 이용할 수 있습니다.",
+    reviewSteps: [
+      {
+        title: "계약서 업로드",
+        desc: "검토할 계약서 파일을 PDF 또는 DOCX 형식으로 선택하세요.",
+      },
+      {
+        title: "'계약서 분석' 클릭",
+        desc: "AI가 전체 내용을 읽고 법률 규정 및 해당 계약서 유형에서 흔히 발생하는 리스크와 대조합니다.",
+      },
+      {
+        title: "'리스크 평가' 확인",
+        desc: "문제가 있는 조항(표현이 느슨하거나, 불리하거나, 규정에 위배되는 등)을 구체적인 설명과 함께 나열합니다.",
+      },
+      {
+        title: "'수정본' 확인 및 다운로드",
+        desc: "AI가 리스크 조항을 수정한 버전을 제안합니다. DOCX 또는 PDF로 다운로드해 바로 사용하세요.",
+      },
+    ],
+    pricingTitle: "요금제",
+    pricingDesc: "PRO 및 ENTERPRISE 구독료이며, 연간 결제 시 할인이 적용됩니다.",
+    planPrefix: "요금제",
+    perMonth: "/월",
+    yearlySubscribe: "연간 결제",
+    perYear: "/년",
+    proSavings: "연 1,000,000동 절약 — 2개월 무료 혜택과 동일",
+    entSavings: "연 2,000,000동 절약 — 2개월 무료 혜택과 동일",
+
+    assistantHeaderTitle: "Legal AI 어시스턴트",
+    closeAria: "닫기",
+    assistantGreeting:
+      "안녕하세요! 계약서 생성, 검토 방법이나 요금제에 대해 도와드릴 수 있습니다. 무엇을 도와드릴까요?",
+    inputPlaceholder: "질문을 입력하세요...",
+    sendAria: "전송",
+    floatingLabel: "AI 어시스턴트",
+    floatingAria: "AI 어시스턴트",
+    assistantErrorFallback:
+      "죄송합니다. 어시스턴트에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+
+    errLoadFields: "필요한 항목 목록을 불러올 수 없습니다",
+    errGenerate: "계약서를 생성할 수 없습니다",
+    errReview: "계약서를 검토할 수 없습니다",
+    errCheckoutInvalid: "결제 링크가 유효하지 않습니다. 다시 시도하거나 고객센터에 문의해 주세요.",
+    errCheckoutStart: "결제를 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+  },
+  ja: {
+    navIntro: "Legal AIについて",
+    navGenerate: "契約書を作成",
+    navReview: "契約書をレビュー",
+    scalesAlt: "正義の天秤",
+    lawBookAlt: "法律書",
+    planLabel: "プラン",
+    contractsUsed: (used, limit) => `契約書作成 ${used}/${limit}回`,
+    reviewUnavailableFree: "レビュー：利用不可（FREEプラン）",
+    reviewUsed: (used, limit) => `今月のレビュー ${used}/${limit}回`,
+    redirecting: "移動中...",
+    upgradePro: "PROにアップグレード",
+    upgradeEnterprise: "ENTERPRISEにアップグレード",
+    logout: "ログアウト",
+
+    generateTitleDefault: "契約書を作成",
+    generateTitlePrefix: "作成：",
+    generateSubtitle: "情報を入力すると、AIが条項ライブラリから契約書を作成します。",
+    contractTypeLabel: "契約書の種類",
+    loadingFieldsText: "必要な項目を読み込み中...",
+    signingInfoHeader: "署名情報",
+    partyAHeader: "甲（当事者A）情報",
+    partyBHeader: "乙（当事者B）情報",
+    savePartyACheckbox: "この甲（当事者A）情報を次回の契約書作成にも保存する",
+    savePartyBCheckbox: "この乙（当事者B）情報を次回の契約書作成にも保存する",
+    generatingBtn: "作成中...",
+    createBtn: "契約書を作成",
+    justGeneratedTitle: (fileName) => `作成された契約書：${fileName}`,
+    downloadDocx: "DOCXをダウンロード",
+    downloadPdf: "PDFをダウンロード",
+    myContractsTitle: "マイ契約書",
+    loadingText: "読み込み中...",
+    noContracts: "まだ契約書がありません。",
+    docxBtn: "DOCX",
+    pdfBtn: "PDF",
+
+    reviewTitle: "契約書をレビュー",
+    reviewSubtitle:
+      "契約書（PDFまたはDOCX）をアップロードすると、AIが法的リスクを評価し修正版を作成します。",
+    reviewBlockedFree:
+      "契約書レビュー機能はPROプラン以上でご利用いただけます。アップグレードしてご利用ください。",
+    reviewLimitReached:
+      "今月のレビュー利用回数の上限に達しました。来月あらためてお試しいただくか、プランをアップグレードしてください。",
+    chooseFileLabel: "契約書ファイルを選択（PDFまたはDOCX、最大10MB）",
+    reviewRequestLabel: "レビュー要件",
+    savedAsDefault: "デフォルトとして保存済み",
+    reviewRequestDesc:
+      "レビューの目的を選択するか、AIが契約書を評価する際に参照する法的根拠・独自の要件を記載してください。今後のレビューにも適用されるようデフォルトとして保存できます。",
+    instructionsPlaceholder:
+      "例：2019年労働法、政令145/2020号に基づき、甲に不利な賠償義務条項を優先的に指摘してください...",
+    savingBtn: "保存中...",
+    saveDefaultBtn: "アカウントのデフォルトとして保存",
+    analyzingBtn: "分析中...",
+    analyzeBtn: "契約書を分析",
+    analyzingHint:
+      "AIが文書を読み込み、リスクを評価し、契約書全文を書き直すため、1〜2分ほどかかる場合があります。",
+    resultTitle: (fileName) => `結果：${fileName}`,
+    riskTabBtn: "リスク評価",
+    revisedTabBtn: "修正版",
+    historyTitle: "レビュー履歴",
+    noReviews: "まだレビュー履歴がありません。",
+    viewBtn: "表示",
+
+    heroTag: "AI法務プラットフォーム",
+    heroTitle: "ベトナム法に準拠した契約書の作成・レビュー",
+    heroSubtitle:
+      "標準条項ライブラリから5種類の一般的な契約書を素早く作成。法的リスクをレビューし、修正版も数分で取得できます。",
+    featuresTitle: "Legal AIの主な機能",
+    featuresList: [
+      "標準条項ライブラリから、5種類の一般的な契約書（サービス、労働、売買、NDA、試用）をすべて作成。",
+      "契約書の法的リスクをレビューし、修正版を自動で作成。",
+      "保護したい目的や独自の法的根拠に応じたレビュー要件を指定可能。",
+      "甲・乙の情報を保存し、次回の契約書作成時に自動入力。",
+      "利用中の疑問にすぐ答えるAIアシスタントを搭載。",
+      "法的文書の規格に沿ったDOCXまたはPDF形式で契約書をダウンロード。",
+    ],
+    generateSectionTitle: "契約書を作成",
+    generateSectionDesc:
+      "標準条項ライブラリから5種類の契約書（サービス、労働、売買、NDA、試用）を素早く作成。",
+    generateSteps: [
+      {
+        title: "契約書の種類を選択",
+        desc: "「契約書の種類」で必要な種類を選択します：サービス、労働、売買、NDA、または試用。",
+      },
+      {
+        title: "双方の情報と条項を入力",
+        desc: "選択した契約書の種類に必要な項目（甲・乙の情報、金額、期間、個別条項など）がフォームに自動表示されます。",
+      },
+      {
+        title: "「契約書を作成」をクリック",
+        desc: "AIが入力内容をライブラリの標準条項の正しい順序で組み合わせ、完全な契約書を作成します。",
+      },
+      {
+        title: "ダウンロードまたは後で確認",
+        desc: "作成後すぐにDOCX/PDFをダウンロードするか、フォーム下の「マイ契約書」からいつでも確認できます。",
+      },
+    ],
+    reviewSectionTitle: "契約書をレビュー",
+    reviewSectionDesc:
+      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。この機能はPROおよびENTERPRISEプランでご利用いただけます。",
+    reviewSteps: [
+      {
+        title: "契約書をアップロード",
+        desc: "レビューしたい契約書ファイルをPDFまたはDOCX形式で選択します。",
+      },
+      {
+        title: "「契約書を分析」をクリック",
+        desc: "AIが全文を読み込み、法令やその契約書の種類でよくあるリスクと照合します。",
+      },
+      {
+        title: "「リスク評価」を確認",
+        desc: "問題のある条項（表現が曖昧、不利、規定違反など）を具体的な説明とともに一覧表示します。",
+      },
+      {
+        title: "「修正版」を確認・ダウンロード",
+        desc: "AIがリスク条項を修正した版を提案します。DOCXまたはPDFでダウンロードしてすぐに使用できます。",
+      },
+    ],
+    pricingTitle: "料金",
+    pricingDesc: "PROおよびENTERPRISEプランの購読料。年払いには割引が適用されます。",
+    planPrefix: "プラン",
+    perMonth: "/月",
+    yearlySubscribe: "年払い",
+    perYear: "/年",
+    proSavings: "年額1,000,000ドンお得 — 2ヶ月分無料に相当",
+    entSavings: "年額2,000,000ドンお得 — 2ヶ月分無料に相当",
+
+    assistantHeaderTitle: "Legal AIアシスタント",
+    closeAria: "閉じる",
+    assistantGreeting:
+      "こんにちは！契約書の作成方法やレビュー方法、プランの料金についてお手伝いできます。何かご質問はありますか？",
+    inputPlaceholder: "質問を入力してください...",
+    sendAria: "送信",
+    floatingLabel: "AIアシスタント",
+    floatingAria: "AIアシスタント",
+    assistantErrorFallback:
+      "申し訳ございません。アシスタントに一時的な問題が発生しています。しばらくしてから再度お試しください。",
+
+    errLoadFields: "必要な項目の一覧を読み込めませんでした",
+    errGenerate: "契約書を作成できませんでした",
+    errReview: "契約書をレビューできませんでした",
+    errCheckoutInvalid: "決済リンクが無効です。もう一度お試しいただくか、サポートまでお問い合わせください。",
+    errCheckoutStart: "決済を開始できませんでした。しばらくしてから再度お試しください。",
+  },
 };
 
 // ---- top-level tab ----
@@ -1313,10 +1645,10 @@ export default function Home() {
       const { action_url, fields } = await startCheckout(planKey);
 
       // FIX: don't blindly trust whatever URL the backend returned —
-      // only submit the form if action_url points to a known SePay
-      // checkout host over HTTPS. Protects against a compromised/
-      // tampered backend response silently sending a paying user to
-      // a phishing page.
+      // only submit the form if it points to a known SePay checkout
+      // host over HTTPS. Protects against a compromised/tampered
+      // backend response silently sending a paying user to a
+      // phishing page.
       if (!isSafeCheckoutUrl(action_url)) {
         setUpgrading(false);
         setUpgradeError(
@@ -1325,8 +1657,8 @@ export default function Home() {
         return;
       }
 
-      // SePay checkout/init chỉ chấp nhận HTML form POST — không phải
-      // GET redirect với query string.
+      // SePay chỉ chấp nhận POST form (kèm chữ ký), không phải GET
+      // redirect — dựng form ẩn và submit sang trang thanh toán.
       submitSepayCheckoutForm(action_url, fields);
     } catch (err) {
       setUpgrading(false);
