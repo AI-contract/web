@@ -26,6 +26,8 @@ const LANG_LABELS: Record<Lang, string> = {
   ja: "日本語",
 };
 
+const LANG_OPTIONS: Lang[] = ["vi", "en", "zh", "ko", "ja"];
+
 // ---- văn bản tĩnh, chuyển ngữ Việt/Anh/Trung ----
 const T: Record<Lang, Record<string, string>> = {
   vi: {
@@ -581,14 +583,6 @@ export default function LandingPage() {
   const [lang, setLang] = useState<Lang>("vi");
   const t = T[lang];
 
-  const nextLang: Record<Lang, Lang> = {
-    vi: "en",
-    en: "zh",
-    zh: "ko",
-    ko: "ja",
-    ja: "vi",
-  };
-
   return (
     <main className="min-h-screen bg-[#FAF8F3] text-[#1C2333]">
       {/* Top nav */}
@@ -623,14 +617,6 @@ export default function LandingPage() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={() => setLang((l) => nextLang[l])}
-              className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white transition border border-white/20 rounded-md px-2.5 py-1.5"
-              aria-label="Switch language"
-            >
-              <Languages size={14} />
-              {LANG_LABELS[lang]}
-            </button>
             <a
               href="/login"
               className="text-sm text-slate-300 hover:text-white transition"
@@ -643,6 +629,22 @@ export default function LandingPage() {
             >
               {t.tryFree}
             </a>
+            <div className="flex items-center gap-1 pl-1">
+              <Languages size={14} className="text-slate-400 mr-0.5" />
+              {LANG_OPTIONS.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setLang(opt)}
+                  className={`text-xs px-2 py-1 rounded-md border transition ${
+                    lang === opt
+                      ? "bg-[#9C7A3C] border-[#9C7A3C] text-white"
+                      : "border-white/20 text-slate-300 hover:text-white hover:border-white/40"
+                  }`}
+                >
+                  {LANG_LABELS[opt]}
+                </button>
+              ))}
+            </div>
           </div>
 
           <button
@@ -673,23 +675,22 @@ export default function LandingPage() {
               <Phone size={14} />
               {t.hotline}: {HOTLINE}
             </a>
-            <button
-              onClick={() => setLang((l) => nextLang[l])}
-              className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"
-            >
-              <Languages size={14} />
-              {
-                lang === "vi"
-                  ? "English"
-                  : lang === "en"
-                  ? "中文"
-                  : lang === "zh"
-                  ? "한국어"
-                  : lang === "ko"
-                  ? "日本語"
-                  : "Tiếng Việt"
-              }
-            </button>
+            <div className="flex items-center gap-1 flex-wrap">
+              <Languages size={14} className="text-slate-400 mr-1" />
+              {LANG_OPTIONS.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setLang(opt)}
+                  className={`text-xs px-2 py-1 rounded-md border transition ${
+                    lang === opt
+                      ? "bg-[#9C7A3C] border-[#9C7A3C] text-white"
+                      : "border-white/20 text-slate-300 hover:text-white"
+                  }`}
+                >
+                  {LANG_LABELS[opt]}
+                </button>
+              ))}
+            </div>
             <a
               href="/login"
               className="block text-sm text-slate-300 hover:text-white"
