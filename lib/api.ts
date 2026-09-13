@@ -142,8 +142,13 @@ export interface BillingStatus {
   is_pro: boolean;
 }
 
+// SePay checkout/init CHỈ chấp nhận HTML form POST — không phải GET
+// redirect với query string. Backend trả về action_url (nơi submit form)
+// + fields (các input ẩn, đã bao gồm "signature"), thay vì một
+// checkout_url để redirect trực tiếp.
 export interface CheckoutResponse {
-  checkout_url: string;
+  action_url: string;
+  fields: Record<string, string>;
   order_invoice_number: string;
 }
 
@@ -436,6 +441,54 @@ export async function startCheckout(
 
 export function getBillingStatus() {
   return request<BillingStatus>("/billing/status");
+}
+
+// Thứ tự field phải khớp với SIGNED_FIELDS_ORDER ở backend
+// (app/services/sepay_service.py) — giữ đúng thứ tự input trong form
+// theo khuyến nghị của tài liệu SePay.
+const SEPAY_FIELD_ORDER = [
+  "order_amount",
+  "merchant",
+  "currency",
+  "operation",
+  "order_description",
+  "order_invoice_number",
+  "customer_id",
+  "payment_method",
+  "success_url",
+  "error_url",
+  "cancel_url",
+  "signature",
+];
+
+// Dựng một <form method="POST"> ẩn với input cho từng field (theo đúng
+// thứ tự), gắn vào <body>, rồi submit() để chuyển hướng sang trang
+// thanh toán SePay. SePay yêu cầu POST form, không chấp nhận GET
+// redirect với query string.
+export function submitSepayCheckoutForm(
+  actionUrl: string,
+  fields: Record<string, string>
+): void {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = actionUrl;
+  form.style.display = "none";
+
+  const orderedKeys = [
+    ...SEPAY_FIELD_ORDER.filter((key) => key in fields),
+    ...Object.keys(fields).filter((key) => !SEPAY_FIELD_ORDER.includes(key)),
+  ];
+
+  for (const key of orderedKeys) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = fields[key];
+    form.appendChild(input);
+  }
+
+  document.body.appendChild(form);
+  form.submit();
 }
 
 // ---------------------------------------------------------------

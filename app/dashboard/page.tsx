@@ -29,6 +29,7 @@ import {
   savePartyBProfile,
   saveReviewPreferences,
   startCheckout,
+  submitSepayCheckoutForm,
 } from "@/lib/api";
 
 // ---- ngôn ngữ giao diện (menu/nhãn chính) - KHÔNG áp dụng cho
@@ -1309,13 +1310,14 @@ export default function Home() {
     setUpgradeError(null);
     setUpgrading(true);
     try {
-      const { checkout_url } = await startCheckout(planKey);
+      const { action_url, fields } = await startCheckout(planKey);
 
       // FIX: don't blindly trust whatever URL the backend returned —
-      // only redirect if it points to a known SePay checkout host
-      // over HTTPS. Protects against a compromised/tampered backend
-      // response silently sending a paying user to a phishing page.
-      if (!isSafeCheckoutUrl(checkout_url)) {
+      // only submit the form if action_url points to a known SePay
+      // checkout host over HTTPS. Protects against a compromised/
+      // tampered backend response silently sending a paying user to
+      // a phishing page.
+      if (!isSafeCheckoutUrl(action_url)) {
         setUpgrading(false);
         setUpgradeError(
           ui.errCheckoutInvalid
@@ -1323,7 +1325,9 @@ export default function Home() {
         return;
       }
 
-      window.location.href = checkout_url;
+      // SePay checkout/init chỉ chấp nhận HTML form POST — không phải
+      // GET redirect với query string.
+      submitSepayCheckoutForm(action_url, fields);
     } catch (err) {
       setUpgrading(false);
       const message =
