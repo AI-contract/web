@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Legal AI — Mất kết nối</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: linear-gradient(135deg, #1b2745, #0e1629);
+        color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+      }
+      .wrap {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+      }
+      .badge {
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        background: rgba(156, 122, 60, 0.15);
+        border: 1px solid rgba(156, 122, 60, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .badge svg { width: 30px; height: 30px; }
+      h1 { font-size: 22px; font-weight: 600; margin: 0 0 10px; }
+      p { color: #cbd3e1; font-size: 15px; max-width: 320px; margin: 0 0 24px; line-height: 1.5; }
+      button {
+        background: #9c7a3c;
+        color: #fff;
+        border: none;
+        font-weight: 500;
+        font-size: 14px;
+        padding: 10px 22px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      button:hover { background: #8a6b34; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c6a15c" stroke-width="1.75">
+          <path d="M16 16l6 6M21 21H3v-2c0-1.5 3-3 9-3s9 1.5 9 3z" style="display:none" />
+          <path d="M12 3v18M5 8l4-2 4 2 4-2 4 2M5 8l3 6a3.5 3.5 0 0 0 6 0l-3-6M13 8l3 6a3.5 3.5 0 0 0 6 0l-3-6M9 21h6" />
+        </svg>
+      </div>
+      <h1>Mất kết nối mạng</h1>
+      <p>Legal AI cần kết nối Internet để tạo và review hợp đồng. Kiểm tra lại mạng rồi thử lại nhé.</p>
+      <button onclick="location.reload()">Thử lại</button>
+    </div>
+  </body>
+</html>
