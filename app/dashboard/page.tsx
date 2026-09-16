@@ -442,6 +442,12 @@ const UI_TEXT: Record<Lang, {
   redirecting: string;
   upgradePro: string;
   upgradeEnterprise: string;
+  billingMonthly: string;
+  billingYearly: string;
+  upgradeProMonthly: string;
+  upgradeProYearly: string;
+  upgradeEnterpriseMonthly: string;
+  upgradeEnterpriseYearly: string;
   logout: string;
 
   generateTitleDefault: string;
@@ -534,6 +540,12 @@ const UI_TEXT: Record<Lang, {
     redirecting: "Đang chuyển hướng...",
     upgradePro: "Nâng cấp PRO",
     upgradeEnterprise: "Nâng cấp ENTERPRISE",
+    billingMonthly: "Tháng",
+    billingYearly: "Năm",
+    upgradeProMonthly: "Nâng cấp PRO — 500.000đ/tháng",
+    upgradeProYearly: "Nâng cấp PRO — 5.000.000đ/năm",
+    upgradeEnterpriseMonthly: "Nâng cấp ENTERPRISE — 1.000.000đ/tháng",
+    upgradeEnterpriseYearly: "Nâng cấp ENTERPRISE — 10.000.000đ/năm",
     logout: "Đăng xuất",
 
     generateTitleDefault: "Tạo hợp đồng",
@@ -679,6 +691,12 @@ const UI_TEXT: Record<Lang, {
     redirecting: "Redirecting...",
     upgradePro: "Upgrade to PRO",
     upgradeEnterprise: "Upgrade to ENTERPRISE",
+    billingMonthly: "Monthly",
+    billingYearly: "Yearly",
+    upgradeProMonthly: "Upgrade to PRO — 500,000đ/month",
+    upgradeProYearly: "Upgrade to PRO — 5,000,000đ/year",
+    upgradeEnterpriseMonthly: "Upgrade to ENTERPRISE — 1,000,000đ/month",
+    upgradeEnterpriseYearly: "Upgrade to ENTERPRISE — 10,000,000đ/year",
     logout: "Log out",
 
     generateTitleDefault: "Generate Contract",
@@ -824,6 +842,12 @@ const UI_TEXT: Record<Lang, {
     redirecting: "正在跳转...",
     upgradePro: "升级至 PRO",
     upgradeEnterprise: "升级至 ENTERPRISE",
+    billingMonthly: "月付",
+    billingYearly: "年付",
+    upgradeProMonthly: "升级至 PRO — 500,000越南盾/月",
+    upgradeProYearly: "升级至 PRO — 5,000,000越南盾/年",
+    upgradeEnterpriseMonthly: "升级至 ENTERPRISE — 1,000,000越南盾/月",
+    upgradeEnterpriseYearly: "升级至 ENTERPRISE — 10,000,000越南盾/年",
     logout: "退出登录",
 
     generateTitleDefault: "生成合同",
@@ -960,6 +984,12 @@ const UI_TEXT: Record<Lang, {
     redirecting: "이동 중...",
     upgradePro: "PRO로 업그레이드",
     upgradeEnterprise: "ENTERPRISE로 업그레이드",
+    billingMonthly: "월간",
+    billingYearly: "연간",
+    upgradeProMonthly: "PRO로 업그레이드 — 500,000동/월",
+    upgradeProYearly: "PRO로 업그레이드 — 5,000,000동/년",
+    upgradeEnterpriseMonthly: "ENTERPRISE로 업그레이드 — 1,000,000동/월",
+    upgradeEnterpriseYearly: "ENTERPRISE로 업그레이드 — 10,000,000동/년",
     logout: "로그아웃",
 
     generateTitleDefault: "계약서 생성",
@@ -1104,6 +1134,12 @@ const UI_TEXT: Record<Lang, {
     redirecting: "移動中...",
     upgradePro: "PROにアップグレード",
     upgradeEnterprise: "ENTERPRISEにアップグレード",
+    billingMonthly: "月払い",
+    billingYearly: "年払い",
+    upgradeProMonthly: "PROにアップグレード — 500,000ドン/月",
+    upgradeProYearly: "PROにアップグレード — 5,000,000ドン/年",
+    upgradeEnterpriseMonthly: "ENTERPRISEにアップグレード — 1,000,000ドン/月",
+    upgradeEnterpriseYearly: "ENTERPRISEにアップグレード — 10,000,000ドン/年",
     logout: "ログアウト",
 
     generateTitleDefault: "契約書を作成",
@@ -1291,6 +1327,12 @@ export default function Home() {
 
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  // Chu kỳ thanh toán đang chọn ở sidebar nâng cấp gói — quyết định
+  // plan_key gửi lên /billing/sepay/checkout là "..._MONTHLY" hay
+  // "..._YEARLY" (xem sepay_service.PLANS ở backend).
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "monthly"
+  );
 
   // ---- fields for the currently selected contract type ----
   // Fetched fresh from the backend every time contractType changes,
@@ -1790,32 +1832,73 @@ export default function Home() {
             {upgradeError && (
               <p className="text-red-400 text-xs mt-1">{upgradeError}</p>
             )}
-            {user.plan === "FREE" && (
+            {(user.plan === "FREE" || user.plan === "PRO") && (
               <>
+                {/* Chọn chu kỳ thanh toán: Tháng / Năm — quyết định
+                    plan_key ("..._MONTHLY" hay "..._YEARLY") gửi lên
+                    /billing/sepay/checkout khi bấm nút nâng cấp bên dưới. */}
+                <div className="flex mt-2 rounded-md border border-white/20 overflow-hidden text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle("monthly")}
+                    className={`flex-1 py-1.5 font-medium transition ${
+                      billingCycle === "monthly"
+                        ? "bg-[#9C7A3C] text-white"
+                        : "bg-transparent text-slate-300 hover:bg-white/10"
+                    }`}
+                  >
+                    {ui.billingMonthly}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle("yearly")}
+                    className={`flex-1 py-1.5 font-medium transition ${
+                      billingCycle === "yearly"
+                        ? "bg-[#9C7A3C] text-white"
+                        : "bg-transparent text-slate-300 hover:bg-white/10"
+                    }`}
+                  >
+                    {ui.billingYearly}
+                  </button>
+                </div>
+
+                {user.plan === "FREE" && (
+                  <button
+                    onClick={() =>
+                      handleUpgrade(
+                        billingCycle === "monthly"
+                          ? "PRO_MONTHLY"
+                          : "PRO_YEARLY"
+                      )
+                    }
+                    disabled={upgrading}
+                    className="w-full bg-[#9C7A3C] hover:bg-[#8A6B34] text-white rounded-md py-2 mt-2 font-medium disabled:opacity-50 transition"
+                  >
+                    {upgrading
+                      ? ui.redirecting
+                      : billingCycle === "monthly"
+                      ? ui.upgradeProMonthly
+                      : ui.upgradeProYearly}
+                  </button>
+                )}
                 <button
-                  onClick={() => handleUpgrade("PRO_MONTHLY")}
-                  disabled={upgrading}
-                  className="w-full bg-[#9C7A3C] hover:bg-[#8A6B34] text-white rounded-md py-2 mt-2 font-medium disabled:opacity-50 transition"
-                >
-                  {upgrading ? ui.redirecting : ui.upgradePro}
-                </button>
-                <button
-                  onClick={() => handleUpgrade("ENTERPRISE_MONTHLY")}
+                  onClick={() =>
+                    handleUpgrade(
+                      billingCycle === "monthly"
+                        ? "ENTERPRISE_MONTHLY"
+                        : "ENTERPRISE_YEARLY"
+                    )
+                  }
                   disabled={upgrading}
                   className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-md py-2 mt-2 font-medium disabled:opacity-50 transition"
                 >
-                  {upgrading ? ui.redirecting : ui.upgradeEnterprise}
+                  {upgrading
+                    ? ui.redirecting
+                    : billingCycle === "monthly"
+                    ? ui.upgradeEnterpriseMonthly
+                    : ui.upgradeEnterpriseYearly}
                 </button>
               </>
-            )}
-            {user.plan === "PRO" && (
-              <button
-                onClick={() => handleUpgrade("ENTERPRISE_MONTHLY")}
-                disabled={upgrading}
-                className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-md py-2 mt-2 font-medium disabled:opacity-50 transition"
-              >
-                {upgrading ? ui.redirecting : ui.upgradeEnterprise}
-              </button>
             )}
             <button
               onClick={handleLogout}
