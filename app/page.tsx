@@ -48,10 +48,12 @@ const T: Record<Lang, Record<string, string>> = {
     howTitle: "Chỉ 4 bước đơn giản",
     pricingTag: "Bảng giá",
     pricingTitle: "Chọn gói phù hợp với bạn",
+    pricingPausedNote:
+      "Hiện tại chỉ hỗ trợ gói FREE. Các gói PRO và ENTERPRISE tạm thời chưa mở đăng ký.",
     ctaStart: "Bắt đầu ngay",
     ctaBottomTitle: "Bắt đầu tạo hợp đồng đầu tiên ngay hôm nay",
     ctaBottomSubtitle:
-      "Miễn phí 3 lượt tạo hợp đồng, không cần thẻ thanh toán.",
+      "Miễn phí 5 lượt tạo hợp đồng, không cần thẻ thanh toán.",
     footerTagline: "Nền tảng AI hỗ trợ soạn thảo & rà soát hợp đồng.",
     hotline: "Hotline",
   },
@@ -72,9 +74,11 @@ const T: Record<Lang, Record<string, string>> = {
     howTitle: "Just 4 simple steps",
     pricingTag: "Pricing",
     pricingTitle: "Choose the plan that fits you",
+    pricingPausedNote:
+      "Only the FREE plan is currently available. PRO and ENTERPRISE are temporarily not open for signup.",
     ctaStart: "Get started",
     ctaBottomTitle: "Create your first contract today",
-    ctaBottomSubtitle: "3 free contract generations, no payment card required.",
+    ctaBottomSubtitle: "5 free contract generations, no payment card required.",
     footerTagline: "AI platform for drafting & reviewing contracts.",
     hotline: "Hotline",
   },
@@ -95,9 +99,10 @@ const T: Record<Lang, Record<string, string>> = {
     howTitle: "只需简单 4 步",
     pricingTag: "价格",
     pricingTitle: "选择适合您的套餐",
+    pricingPausedNote: "目前仅支持 FREE 套餐。PRO 与 ENTERPRISE 暂未开放注册。",
     ctaStart: "立即开始",
     ctaBottomTitle: "今天就创建您的第一份合同",
-    ctaBottomSubtitle: "免费生成 3 份合同，无需支付卡信息。",
+    ctaBottomSubtitle: "免费生成 5 份合同，无需支付卡信息。",
     footerTagline: "AI 平台，助您起草与审查合同。",
     hotline: "热线",
   },
@@ -118,9 +123,11 @@ const T: Record<Lang, Record<string, string>> = {
     howTitle: "간단한 4단계",
     pricingTag: "요금제",
     pricingTitle: "나에게 맞는 요금제를 선택하세요",
+    pricingPausedNote:
+      "현재 FREE 요금제만 제공됩니다. PRO 및 ENTERPRISE는 일시적으로 신청이 열려 있지 않습니다.",
     ctaStart: "지금 시작하기",
     ctaBottomTitle: "오늘 첫 계약서를 만들어보세요",
-    ctaBottomSubtitle: "계약서 생성 3회 무료, 결제 카드 등록 불필요.",
+    ctaBottomSubtitle: "계약서 생성 5회 무료, 결제 카드 등록 불필요.",
     footerTagline: "계약서 작성 및 검토를 지원하는 AI 플랫폼.",
     hotline: "핫라인",
   },
@@ -141,9 +148,11 @@ const T: Record<Lang, Record<string, string>> = {
     howTitle: "簡単4ステップ",
     pricingTag: "料金",
     pricingTitle: "ご自身に合ったプランを選択",
+    pricingPausedNote:
+      "現在はFREEプランのみご利用いただけます。PRO・ENTERPRISEは一時的に申し込みを停止しています。",
     ctaStart: "今すぐ始める",
     ctaBottomTitle: "今日、最初の契約書を作成しましょう",
-    ctaBottomSubtitle: "契約書作成3回無料、クレジットカード登録不要。",
+    ctaBottomSubtitle: "契約書作成5回無料、クレジットカード登録不要。",
     footerTagline: "契約書の作成・レビューを支援するAIプラットフォーム。",
     hotline: "ホットライン",
   },
@@ -290,9 +299,9 @@ const PRICING: Record<
       period: "",
       desc: "Dùng thử tạo hợp đồng",
       features: [
-        "3 lượt tạo hợp đồng (trọn đời)",
+        "5 lượt tạo hợp đồng (trọn đời)",
         "Đủ 5 loại hợp đồng",
-        "Không có tính năng review",
+        "Review hợp đồng: 3 lần/tháng",
       ],
       highlight: false,
     },
@@ -330,9 +339,9 @@ const PRICING: Record<
       period: "",
       desc: "Try out contract generation",
       features: [
-        "3 contract generations (lifetime)",
+        "5 contract generations (lifetime)",
         "All 5 contract types",
-        "No review feature",
+        "Contract review: 3x/month",
       ],
       highlight: false,
     },
@@ -370,9 +379,9 @@ const PRICING: Record<
       period: "",
       desc: "试用生成合同",
       features: [
-        "3 次生成合同（终身）",
+        "5 次生成合同（终身）",
         "支持全部 5 种合同类型",
-        "不含审查功能",
+        "合同审查：每月 3 次",
       ],
       highlight: false,
     },
@@ -410,9 +419,9 @@ const PRICING: Record<
       period: "",
       desc: "계약서 생성 체험",
       features: [
-        "계약서 생성 3회 (평생)",
+        "계약서 생성 5회 (평생)",
         "5가지 계약서 유형 모두 지원",
-        "검토 기능 없음",
+        "계약서 검토: 월 3회",
       ],
       highlight: false,
     },
@@ -450,9 +459,9 @@ const PRICING: Record<
       period: "",
       desc: "契約書作成を試す",
       features: [
-        "契約書生成3回（生涯)",
+        "契約書生成5回（生涯)",
         "5種類の契約書すべてに対応",
-        "レビュー機能なし",
+        "契約書レビュー：月3回",
       ],
       highlight: false,
     },
@@ -815,10 +824,17 @@ export default function LandingPage() {
           <h2 className="text-3xl md:text-4xl font-semibold text-[#1C2333]">
             {t.pricingTitle}
           </h2>
+          {/* TẠM THỜI: chỉ hiển thị gói FREE, đã ẩn PRO/ENTERPRISE khỏi
+              bảng giá (xem PRICING[lang].filter bên dưới) — khớp với
+              BILLING_ENABLED=false ở dashboard/page.tsx. Đổi filter lại
+              thành hiển thị đủ 3 gói khi muốn mở lại PRO/ENTERPRISE. */}
+          <p className="text-sm text-[#9C7A3C] mt-3">{t.pricingPausedNote}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PRICING[lang].map((plan) => (
+        <div className="grid grid-cols-1 gap-6 max-w-sm mx-auto">
+          {PRICING[lang]
+            .filter((plan) => plan.name === "FREE")
+            .map((plan) => (
             <div
               key={plan.name}
               className={`rounded-lg border p-8 flex flex-col ${
