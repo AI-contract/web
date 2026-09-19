@@ -1867,7 +1867,7 @@ export default function Home() {
             {upgradeError && (
               <p className="text-red-400 text-xs mt-1">{upgradeError}</p>
             )}
-            {false && (user.plan === "FREE" || user.plan === "PRO") && (
+            {false && (user?.plan === "FREE" || user?.plan === "PRO") && (
               <>
                 {/* Chọn chu kỳ thanh toán: Tháng / Năm — quyết định
                     plan_key ("..._MONTHLY" hay "..._YEARLY") gửi lên
@@ -1897,7 +1897,10 @@ export default function Home() {
                   </button>
                 </div>
 
-                {user.plan === "FREE" && (
+                {/* FIX: dùng user?.plan thay vì user.plan để TypeScript
+                    không báo "'user' is possibly 'null'" (khối này nằm
+                    sau `false &&` nên TS không thu hẹp kiểu của user). */}
+                {user?.plan === "FREE" && (
                   <button
                     onClick={() =>
                       handleUpgrade(
