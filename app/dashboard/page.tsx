@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, Bot, X, Send, Phone, Mail, MapPin, Calendar, Clock, Percent, Wallet, Landmark, Hash, Briefcase, Building2, User, UserCheck, CreditCard, Package, Truck, ShieldCheck, FileSignature, CheckCircle2, Languages } from "lucide-react";
 import {
   ApiError,
@@ -14,6 +15,7 @@ import {
   downloadContractDocx,
   downloadContractPdf,
   downloadRevisedContractDocx,
+  downloadRevisedContractDocxTrackChanges,
   downloadRevisedContractPdf,
   generateContract,
   getContractTypeFields,
@@ -31,12 +33,8 @@ import {
   startCheckout,
   submitSepayCheckoutForm,
 } from "@/lib/api";
-
-// TẠM THỜI: tắt UI nâng cấp PRO/ENTERPRISE (chỉ cung cấp FREE) — khớp
-// với settings.BILLING_ENABLED=False ở backend (app/core/config.py, chặn
-// thật sự ở POST /billing/sepay/checkout). Đổi lại thành true + bật lại
-// BILLING_ENABLED ở backend khi muốn mở lại tính năng thanh toán.
-const BILLING_ENABLED = false;
+import DiffView from "@/app/components/DiffView";
+import ReviewChat from "@/app/components/ReviewChat";
 
 // ---- ngôn ngữ giao diện (menu/nhãn chính) - KHÔNG áp dụng cho
 // FIELD_LABELS/FIELD_LABEL_OVERRIDES_BY_TYPE, vì văn bản hợp đồng
@@ -450,7 +448,6 @@ const UI_TEXT: Record<Lang, {
   upgradeEnterprise: string;
   billingMonthly: string;
   billingYearly: string;
-  billingPausedNotice: string;
   upgradeProMonthly: string;
   upgradeProYearly: string;
   upgradeEnterpriseMonthly: string;
@@ -495,6 +492,7 @@ const UI_TEXT: Record<Lang, {
   resultTitle: (fileName: string) => string;
   riskTabBtn: string;
   revisedTabBtn: string;
+  diffTabBtn: string;
   historyTitle: string;
   noReviews: string;
   viewBtn: string;
@@ -549,8 +547,6 @@ const UI_TEXT: Record<Lang, {
     upgradeEnterprise: "Nâng cấp ENTERPRISE",
     billingMonthly: "Tháng",
     billingYearly: "Năm",
-    billingPausedNotice:
-      "Tính năng nâng cấp PRO/ENTERPRISE đang tạm ngừng. Hiện tại tất cả tài khoản đều dùng gói FREE với 5 lượt tạo hợp đồng và 3 lượt review/tháng.",
     upgradeProMonthly: "Nâng cấp PRO — 500.000đ/tháng",
     upgradeProYearly: "Nâng cấp PRO — 5.000.000đ/năm",
     upgradeEnterpriseMonthly: "Nâng cấp ENTERPRISE — 1.000.000đ/tháng",
@@ -601,6 +597,7 @@ const UI_TEXT: Record<Lang, {
     resultTitle: (fileName) => `Kết quả: ${fileName}`,
     riskTabBtn: "Đánh giá rủi ro",
     revisedTabBtn: "Bản đã chỉnh sửa",
+    diffTabBtn: "So sánh thay đổi",
     historyTitle: "Lịch sử review",
     noReviews: "Chưa có review nào.",
     viewBtn: "Xem",
@@ -641,7 +638,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review hợp đồng",
     reviewSectionDesc:
-      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa.",
+      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Tính năng này dành cho gói PRO và ENTERPRISE.",
     reviewSteps: [
       {
         title: "Tải lên hợp đồng",
@@ -702,8 +699,6 @@ const UI_TEXT: Record<Lang, {
     upgradeEnterprise: "Upgrade to ENTERPRISE",
     billingMonthly: "Monthly",
     billingYearly: "Yearly",
-    billingPausedNotice:
-      "Upgrading to PRO/ENTERPRISE is temporarily paused. All accounts currently use the FREE plan with 5 contract generations and 3 reviews per month.",
     upgradeProMonthly: "Upgrade to PRO — 500,000đ/month",
     upgradeProYearly: "Upgrade to PRO — 5,000,000đ/year",
     upgradeEnterpriseMonthly: "Upgrade to ENTERPRISE — 1,000,000đ/month",
@@ -754,6 +749,7 @@ const UI_TEXT: Record<Lang, {
     resultTitle: (fileName) => `Result: ${fileName}`,
     riskTabBtn: "Risk assessment",
     revisedTabBtn: "Revised version",
+    diffTabBtn: "Compare changes",
     historyTitle: "Review history",
     noReviews: "No reviews yet.",
     viewBtn: "View",
@@ -794,7 +790,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review contract",
     reviewSectionDesc:
-      "Upload an existing contract for the AI to review legal risks and propose a revised version.",
+      "Upload an existing contract for the AI to review legal risks and propose a revised version. This feature is available on the PRO and ENTERPRISE plans.",
     reviewSteps: [
       {
         title: "Upload the contract",
@@ -855,8 +851,6 @@ const UI_TEXT: Record<Lang, {
     upgradeEnterprise: "升级至 ENTERPRISE",
     billingMonthly: "月付",
     billingYearly: "年付",
-    billingPausedNotice:
-      "升级至 PRO/ENTERPRISE 功能暂时暂停。目前所有账户均使用 FREE 套餐，每月可生成 5 份合同、审查 3 次。",
     upgradeProMonthly: "升级至 PRO — 500,000越南盾/月",
     upgradeProYearly: "升级至 PRO — 5,000,000越南盾/年",
     upgradeEnterpriseMonthly: "升级至 ENTERPRISE — 1,000,000越南盾/月",
@@ -903,6 +897,7 @@ const UI_TEXT: Record<Lang, {
     resultTitle: (fileName) => `结果：${fileName}`,
     riskTabBtn: "风险评估",
     revisedTabBtn: "修订版本",
+    diffTabBtn: "对比修改",
     historyTitle: "审查历史",
     noReviews: "暂无审查记录。",
     viewBtn: "查看",
@@ -941,7 +936,7 @@ const UI_TEXT: Record<Lang, {
       },
     ],
     reviewSectionTitle: "审查合同",
-    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。",
+    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。此功能适用于 PRO 及 ENTERPRISE 套餐。",
     reviewSteps: [
       {
         title: "上传合同",
@@ -999,8 +994,6 @@ const UI_TEXT: Record<Lang, {
     upgradeEnterprise: "ENTERPRISE로 업그레이드",
     billingMonthly: "월간",
     billingYearly: "연간",
-    billingPausedNotice:
-      "PRO/ENTERPRISE 업그레이드 기능이 일시적으로 중단되었습니다. 현재 모든 계정은 월 계약서 생성 5회, 검토 3회의 FREE 요금제를 사용합니다.",
     upgradeProMonthly: "PRO로 업그레이드 — 500,000동/월",
     upgradeProYearly: "PRO로 업그레이드 — 5,000,000동/년",
     upgradeEnterpriseMonthly: "ENTERPRISE로 업그레이드 — 1,000,000동/월",
@@ -1051,6 +1044,7 @@ const UI_TEXT: Record<Lang, {
     resultTitle: (fileName) => `결과: ${fileName}`,
     riskTabBtn: "리스크 평가",
     revisedTabBtn: "수정본",
+    diffTabBtn: "변경 비교",
     historyTitle: "검토 기록",
     noReviews: "아직 검토 기록이 없습니다.",
     viewBtn: "보기",
@@ -1091,7 +1085,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "계약서 검토",
     reviewSectionDesc:
-      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다.",
+      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. 이 기능은 PRO 및 ENTERPRISE 요금제에서 이용할 수 있습니다.",
     reviewSteps: [
       {
         title: "계약서 업로드",
@@ -1151,8 +1145,6 @@ const UI_TEXT: Record<Lang, {
     upgradeEnterprise: "ENTERPRISEにアップグレード",
     billingMonthly: "月払い",
     billingYearly: "年払い",
-    billingPausedNotice:
-      "PRO/ENTERPRISEへのアップグレードは現在一時停止中です。現在すべてのアカウントはFREEプラン（月5件の契約書作成、3件のレビュー）でご利用いただけます。",
     upgradeProMonthly: "PROにアップグレード — 500,000ドン/月",
     upgradeProYearly: "PROにアップグレード — 5,000,000ドン/年",
     upgradeEnterpriseMonthly: "ENTERPRISEにアップグレード — 1,000,000ドン/月",
@@ -1203,6 +1195,7 @@ const UI_TEXT: Record<Lang, {
     resultTitle: (fileName) => `結果：${fileName}`,
     riskTabBtn: "リスク評価",
     revisedTabBtn: "修正版",
+    diffTabBtn: "変更点を比較",
     historyTitle: "レビュー履歴",
     noReviews: "まだレビュー履歴がありません。",
     viewBtn: "表示",
@@ -1243,7 +1236,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "契約書をレビュー",
     reviewSectionDesc:
-      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。",
+      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。この機能はPROおよびENTERPRISEプランでご利用いただけます。",
     reviewSteps: [
       {
         title: "契約書をアップロード",
@@ -1369,7 +1362,7 @@ export default function Home() {
     null
   );
   const [reviewResultTab, setReviewResultTab] = useState<
-    "analysis" | "revised"
+    "analysis" | "revised" | "diff" | "chat"
   >("analysis");
 
   const [reviews, setReviews] = useState<ContractReviewOut[]>([]);
@@ -1737,13 +1730,9 @@ export default function Home() {
     );
   }
 
-  // TẠM THỜI: FREE trước đây bị chặn review hoàn toàn (reviewBlockedForFree),
-  // giờ FREE cũng có hạn mức review/tháng như PRO/ENTERPRISE (xem
-  // FREE_REVIEW_LIMIT trong backend) nên chỉ còn 1 điều kiện duy nhất:
-  // đã dùng hết hạn mức của tháng hay chưa, áp dụng cho mọi gói.
   const reviewLimitReached =
-    !!user && user.review_used >= user.review_limit;
-  const reviewBlockedForFree = false;
+    !!user && user.plan !== "FREE" && user.review_used >= user.review_limit;
+  const reviewBlockedForFree = !!user && user.plan === "FREE";
 
   return (
     <main className="min-h-screen bg-[#FAF8F3] flex">
@@ -1811,6 +1800,31 @@ export default function Home() {
             <ScanSearch size={18} />
             <span className="text-sm">{ui.navReview}</span>
           </button>
+
+          {/* Các tính năng mới: mở trang riêng (không dùng chung state
+              `tab` ở trên) — giữ style border-l-2 nhất quán với các
+              mục nav khác. */}
+          <Link
+            href="/clause-library"
+            className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            <BookOpen size={18} />
+            <span className="text-sm">Thư viện điều khoản</span>
+          </Link>
+          <Link
+            href="/deadlines"
+            className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            <Calendar size={18} />
+            <span className="text-sm">Nhắc hạn hợp đồng</span>
+          </Link>
+          <Link
+            href="/workspace"
+            className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            <Building2 size={18} />
+            <span className="text-sm">Workspace (Enterprise)</span>
+          </Link>
         </nav>
 
         {/* Ảnh minh họa gốc (SVG tự vẽ, không phải ảnh stock nên
@@ -1846,12 +1860,14 @@ export default function Home() {
               {ui.contractsUsed(user.requests_used, user.requests_limit)}
             </div>
             <div>
-              {ui.reviewUsed(user.review_used, user.review_limit)}
+              {user.plan === "FREE"
+                ? ui.reviewUnavailableFree
+                : ui.reviewUsed(user.review_used, user.review_limit)}
             </div>
             {upgradeError && (
               <p className="text-red-400 text-xs mt-1">{upgradeError}</p>
             )}
-            {BILLING_ENABLED && (user.plan === "FREE" || user.plan === "PRO") && (
+            {(user.plan === "FREE" || user.plan === "PRO") && (
               <>
                 {/* Chọn chu kỳ thanh toán: Tháng / Năm — quyết định
                     plan_key ("..._MONTHLY" hay "..._YEARLY") gửi lên
@@ -2374,13 +2390,61 @@ export default function Home() {
                     >
                       {ui.revisedTabBtn}
                     </button>
+                    <button
+                      onClick={() => setReviewResultTab("diff")}
+                      disabled={!lastReview.revised_contract_text}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 ${
+                        reviewResultTab === "diff"
+                          ? "bg-[#16213E] text-white"
+                          : "bg-[#FAF8F3] text-[#5B6472] hover:bg-[#F0EDE4] border border-[#DCD7C9]"
+                      }`}
+                    >
+                      {ui.diffTabBtn}
+                    </button>
+                    <button
+                      onClick={() => setReviewResultTab("chat")}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 ${
+                        reviewResultTab === "chat"
+                          ? "bg-[#16213E] text-white"
+                          : "bg-[#FAF8F3] text-[#5B6472] hover:bg-[#F0EDE4] border border-[#DCD7C9]"
+                      }`}
+                    >
+                      <Bot size={14} />
+                      Hỏi đáp
+                    </button>
                   </div>
 
-                  <div className="bg-[#FAF8F3] rounded-md border border-[#DCD7C9] p-4 text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
-                    {reviewResultTab === "analysis"
-                      ? lastReview.analysis_result
-                      : lastReview.revised_contract_text}
-                  </div>
+                  {reviewResultTab === "diff" ? (
+                    <>
+                      <DiffView
+                        originalText={lastReview.extracted_text}
+                        revisedText={lastReview.revised_contract_text || ""}
+                        lang={lang}
+                      />
+                      {lastReview.revised_contract_text && (
+                        <div className="flex gap-3 mt-4">
+                          <button
+                            onClick={() =>
+                              downloadRevisedContractDocxTrackChanges(
+                                lastReview.id
+                              )
+                            }
+                            className="border border-[#DCD7C9] rounded-md px-4 py-2 text-sm hover:bg-[#FAF8F3] transition"
+                          >
+                            Tải DOCX kèm Track Changes
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : reviewResultTab === "chat" ? (
+                    <ReviewChat reviewId={lastReview.id} />
+                  ) : (
+                    <div className="bg-[#FAF8F3] rounded-md border border-[#DCD7C9] p-4 text-sm whitespace-pre-wrap max-h-96 overflow-y-auto">
+                      {reviewResultTab === "analysis"
+                        ? lastReview.analysis_result
+                        : lastReview.revised_contract_text}
+                    </div>
+                  )}
 
                   {reviewResultTab === "revised" &&
                     lastReview.revised_contract_text && (
@@ -2567,13 +2631,52 @@ export default function Home() {
                 </h3>
                 <p className="text-[#5B6472] mb-6">{ui.pricingDesc}</p>
 
-                {/* TẠM THỜI: đã ẩn hẳn bảng giá PRO/ENTERPRISE (không chỉ
-                    ẩn nút mua) — chỉ còn banner thông báo FREE là gói duy
-                    nhất đang mở. Khôi phục lại khối grid 2 cột PRO/
-                    ENTERPRISE (đã gỡ khỏi đây) khi muốn hiển thị lại giá
-                    2 gói đó, đồng thời bật BILLING_ENABLED = true ở trên. */}
-                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-md p-4 text-sm">
-                  {ui.billingPausedNotice}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    {
+                      name: "PRO",
+                      monthly: "500.000đ",
+                      yearly: "5.000.000đ",
+                      savings: ui.proSavings,
+                    },
+                    {
+                      name: "ENTERPRISE",
+                      monthly: "1.000.000đ",
+                      yearly: "10.000.000đ",
+                      savings: ui.entSavings,
+                    },
+                  ].map((plan) => (
+                    <div
+                      key={plan.name}
+                      className="rounded-md border border-[#DCD7C9] p-6"
+                    >
+                      <p className="text-sm font-medium text-[#9C7A3C] tracking-wide uppercase mb-1">
+                        {ui.planPrefix} {plan.name}
+                      </p>
+                      <p className="text-3xl font-semibold text-[#1C2333]">
+                        {plan.monthly}
+                        <span className="text-base font-normal text-[#5B6472]">
+                          {" "}
+                          {ui.perMonth}
+                        </span>
+                      </p>
+                      <div className="mt-4 pt-4 border-t border-[#DCD7C9]">
+                        <p className="text-sm text-[#5B6472]">
+                          {ui.yearlySubscribe}
+                        </p>
+                        <p className="text-xl font-semibold text-[#1C2333]">
+                          {plan.yearly}
+                          <span className="text-sm font-normal text-[#5B6472]">
+                            {" "}
+                            {ui.perYear}
+                          </span>
+                        </p>
+                        <p className="text-xs text-[#9C7A3C] mt-1">
+                          {plan.savings}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </>

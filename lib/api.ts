@@ -122,6 +122,7 @@ export interface ContractReviewOut {
   id: number;
   user_id: number;
   original_filename: string;
+  extracted_text: string;
   analysis_result: string;
   revised_contract_text: string | null;
   revised_contract_type: string | null;
@@ -338,6 +339,17 @@ export function downloadRevisedContractPdf(id: number) {
   );
 }
 
+// Bản DOCX kèm Track Changes thật (w:ins/w:del) — mở bằng Word sẽ
+// thấy đúng các thay đổi ở chế độ Review, chấp nhận/từ chối được
+// từng chỗ, khác với bản DOCX thường ở trên (chỉ là bản đã sửa,
+// không đánh dấu thay đổi).
+export function downloadRevisedContractDocxTrackChanges(id: number) {
+  return downloadFile(
+    `/contract-reviews/${id}/download-docx-trackchanges`,
+    `hop-dong-so-sanh-track-changes-${id}.docx`
+  );
+}
+
 // Yêu cầu review đã lưu mặc định cho tài khoản (mục tiêu + văn bản
 // pháp luật/yêu cầu riêng). Áp dụng sẵn (pre-fill) mỗi khi vào tab
 // Review; người dùng vẫn sửa được cho từng lần review cụ thể mà
@@ -514,6 +526,205 @@ export function askAssistant(history: ChatMessage[]) {
       history,
     }),
   });
+}
+
+// ---------------------------------------------------------------
+// Chat hỏi-đáp trên hợp đồng vừa review (khác với trợ lý ảo chung
+// ở askAssistant() phía trên — phạm vi rộng hơn, có ngữ cảnh là
+// chính hợp đồng đang xem, được phép nói cả về pháp luật liên quan
+// nhưng phải nêu rõ nguồn).
+// ---------------------------------------------------------------
+export interface ReviewChatMessageOut {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  sources_note: string | null;
+  created_at: string;
+}
+
+export function getReviewChatHistory(reviewId: number) {
+  return request<ReviewChatMessageOut[]>(
+    `/contract-reviews/${reviewId}/chat`
+  );
+}
+
+export function askReviewChat(reviewId: number, message: string) {
+  return request<ReviewChatMessageOut>(
+    `/contract-reviews/${reviewId}/chat`,
+    {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }
+  );
+}
+
+// ---------------------------------------------------------------
+// Thư viện điều khoản theo ngành
+// ---------------------------------------------------------------
+export interface ClauseIndustry {
+  key: string;
+  label: string;
+  clause_count: number;
+}
+
+export interface ClauseSummary {
+  clause_name: string;
+  label: string;
+  preview: string;
+}
+
+export interface ClauseContent {
+  contract_type: string;
+  clause_name: string;
+  content: string;
+}
+
+export function getClauseIndustries() {
+  return request<{ industries: ClauseIndustry[] }>("/clause-library");
+}
+
+export function getClausesByIndustry(contractType: string) {
+  return request<{ contract_type: string; clauses: ClauseSummary[] }>(
+    `/clause-library/${contractType}`
+  );
+}
+
+export function getClauseContent(contractType: string, clauseName: string) {
+  return request<ClauseContent>(
+    `/clause-library/${contractType}/${clauseName}`
+  );
+}
+
+// ---------------------------------------------------------------
+// Nhắc hạn hợp đồng
+// ---------------------------------------------------------------
+export interface ContractDeadline {
+  id: number;
+  title: string;
+  deadline_type: string;
+  due_date: string; // "YYYY-MM-DD"
+  notify_offsets_days: string;
+  note: string | null;
+  is_resolved: boolean;
+  contract_id: number | null;
+  contract_review_id: number | null;
+  created_at: string;
+  days_remaining: number;
+}
+
+export interface ContractDeadlineIn {
+  title: string;
+  deadline_type?: string;
+  due_date: string;
+  notify_offsets_days?: string;
+  note?: string;
+  contract_id?: number;
+  contract_review_id?: number;
+}
+
+export function listDeadlines(includeResolved = false) {
+  return request<ContractDeadline[]>(
+    `/deadlines?include_resolved=${includeResolved}`
+  );
+}
+
+export function createDeadline(payload: ContractDeadlineIn) {
+  return request<ContractDeadline>("/deadlines", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateDeadline(
+  id: number,
+  payload: Partial<ContractDeadlineIn & { is_resolved: boolean }>
+) {
+  return request<ContractDeadline>(`/deadlines/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteDeadline(id: number) {
+  return request<{ message: string }>(`/deadlines/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// ---------------------------------------------------------------
+// Workspace nhiều người dùng (ENTERPRISE)
+// ---------------------------------------------------------------
+export interface OrganizationOut {
+  id: number;
+  name: string;
+  owner_id: number;
+  created_at: string;
+}
+
+export interface OrganizationMemberOut {
+  id: number;
+  email: string;
+  user_id: number | null;
+  role: "owner" | "admin" | "member";
+  status: "pending" | "active" | "removed";
+  invited_at: string;
+  joined_at: string | null;
+}
+
+export function createOrganization(name: string) {
+  return request<OrganizationOut>("/organizations", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function getMyOrganization() {
+  return request<OrganizationOut | null>("/organizations/me");
+}
+
+export function listOrganizationMembers() {
+  return request<OrganizationMemberOut[]>("/organizations/members");
+}
+
+export function inviteOrganizationMember(email: string, role: string = "member") {
+  return request<{
+    id: number;
+    email: string;
+    role: string;
+    status: string;
+    invite_token: string;
+  }>("/organizations/invite", {
+    method: "POST",
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export function acceptOrganizationInvite(inviteToken: string) {
+  return request<OrganizationMemberOut>("/organizations/accept-invite", {
+    method: "POST",
+    body: JSON.stringify({ invite_token: inviteToken }),
+  });
+}
+
+export function removeOrganizationMember(memberId: number) {
+  return request<{ message: string }>(
+    `/organizations/members/${memberId}`,
+    { method: "DELETE" }
+  );
+}
+
+export function leaveOrganization() {
+  return request<{ message: string }>("/organizations/leave", {
+    method: "POST",
+  });
+}
+
+export function listOrganizationContracts() {
+  return request<ContractOut[]>("/organizations/contracts");
+}
+
+export function listOrganizationContractReviews() {
+  return request<ContractReviewOut[]>("/organizations/contract-reviews");
 }
 
 export { ApiError };
