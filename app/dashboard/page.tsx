@@ -539,7 +539,7 @@ const UI_TEXT: Record<Lang, {
     scalesAlt: "Cán cân công lý",
     lawBookAlt: "Sách luật",
     planLabel: "Gói",
-    contractsUsed: (used, limit) => `${used}/${limit} lượt tạo hợp đồng`,
+    contractsUsed: (used, limit) => `${used}/${limit} lượt tạo hợp đồng/tháng`,
     reviewUnavailableFree: "Review: không khả dụng (gói FREE)",
     reviewUsed: (used, limit) => `${used}/${limit} lượt review/tháng`,
     redirecting: "Đang chuyển hướng...",
@@ -638,7 +638,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review hợp đồng",
     reviewSectionDesc:
-      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Tính năng này dành cho gói PRO và ENTERPRISE.",
+      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Gói FREE được review 3 lượt/tháng.",
     reviewSteps: [
       {
         title: "Tải lên hợp đồng",
@@ -691,7 +691,7 @@ const UI_TEXT: Record<Lang, {
     scalesAlt: "Scales of justice",
     lawBookAlt: "Law book",
     planLabel: "Plan",
-    contractsUsed: (used, limit) => `${used}/${limit} contracts generated`,
+    contractsUsed: (used, limit) => `${used}/${limit} contracts generated this month`,
     reviewUnavailableFree: "Review: unavailable (FREE plan)",
     reviewUsed: (used, limit) => `${used}/${limit} reviews this month`,
     redirecting: "Redirecting...",
@@ -790,7 +790,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review contract",
     reviewSectionDesc:
-      "Upload an existing contract for the AI to review legal risks and propose a revised version. This feature is available on the PRO and ENTERPRISE plans.",
+      "Upload an existing contract for the AI to review legal risks and propose a revised version. The FREE plan includes 3 reviews per month.",
     reviewSteps: [
       {
         title: "Upload the contract",
@@ -843,7 +843,7 @@ const UI_TEXT: Record<Lang, {
     scalesAlt: "正义天平",
     lawBookAlt: "法律书籍",
     planLabel: "套餐",
-    contractsUsed: (used, limit) => `已生成 ${used}/${limit} 份合同`,
+    contractsUsed: (used, limit) => `本月已生成 ${used}/${limit} 份合同`,
     reviewUnavailableFree: "审查功能：不可用（FREE 套餐）",
     reviewUsed: (used, limit) => `本月已使用 ${used}/${limit} 次审查`,
     redirecting: "正在跳转...",
@@ -936,7 +936,7 @@ const UI_TEXT: Record<Lang, {
       },
     ],
     reviewSectionTitle: "审查合同",
-    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。此功能适用于 PRO 及 ENTERPRISE 套餐。",
+    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。FREE 套餐每月可审查 3 次。",
     reviewSteps: [
       {
         title: "上传合同",
@@ -986,7 +986,7 @@ const UI_TEXT: Record<Lang, {
     scalesAlt: "정의의 저울",
     lawBookAlt: "법률 서적",
     planLabel: "요금제",
-    contractsUsed: (used, limit) => `계약서 생성 ${used}/${limit}회`,
+    contractsUsed: (used, limit) => `이번 달 계약서 생성 ${used}/${limit}회`,
     reviewUnavailableFree: "검토: 이용 불가 (FREE 요금제)",
     reviewUsed: (used, limit) => `이번 달 검토 ${used}/${limit}회`,
     redirecting: "이동 중...",
@@ -1085,7 +1085,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "계약서 검토",
     reviewSectionDesc:
-      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. 이 기능은 PRO 및 ENTERPRISE 요금제에서 이용할 수 있습니다.",
+      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. FREE 요금제는 매월 3회 검토할 수 있습니다.",
     reviewSteps: [
       {
         title: "계약서 업로드",
@@ -1137,7 +1137,7 @@ const UI_TEXT: Record<Lang, {
     scalesAlt: "正義の天秤",
     lawBookAlt: "法律書",
     planLabel: "プラン",
-    contractsUsed: (used, limit) => `契約書作成 ${used}/${limit}回`,
+    contractsUsed: (used, limit) => `今月の契約書作成 ${used}/${limit}回`,
     reviewUnavailableFree: "レビュー：利用不可（FREEプラン）",
     reviewUsed: (used, limit) => `今月のレビュー ${used}/${limit}回`,
     redirecting: "移動中...",
@@ -1236,7 +1236,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "契約書をレビュー",
     reviewSectionDesc:
-      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。この機能はPROおよびENTERPRISEプランでご利用いただけます。",
+      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。FREEプランでは毎月3回までレビューできます。",
     reviewSteps: [
       {
         title: "契約書をアップロード",
@@ -1731,8 +1731,10 @@ export default function Home() {
   }
 
   const reviewLimitReached =
-    !!user && user.plan !== "FREE" && user.review_used >= user.review_limit;
-  const reviewBlockedForFree = !!user && user.plan === "FREE";
+    !!user && user.review_used >= user.review_limit;
+  // Gói FREE nay cũng được review (xem FREE_REVIEW_LIMIT ở backend), nên
+  // không còn khóa cứng theo gói nữa.
+  const reviewBlockedForFree = false;
 
   return (
     <main className="min-h-screen bg-[#FAF8F3] flex">
@@ -1860,9 +1862,7 @@ export default function Home() {
               {ui.contractsUsed(user.requests_used, user.requests_limit)}
             </div>
             <div>
-              {user.plan === "FREE"
-                ? ui.reviewUnavailableFree
-                : ui.reviewUsed(user.review_used, user.review_limit)}
+              {ui.reviewUsed(user.review_used, user.review_limit)}
             </div>
             {upgradeError && (
               <p className="text-red-400 text-xs mt-1">{upgradeError}</p>
