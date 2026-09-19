@@ -1867,7 +1867,7 @@ export default function Home() {
             {upgradeError && (
               <p className="text-red-400 text-xs mt-1">{upgradeError}</p>
             )}
-            {(user.plan === "FREE" || user.plan === "PRO") && (
+            {false && (user.plan === "FREE" || user.plan === "PRO") && (
               <>
                 {/* Chọn chu kỳ thanh toán: Tháng / Năm — quyết định
                     plan_key ("..._MONTHLY" hay "..._YEARLY") gửi lên
