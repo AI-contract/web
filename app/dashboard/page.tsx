@@ -1807,6 +1807,13 @@ export default function Home() {
               `tab` ở trên) — giữ style border-l-2 nhất quán với các
               mục nav khác. */}
           <Link
+            href="/legal-lookup"
+            className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            <Scale size={18} />
+            <span className="text-sm">Tra cứu pháp lý</span>
+          </Link>
+          <Link
             href="/clause-library"
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >

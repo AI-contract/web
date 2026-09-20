@@ -727,4 +727,125 @@ export function listOrganizationContractReviews() {
   return request<ContractReviewOut[]>("/organizations/contract-reviews");
 }
 
+// ---------------------------------------------------------------
+// Tra cứu pháp lý (văn bản pháp luật, bản án, án lệ)
+// ---------------------------------------------------------------
+export interface LegalOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
+export interface LegalMeta {
+  doc_types: LegalOption[];
+  fields: LegalOption[];
+  statuses: LegalOption[];
+  issuers: string[];
+  total_documents: number;
+}
+
+export interface LegalSearchItem {
+  document_id: number;
+  doc_type: string;
+  doc_type_label: string;
+  fields: string[];
+  field_labels: string[];
+  number: string | null;
+  title: string;
+  issuer: string | null;
+  issued_on: string | null;
+  effective_on: string | null;
+  status: string;
+  status_label: string;
+  source_name: string | null;
+  source_url: string | null;
+  data_updated_at: string | null;
+  // Đoạn/Điều khớp nhất trong văn bản, vd "Điều 418".
+  locator: string | null;
+  snippet: string;
+  // Vị trí tô sáng [start, end] tương đối theo `snippet` (tính theo
+  // ký tự Unicode/code point, KHÔNG phải HTML).
+  highlights: number[][];
+  score: number;
+}
+
+export interface LegalSearchResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  items: LegalSearchItem[];
+  query_terms: string[];
+  disclaimer: string;
+}
+
+export interface LegalChunk {
+  id: number;
+  position: number;
+  locator: string | null;
+  content: string;
+}
+
+export interface LegalDocumentDetail {
+  id: number;
+  doc_type: string;
+  doc_type_label: string;
+  fields: string[];
+  field_labels: string[];
+  number: string | null;
+  title: string;
+  issuer: string | null;
+  issued_on: string | null;
+  effective_on: string | null;
+  status: string;
+  status_label: string;
+  summary: string | null;
+  source_name: string | null;
+  source_url: string | null;
+  data_updated_at: string | null;
+  chunks: LegalChunk[];
+  disclaimer: string;
+}
+
+export interface LegalSearchParams {
+  q?: string;
+  doc_type?: string;
+  field?: string;
+  issuer?: string;
+  status?: string;
+  year?: number;
+  page?: number;
+  page_size?: number;
+}
+
+export function getLegalMeta() {
+  return request<LegalMeta>("/legal/meta");
+}
+
+export function searchLegal(params: LegalSearchParams) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    qs.set(key, String(value));
+  }
+  const suffix = qs.toString();
+  return request<LegalSearchResponse>(
+    `/legal/search${suffix ? `?${suffix}` : ""}`
+  );
+}
+
+// "Căn cứ pháp lý" cho một đoạn văn (vd một điều khoản hợp đồng).
+export function searchLegalByText(
+  text: string,
+  opts: { doc_type?: string; field?: string; limit?: number } = {}
+) {
+  return request<LegalSearchResponse>("/legal/search-by-text", {
+    method: "POST",
+    body: JSON.stringify({ text, ...opts }),
+  });
+}
+
+export function getLegalDocument(id: number) {
+  return request<LegalDocumentDetail>(`/legal/documents/${id}`);
+}
+
 export { ApiError };
