@@ -736,12 +736,36 @@ export interface LegalOption {
   count: number;
 }
 
+// Cấp 1: một thẻ lĩnh vực ở trang tổng quan.
+export interface LegalFieldStat {
+  value: string;
+  label: string;
+  total: number;
+  // Số tài liệu theo loại: { van_ban, ban_an, an_le }.
+  by_type: Record<string, number>;
+}
+
+export interface LegalRecentItem {
+  document_id: number;
+  doc_type: string;
+  doc_type_label: string;
+  number: string | null;
+  title: string;
+  issued_on: string | null;
+  updated_at: string | null;
+}
+
 export interface LegalMeta {
   doc_types: LegalOption[];
   fields: LegalOption[];
   statuses: LegalOption[];
   issuers: string[];
   total_documents: number;
+  field_stats: LegalFieldStat[];
+  // Chuyên đề theo từng lĩnh vực (key = giá trị lĩnh vực).
+  topics: Record<string, LegalOption[]>;
+  recent: LegalRecentItem[];
+  last_updated: string | null;
 }
 
 export interface LegalSearchItem {
@@ -750,6 +774,8 @@ export interface LegalSearchItem {
   doc_type_label: string;
   fields: string[];
   field_labels: string[];
+  topics: string[];
+  topic_labels: string[];
   number: string | null;
   title: string;
   issuer: string | null;
@@ -766,6 +792,11 @@ export interface LegalSearchItem {
   // Vị trí tô sáng [start, end] tương đối theo `snippet` (tính theo
   // ký tự Unicode/code point, KHÔNG phải HTML).
   highlights: number[][];
+  // Thẻ kết quả cấp 3 (án lệ, bản án). null/[] nếu tài liệu không có mục đó.
+  issue: string | null;
+  resolution: string | null;
+  basis: string[];
+  keywords: string[];
   score: number;
 }
 
@@ -782,6 +813,8 @@ export interface LegalChunk {
   id: number;
   position: number;
   locator: string | null;
+  // meta | provision | issue | resolution | basis | keywords | summary | source | facts | body
+  role: string;
   content: string;
 }
 
@@ -791,6 +824,8 @@ export interface LegalDocumentDetail {
   doc_type_label: string;
   fields: string[];
   field_labels: string[];
+  topics: string[];
+  topic_labels: string[];
   number: string | null;
   title: string;
   issuer: string | null;
@@ -802,17 +837,26 @@ export interface LegalDocumentDetail {
   source_name: string | null;
   source_url: string | null;
   data_updated_at: string | null;
+  basis: string[];
+  keywords: string[];
   chunks: LegalChunk[];
   disclaimer: string;
 }
+
+export type LegalSort = "relevance" | "newest" | "oldest";
 
 export interface LegalSearchParams {
   q?: string;
   doc_type?: string;
   field?: string;
+  topic?: string;
   issuer?: string;
   status?: string;
+  number?: string;
+  issued_from?: string; // yyyy-mm-dd
+  issued_to?: string; // yyyy-mm-dd
   year?: number;
+  sort?: LegalSort;
   page?: number;
   page_size?: number;
 }
