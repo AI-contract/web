@@ -728,168 +728,70 @@ export function listOrganizationContractReviews() {
 }
 
 // ---------------------------------------------------------------
-// Tra cứu pháp lý (văn bản pháp luật, bản án, án lệ)
+// Tra cứu pháp lý TRỰC TIẾP trên nguồn chính thống (không lưu trữ)
 // ---------------------------------------------------------------
-export interface LegalOption {
-  value: string;
-  label: string;
-  count: number;
-}
+export type LiveGroup = "van_ban" | "an_le" | "ban_an";
+export type LiveMode = "keyword" | "clause";
 
-// Cấp 1: một thẻ lĩnh vực ở trang tổng quan.
-export interface LegalFieldStat {
-  value: string;
-  label: string;
-  total: number;
-  // Số tài liệu theo loại: { van_ban, ban_an, an_le }.
-  by_type: Record<string, number>;
-}
-
-export interface LegalRecentItem {
-  document_id: number;
-  doc_type: string;
-  doc_type_label: string;
-  number: string | null;
+export interface LiveItem {
+  url: string;
   title: string;
-  issued_on: string | null;
-  updated_at: string | null;
-}
-
-export interface LegalMeta {
-  doc_types: LegalOption[];
-  fields: LegalOption[];
-  statuses: LegalOption[];
-  issuers: string[];
-  total_documents: number;
-  field_stats: LegalFieldStat[];
-  // Chuyên đề theo từng lĩnh vực (key = giá trị lĩnh vực).
-  topics: Record<string, LegalOption[]>;
-  recent: LegalRecentItem[];
-  last_updated: string | null;
-}
-
-export interface LegalSearchItem {
-  document_id: number;
-  doc_type: string;
-  doc_type_label: string;
-  fields: string[];
-  field_labels: string[];
-  topics: string[];
-  topic_labels: string[];
   number: string | null;
-  title: string;
   issuer: string | null;
   issued_on: string | null;
   effective_on: string | null;
-  status: string;
-  status_label: string;
-  source_name: string | null;
-  source_url: string | null;
-  data_updated_at: string | null;
-  // Đoạn/Điều khớp nhất trong văn bản, vd "Điều 418".
-  locator: string | null;
-  snippet: string;
-  // Vị trí tô sáng [start, end] tương đối theo `snippet` (tính theo
-  // ký tự Unicode/code point, KHÔNG phải HTML).
-  highlights: number[][];
-  // Thẻ kết quả cấp 3 (án lệ, bản án). null/[] nếu tài liệu không có mục đó.
+  // Tình trạng hiệu lực CHỈ khi chính trang nguồn ghi rõ; null = chưa xác minh.
+  status_text: string | null;
+  category: string | null;
+  // Trích dẫn nguyên văn đã được đối chiếu với trang nguồn.
   issue: string | null;
   resolution: string | null;
-  basis: string[];
-  keywords: string[];
-  score: number;
+  excerpt: string | null;
+  // Một câu do AI viết giải thích vì sao liên quan (không phải trích dẫn).
+  relevance: string | null;
+  // verified: khớp trang nguồn; unknown: chưa đối chiếu được; unverified: có
+  // trích dẫn không khớp và đã bị ẩn (quote_removed = true).
+  verification: "verified" | "unknown" | "unverified";
+  quote_removed: boolean;
 }
 
-export interface LegalSearchResponse {
-  total: number;
-  page: number;
-  page_size: number;
-  items: LegalSearchItem[];
-  query_terms: string[];
+export interface LiveSearchResponse {
+  group: LiveGroup;
+  group_label: string;
+  query: string;
+  mode: LiveMode;
+  items: LiveItem[];
+  notice: string | null;
+  from_cache: boolean;
+  searched_domains: string[];
+  generated_at: string;
+  // Số lượt còn lại hôm nay; null = không giới hạn (quản trị viên).
+  remaining_calls: number | null;
   disclaimer: string;
 }
 
-export interface LegalChunk {
-  id: number;
-  position: number;
-  locator: string | null;
-  // meta | provision | issue | resolution | basis | keywords | summary | source | facts | body
-  role: string;
-  content: string;
+export interface LiveGroupInfo {
+  value: LiveGroup;
+  label: string;
+  domains: string[];
 }
 
-export interface LegalDocumentDetail {
-  id: number;
-  doc_type: string;
-  doc_type_label: string;
-  fields: string[];
-  field_labels: string[];
-  topics: string[];
-  topic_labels: string[];
-  number: string | null;
-  title: string;
-  issuer: string | null;
-  issued_on: string | null;
-  effective_on: string | null;
-  status: string;
-  status_label: string;
-  summary: string | null;
-  source_name: string | null;
-  source_url: string | null;
-  data_updated_at: string | null;
-  basis: string[];
-  keywords: string[];
-  chunks: LegalChunk[];
+export interface LiveInfo {
+  enabled: boolean;
+  groups: LiveGroupInfo[];
+  daily_limit: number | null;
+  remaining_calls: number | null;
   disclaimer: string;
 }
 
-export type LegalSort = "relevance" | "newest" | "oldest";
-
-export interface LegalSearchParams {
-  q?: string;
-  doc_type?: string;
-  field?: string;
-  topic?: string;
-  issuer?: string;
-  status?: string;
-  number?: string;
-  issued_from?: string; // yyyy-mm-dd
-  issued_to?: string; // yyyy-mm-dd
-  year?: number;
-  sort?: LegalSort;
-  page?: number;
-  page_size?: number;
+export function getLegalLiveInfo() {
+  return request<LiveInfo>("/legal/live/info");
 }
 
-export function getLegalMeta() {
-  return request<LegalMeta>("/legal/meta");
-}
-
-export function searchLegal(params: LegalSearchParams) {
-  const qs = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === "") continue;
-    qs.set(key, String(value));
-  }
-  const suffix = qs.toString();
-  return request<LegalSearchResponse>(
-    `/legal/search${suffix ? `?${suffix}` : ""}`
-  );
-}
-
-// "Căn cứ pháp lý" cho một đoạn văn (vd một điều khoản hợp đồng).
-export function searchLegalByText(
-  text: string,
-  opts: { doc_type?: string; field?: string; limit?: number } = {}
-) {
-  return request<LegalSearchResponse>("/legal/search-by-text", {
-    method: "POST",
-    body: JSON.stringify({ text, ...opts }),
-  });
-}
-
-export function getLegalDocument(id: number) {
-  return request<LegalDocumentDetail>(`/legal/documents/${id}`);
+// Mỗi lần gọi tìm trong MỘT nhóm nguồn; giao diện gọi 3 nhóm song song.
+export function searchLegalLive(group: LiveGroup, q: string, mode: LiveMode) {
+  const qs = new URLSearchParams({ group, q, mode });
+  return request<LiveSearchResponse>(`/legal/live/search?${qs.toString()}`);
 }
 
 export { ApiError };
