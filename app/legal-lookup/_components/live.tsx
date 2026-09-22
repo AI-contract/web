@@ -23,6 +23,7 @@ import {
   Loader2,
   RefreshCw,
   Scale,
+  ShieldAlert,
 } from "lucide-react";
 import {
   ApiError,
@@ -37,7 +38,7 @@ import {
 // ---------------------------------------------------------------
 // Hằng số & tiện ích
 // ---------------------------------------------------------------
-export const GROUP_ORDER: LiveGroup[] = ["van_ban", "an_le", "ban_an"];
+export const GROUP_ORDER: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia"];
 
 export const GROUP_META: Record<
   LiveGroup,
@@ -61,6 +62,18 @@ export const GROUP_META: Record<
     excerptLabel: "Thông tin về vụ/việc",
     badge: "bg-amber-50 text-amber-800 border-amber-200",
   },
+  danh_gia: {
+    label: "Đánh giá pháp lý & rủi ro",
+    hint: "Phân tích sơ bộ do AI tổng hợp từ quy định pháp luật và nguồn mở — chỉ tham khảo",
+    excerptLabel: "Phân tích",
+    badge: "bg-rose-50 text-rose-700 border-rose-200",
+  },
+};
+
+const RISK_META: Record<"cao" | "trung_binh" | "thap", { label: string; tone: string }> = {
+  cao: { label: "Rủi ro cao", tone: "bg-red-50 text-red-700 border-red-200" },
+  trung_binh: { label: "Rủi ro trung bình", tone: "bg-orange-50 text-orange-800 border-orange-200" },
+  thap: { label: "Rủi ro thấp", tone: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 };
 
 export const DISCLAIMER_FALLBACK =
@@ -278,6 +291,14 @@ export function LiveResultCard({ item, group }: { item: LiveItem; group: LiveGro
             {item.category}
           </span>
         )}
+        {item.risk_level && (
+          <span
+            className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${RISK_META[item.risk_level].tone}`}
+          >
+            <ShieldAlert size={12} />
+            {RISK_META[item.risk_level].label}
+          </span>
+        )}
       </div>
 
       {src ? (
@@ -296,13 +317,17 @@ export function LiveResultCard({ item, group }: { item: LiveItem; group: LiveGro
 
       {item.issue && (
         <div className="mt-4">
-          <p className="text-sm font-semibold text-red-700 mb-1">Vấn đề pháp lý</p>
+          <p className="text-sm font-semibold text-red-700 mb-1">
+            {group === "danh_gia" ? "Phân tích quy định liên quan" : "Vấn đề pháp lý"}
+          </p>
           <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{item.issue}</p>
         </div>
       )}
       {item.resolution && (
         <div className="mt-4">
-          <p className="text-sm font-semibold text-[#9C7A3C] mb-1">Giải quyết / Phán quyết</p>
+          <p className="text-sm font-semibold text-[#9C7A3C] mb-1">
+            {group === "danh_gia" ? "Khuyến nghị / biện pháp giảm rủi ro" : "Giải quyết / Phán quyết"}
+          </p>
           <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap border-l-4 border-[#C6A15C] bg-[#FAF8F3] px-3 py-2">
             {item.resolution}
           </p>
@@ -317,7 +342,43 @@ export function LiveResultCard({ item, group }: { item: LiveItem; group: LiveGro
         </div>
       )}
 
-      <VerificationNote item={item} />
+      {group === "danh_gia" && item.references.length > 0 && (
+        <div className="mt-4">
+          <p className="text-sm font-semibold text-[#5B6472] mb-1.5">Nguồn tham khảo</p>
+          <ul className="space-y-1">
+            {item.references.map((ref) => {
+              const refUrl = safeUrl(ref.url);
+              return (
+                <li key={ref.url} className="text-sm">
+                  {refUrl ? (
+                    <a
+                      href={refUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#9C7A3C] hover:underline inline-flex items-center gap-1"
+                    >
+                      <ExternalLink size={12} className="shrink-0" />
+                      {ref.title}
+                    </a>
+                  ) : (
+                    ref.title
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {group === "danh_gia" ? (
+        <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-700">
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          {item.disclaimer ||
+            "Nội dung do AI tổng hợp, chỉ mang tính tham khảo, không thay thế ý kiến tư vấn của luật sư/chuyên gia pháp lý."}
+        </p>
+      ) : (
+        <VerificationNote item={item} />
+      )}
 
       {item.relevance && (
         <p className="mt-2 text-xs italic text-[#8A919C]">Gợi ý của AI: {item.relevance}</p>
@@ -356,6 +417,7 @@ export function LiveGroupSection({
   domains,
   query,
   mode,
+  requestText,
   onRemaining,
   onUnauthorized,
 }: {
@@ -363,6 +425,7 @@ export function LiveGroupSection({
   domains: string[];
   query: string;
   mode: LiveMode;
+  requestText?: string;
   onRemaining: (remaining: number | null) => void;
   onUnauthorized: () => void;
 }) {
@@ -372,7 +435,7 @@ export function LiveGroupSection({
 
   useEffect(() => {
     let cancelled = false;
-    searchLegalLive(group, query, mode)
+    searchLegalLive(group, query, mode, requestText)
       .then((data) => {
         if (cancelled) return;
         setLoaded({ nonce, data, error: null, status: null });
@@ -394,7 +457,7 @@ export function LiveGroupSection({
     return () => {
       cancelled = true;
     };
-  }, [group, query, mode, nonce, onRemaining, onUnauthorized]);
+  }, [group, query, mode, requestText, nonce, onRemaining, onUnauthorized]);
 
   const loading = !loaded || loaded.nonce !== nonce;
   const data = !loading ? loaded.data : null;

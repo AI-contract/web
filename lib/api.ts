@@ -730,8 +730,13 @@ export function listOrganizationContractReviews() {
 // ---------------------------------------------------------------
 // Tra cứu pháp lý TRỰC TIẾP trên nguồn chính thống (không lưu trữ)
 // ---------------------------------------------------------------
-export type LiveGroup = "van_ban" | "an_le" | "ban_an";
+export type LiveGroup = "van_ban" | "an_le" | "ban_an" | "danh_gia";
 export type LiveMode = "keyword" | "clause";
+
+export interface LiveReference {
+  title: string;
+  url: string;
+}
 
 export interface LiveItem {
   url: string;
@@ -743,16 +748,23 @@ export interface LiveItem {
   // Tình trạng hiệu lực CHỈ khi chính trang nguồn ghi rõ; null = chưa xác minh.
   status_text: string | null;
   category: string | null;
-  // Trích dẫn nguyên văn đã được đối chiếu với trang nguồn.
+  // 3 nhóm van_ban/an_le/ban_an: trích nguyên văn đã đối chiếu với trang nguồn.
+  // Nhóm danh_gia: issue = phân tích quy định liên quan, resolution = khuyến
+  // nghị/biện pháp giảm rủi ro (do AI diễn giải, không phải trích nguyên văn).
   issue: string | null;
   resolution: string | null;
   excerpt: string | null;
   // Một câu do AI viết giải thích vì sao liên quan (không phải trích dẫn).
   relevance: string | null;
-  // verified: khớp trang nguồn; unknown: chưa đối chiếu được; unverified: có
-  // trích dẫn không khớp và đã bị ẩn (quote_removed = true).
+  // verified: khớp trang nguồn; unknown: chưa đối chiếu được (hoặc thuộc nhóm
+  // danh_gia — không áp dụng đối chiếu); unverified: có trích dẫn không khớp
+  // và đã bị ẩn (quote_removed = true).
   verification: "verified" | "unknown" | "unverified";
   quote_removed: boolean;
+  // Chỉ dùng cho nhóm "danh_gia" (Đánh giá pháp lý & rủi ro).
+  risk_level: "cao" | "trung_binh" | "thap" | null;
+  references: LiveReference[];
+  disclaimer: string | null;
 }
 
 export interface LiveSearchResponse {
@@ -776,22 +788,48 @@ export interface LiveGroupInfo {
   domains: string[];
 }
 
+export interface LiveHistoryItem {
+  query: string;
+  mode: LiveMode;
+  created_at: string;
+}
+
 export interface LiveInfo {
   enabled: boolean;
   groups: LiveGroupInfo[];
   daily_limit: number | null;
   remaining_calls: number | null;
   disclaimer: string;
+  // ---- Cá nhân hoá theo tài khoản ----
+  business_field: string | null;
+  recent_searches: LiveHistoryItem[];
 }
 
 export function getLegalLiveInfo() {
   return request<LiveInfo>("/legal/live/info");
 }
 
-// Mỗi lần gọi tìm trong MỘT nhóm nguồn; giao diện gọi 3 nhóm song song.
-export function searchLegalLive(group: LiveGroup, q: string, mode: LiveMode) {
+// Mỗi lần gọi tìm trong MỘT nhóm nguồn; giao diện gọi 4 nhóm song song
+// (van_ban, an_le, ban_an, danh_gia). `requestText` là nội dung ô "Yêu cầu
+// tra cứu" (tuỳ chọn) — vd trình tự thủ tục, biện pháp giảm rủi ro.
+export function searchLegalLive(
+  group: LiveGroup,
+  q: string,
+  mode: LiveMode,
+  requestText?: string
+) {
   const qs = new URLSearchParams({ group, q, mode });
+  if (requestText && requestText.trim()) qs.set("request", requestText.trim());
   return request<LiveSearchResponse>(`/legal/live/search?${qs.toString()}`);
+}
+
+// Lĩnh vực hoạt động khách tự khai báo — dùng làm bối cảnh cá nhân hoá cho
+// tra cứu pháp lý (xem GROUP_META/business field trong app/legal-lookup).
+export function saveLegalBusinessField(businessField: string) {
+  return request<{ business_field: string | null }>("/legal/live/profile", {
+    method: "PUT",
+    body: JSON.stringify({ business_field: businessField.trim() || null }),
+  });
 }
 
 export { ApiError };

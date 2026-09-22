@@ -12,8 +12,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Info, Loader2, Search } from "lucide-react";
-import { ApiError, LiveInfo, LiveMode, getLegalLiveInfo } from "@/lib/api";
+import { Briefcase, History, Info, Loader2, Search } from "lucide-react";
+import {
+  ApiError,
+  LiveInfo,
+  LiveMode,
+  getLegalLiveInfo,
+  saveLegalBusinessField,
+} from "@/lib/api";
 import {
   DISCLAIMER_FALLBACK,
   GROUP_META,
@@ -34,6 +40,7 @@ interface Submitted {
   id: number;
   q: string;
   mode: LiveMode;
+  requestText: string;
 }
 
 export default function LegalLookupPage() {
@@ -43,9 +50,13 @@ export default function LegalLookupPage() {
   const [mode, setMode] = useState<LiveMode>("keyword");
   const [keyword, setKeyword] = useState("");
   const [clause, setClause] = useState("");
+  const [requestText, setRequestText] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
   const [remaining, setRemaining] = useState<number | null | undefined>(undefined);
+  const [businessField, setBusinessField] = useState("");
+  const [businessFieldSaved, setBusinessFieldSaved] = useState<string | null>(null);
+  const [savingField, setSavingField] = useState(false);
 
   // Thông tin nguồn tra cứu + số lượt còn lại (không chặn việc tra cứu nếu lỗi).
   useEffect(() => {
@@ -56,6 +67,8 @@ export default function LegalLookupPage() {
         if (cancelled) return;
         setInfo(i);
         setRemaining(i.remaining_calls);
+        setBusinessField(i.business_field ?? "");
+        setBusinessFieldSaved(i.business_field ?? null);
       })
       .catch((err) => {
         if (!cancelled && err instanceof ApiError && err.status === 401) onUnauthorized();
@@ -64,6 +77,19 @@ export default function LegalLookupPage() {
       cancelled = true;
     };
   }, [ok, onUnauthorized]);
+
+  async function onSaveBusinessField() {
+    setSavingField(true);
+    try {
+      const res = await saveLegalBusinessField(businessField);
+      setBusinessFieldSaved(res.business_field);
+      setBusinessField(res.business_field ?? "");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) onUnauthorized();
+    } finally {
+      setSavingField(false);
+    }
+  }
 
   // Identity ổn định: LiveGroupSection dùng trong dependency của effect.
   const onRemaining = useCallback((value: number | null) => setRemaining(value), []);
@@ -79,7 +105,12 @@ export default function LegalLookupPage() {
       return;
     }
     setFormError(null);
-    setSubmitted((prev) => ({ id: (prev?.id ?? 0) + 1, q: text, mode: m }));
+    setSubmitted((prev) => ({
+      id: (prev?.id ?? 0) + 1,
+      q: text,
+      mode: m,
+      requestText: requestText.trim(),
+    }));
   }
 
   function onSubmit(e: FormEvent) {
@@ -123,6 +154,40 @@ export default function LegalLookupPage() {
               </li>
             ))}
           </ul>
+        </div>
+
+        {/* Lĩnh vực hoạt động — cá nhân hoá tra cứu */}
+        <div className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 mb-6">
+          <label
+            htmlFor="legal-live-business-field"
+            className="text-sm font-semibold text-[#1C2333] flex items-center gap-1.5 mb-2"
+          >
+            <Briefcase size={16} className="text-[#9C7A3C]" /> Lĩnh vực hoạt động
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="legal-live-business-field"
+              type="text"
+              value={businessField}
+              onChange={(e) => setBusinessField(e.target.value)}
+              maxLength={200}
+              placeholder="Ví dụ: Bất động sản, Thương mại điện tử, Xây dựng…"
+              aria-label="Lĩnh vực hoạt động"
+              className="flex-1 rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
+            />
+            <button
+              type="button"
+              onClick={onSaveBusinessField}
+              disabled={savingField || businessField.trim() === (businessFieldSaved ?? "")}
+              className="rounded-md border border-[#DCD7C9] px-4 py-2 text-sm text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-50"
+            >
+              {savingField ? "Đang lưu…" : "Lưu"}
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-[#8A919C]">
+            Legal AI sẽ ưu tiên kết quả phù hợp với lĩnh vực này khi tra cứu, đặc biệt ở mục “Đánh
+            giá pháp lý &amp; rủi ro”.
+          </p>
         </div>
 
         {/* Chế độ */}
@@ -196,6 +261,59 @@ export default function LegalLookupPage() {
                   </button>
                 ))}
               </div>
+
+              {!!info?.recent_searches.length && (
+                <div>
+                  <p className="text-xs font-medium text-[#5B6472] flex items-center gap-1 mb-1.5">
+                    <History size={12} /> Tra cứu gần đây
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {info.recent_searches.map((h) => (
+                      <button
+                        key={h.query}
+                        type="button"
+                        disabled={!enabled}
+                        onClick={() => {
+                          if (h.mode === "keyword") {
+                            setMode("keyword");
+                            setKeyword(h.query);
+                            run(h.query, "keyword");
+                          } else {
+                            setMode("clause");
+                            setClause(h.query);
+                            run(h.query, "clause");
+                          }
+                        }}
+                        className="text-xs px-3 py-1 rounded-full border border-dashed border-[#DCD7C9] bg-[#FAF8F3] text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-60"
+                      >
+                        {h.query.length > 60 ? `${h.query.slice(0, 60)}…` : h.query}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label
+                  htmlFor="legal-live-request"
+                  className="block text-xs font-medium text-[#5B6472] mb-1"
+                >
+                  Yêu cầu tra cứu <span className="font-normal text-[#8A919C]">(tuỳ chọn)</span>
+                </label>
+                <input
+                  id="legal-live-request"
+                  type="text"
+                  value={requestText}
+                  onChange={(e) => setRequestText(e.target.value)}
+                  maxLength={500}
+                  placeholder="Ví dụ: Trình tự thủ tục cần thực hiện; Biện pháp giúp hạn chế rủi ro pháp lý…"
+                  aria-label="Yêu cầu tra cứu"
+                  className="w-full rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
+                />
+                <p className="mt-1 text-xs text-[#8A919C]">
+                  Nêu rõ bạn cần gì để mục “Đánh giá pháp lý &amp; rủi ro” trả lời đúng trọng tâm hơn.
+                </p>
+              </div>
             </>
           ) : (
             <>
@@ -228,7 +346,7 @@ export default function LegalLookupPage() {
 
         <p className="text-xs text-[#8A919C] mb-6">
           {typeof remaining === "number"
-            ? `Còn ${remaining} lượt tra cứu hôm nay (mỗi lần tra cứu dùng 3 lượt). `
+            ? `Còn ${remaining} lượt tra cứu hôm nay (mỗi lần tra cứu dùng 4 lượt). `
             : ""}
           {lowQuota && "Số lượt còn ít: một số nhóm kết quả có thể không tra cứu được."}
         </p>
@@ -249,6 +367,7 @@ export default function LegalLookupPage() {
                 domains={domainsOf(g)}
                 query={submitted.q}
                 mode={submitted.mode}
+                requestText={submitted.requestText}
                 onRemaining={onRemaining}
                 onUnauthorized={onUnauthorized}
               />
