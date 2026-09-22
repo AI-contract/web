@@ -15,6 +15,7 @@ import type { FormEvent } from "react";
 import { Briefcase, History, Info, Loader2, Search } from "lucide-react";
 import {
   ApiError,
+  LiveGroup,
   LiveInfo,
   LiveMode,
   getLegalLiveInfo,
@@ -22,9 +23,9 @@ import {
 } from "@/lib/api";
 import {
   DISCLAIMER_FALLBACK,
-  GROUP_META,
-  GROUP_ORDER,
+  DISPLAY_SECTIONS,
   LiveGroupSection,
+  LiveMergedGroupSection,
   PageHeader,
   useAuthGuard,
 } from "./_components/live";
@@ -127,8 +128,9 @@ export default function LegalLookupPage() {
   }
 
   const enabled = info?.enabled !== false;
-  const domainsOf = (g: (typeof GROUP_ORDER)[number]) =>
-    info?.groups.find((x) => x.value === g)?.domains ?? [];
+  const domainsOf = (g: LiveGroup) => info?.groups.find((x) => x.value === g)?.domains ?? [];
+  const sectionDomainsOf = (section: (typeof DISPLAY_SECTIONS)[number]) =>
+    section.groups.flatMap((g) => domainsOf(g));
   const lowQuota = typeof remaining === "number" && remaining < 3;
 
   return (
@@ -147,10 +149,10 @@ export default function LegalLookupPage() {
             đến từ khóa của bạn, kèm link nguồn để đối chiếu.
           </p>
           <ul className="list-disc pl-5 mt-2 space-y-0.5 text-[#5B6472]">
-            {GROUP_ORDER.map((g) => (
-              <li key={g}>
-                <strong>{GROUP_META[g].label}:</strong>{" "}
-                {domainsOf(g).length ? domainsOf(g).join(", ") : GROUP_META[g].hint}
+            {DISPLAY_SECTIONS.map((section) => (
+              <li key={section.key}>
+                <strong>{section.label}:</strong>{" "}
+                {sectionDomainsOf(section).length ? sectionDomainsOf(section).join(", ") : section.hint}
               </li>
             ))}
           </ul>
@@ -360,18 +362,32 @@ export default function LegalLookupPage() {
                 “{submitted.q.length > 120 ? `${submitted.q.slice(0, 120)}…` : submitted.q}”
               </span>
             </p>
-            {GROUP_ORDER.map((g) => (
-              <LiveGroupSection
-                key={g}
-                group={g}
-                domains={domainsOf(g)}
-                query={submitted.q}
-                mode={submitted.mode}
-                requestText={submitted.requestText}
-                onRemaining={onRemaining}
-                onUnauthorized={onUnauthorized}
-              />
-            ))}
+            {DISPLAY_SECTIONS.map((section) =>
+              section.groups.length === 1 ? (
+                <LiveGroupSection
+                  key={section.key}
+                  group={section.groups[0]}
+                  domains={sectionDomainsOf(section)}
+                  query={submitted.q}
+                  mode={submitted.mode}
+                  requestText={submitted.requestText}
+                  onRemaining={onRemaining}
+                  onUnauthorized={onUnauthorized}
+                />
+              ) : (
+                <LiveMergedGroupSection
+                  key={section.key}
+                  groups={section.groups}
+                  label={section.label}
+                  domains={sectionDomainsOf(section)}
+                  query={submitted.q}
+                  mode={submitted.mode}
+                  requestText={submitted.requestText}
+                  onRemaining={onRemaining}
+                  onUnauthorized={onUnauthorized}
+                />
+              )
+            )}
           </div>
         )}
 

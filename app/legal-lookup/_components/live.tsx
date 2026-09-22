@@ -70,6 +70,29 @@ export const GROUP_META: Record<
   },
 };
 
+// ---------------------------------------------------------------
+// Hiển thị: gộp 2 nhóm "Án lệ" và "Bản án" thành 1 khối trên UI
+// ("Án lệ/Bản án"), trong khi vẫn gọi 2 API riêng (2 nguồn khác nhau:
+// anle.toaan.gov.vn và congbobanan.toaan.gov.vn) rồi hợp kết quả lại.
+// ---------------------------------------------------------------
+export interface DisplaySection {
+  key: string;
+  groups: LiveGroup[];
+  label: string;
+  hint: string;
+}
+
+export const DISPLAY_SECTIONS: DisplaySection[] = [
+  { key: "van_ban", groups: ["van_ban"], label: GROUP_META.van_ban.label, hint: GROUP_META.van_ban.hint },
+  {
+    key: "an_le_ban_an",
+    groups: ["an_le", "ban_an"],
+    label: "Án lệ/Bản án",
+    hint: `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`,
+  },
+  { key: "danh_gia", groups: ["danh_gia"], label: GROUP_META.danh_gia.label, hint: GROUP_META.danh_gia.hint },
+];
+
 const RISK_META: Record<"cao" | "trung_binh" | "thap", { label: string; tone: string }> = {
   cao: { label: "Rủi ro cao", tone: "bg-red-50 text-red-700 border-red-200" },
   trung_binh: { label: "Rủi ro trung bình", tone: "bg-orange-50 text-orange-800 border-orange-200" },
@@ -509,6 +532,132 @@ export function LiveGroupSection({
         <div className="space-y-3">
           {data.items.map((item) => (
             <LiveResultCard key={item.url} item={item} group={group} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------
+// Khối kết quả GỘP nhiều nhóm nguồn vào 1 section hiển thị (vd "Án lệ/Bản
+// án"): mỗi nhóm vẫn gọi API/tải/lỗi độc lập, nhưng phần hiển thị (tiêu đề,
+// trạng thái đang tải, danh sách kết quả) được hợp nhất làm một.
+// ---------------------------------------------------------------
+export function LiveMergedGroupSection({
+  groups,
+  label,
+  domains,
+  query,
+  mode,
+  requestText,
+  onRemaining,
+  onUnauthorized,
+}: {
+  groups: LiveGroup[];
+  label: string;
+  domains: string[];
+  query: string;
+  mode: LiveMode;
+  requestText?: string;
+  onRemaining: (remaining: number | null) => void;
+  onUnauthorized: () => void;
+}) {
+  const [nonce, setNonce] = useState(0);
+  const [loadedByGroup, setLoadedByGroup] = useState<Partial<Record<LiveGroup, Loaded>>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    groups.forEach((g) => {
+      searchLegalLive(g, query, mode, requestText)
+        .then((data) => {
+          if (cancelled) return;
+          setLoadedByGroup((prev) => ({ ...prev, [g]: { nonce, data, error: null, status: null } }));
+          onRemaining(data.remaining_calls);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (err instanceof ApiError && err.status === 401) {
+            onUnauthorized();
+            return;
+          }
+          setLoadedByGroup((prev) => ({
+            ...prev,
+            [g]: {
+              nonce,
+              data: null,
+              error: errorMessage(err),
+              status: err instanceof ApiError ? err.status : null,
+            },
+          }));
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups.join(","), query, mode, requestText, nonce, onRemaining, onUnauthorized]);
+
+  const entries = groups.map((g) => ({ group: g, loaded: loadedByGroup[g] ?? null }));
+  const loading = entries.some((e) => !e.loaded || e.loaded.nonce !== nonce);
+  const settled = entries.filter((e) => e.loaded && e.loaded.nonce === nonce);
+  const errors = settled
+    .filter((e) => e.loaded?.error)
+    .map((e) => ({ group: e.group, message: e.loaded!.error!, status: e.loaded!.status }));
+  const items = settled.flatMap((e) =>
+    (e.loaded?.data?.items ?? []).map((item) => ({ item, group: e.group }))
+  );
+  const notice = settled.map((e) => e.loaded?.data?.notice).find(Boolean) ?? null;
+  const domainText = domains.length ? domains.join(", ") : null;
+  const canRetry = errors.some((e) => e.status !== 429);
+
+  return (
+    <section aria-label={label} className="mb-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <h2 className="text-base font-semibold text-[#1C2333]">
+          {label}
+          {!loading && items.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-[#5B6472]">({items.length} kết quả)</span>
+          )}
+        </h2>
+        {domainText && <p className="text-xs text-[#8A919C]">Nguồn: {domainText}</p>}
+      </div>
+
+      {loading && (
+        <div className="flex items-center gap-2 bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 text-sm text-[#5B6472]">
+          <Loader2 size={16} className="animate-spin text-[#9C7A3C]" />
+          Đang tìm trên các nguồn chính thống… (có thể mất 10–60 giây)
+        </div>
+      )}
+
+      {!loading && errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-5 py-4 text-sm text-red-700 mb-3">
+          {errors.map((e) => (
+            <p key={e.group}>
+              {GROUP_META[e.group].label}: {e.message}
+            </p>
+          ))}
+          {canRetry && (
+            <button
+              onClick={() => setNonce((n) => n + 1)}
+              className="mt-2 inline-flex items-center gap-1.5 text-red-700 underline"
+            >
+              <RefreshCw size={13} /> Thử lại
+            </button>
+          )}
+        </div>
+      )}
+
+      {!loading && errors.length === 0 && items.length === 0 && (
+        <div className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 text-sm text-[#5B6472]">
+          {notice ?? "Không tìm thấy nội dung phù hợp trên các nguồn chính thống."}
+        </div>
+      )}
+
+      {!loading && items.length > 0 && (
+        <div className="space-y-3">
+          {items.map(({ item, group }) => (
+            <LiveResultCard key={`${group}-${item.url}`} item={item} group={group} />
           ))}
         </div>
       )}
