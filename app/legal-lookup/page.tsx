@@ -29,6 +29,7 @@ import {
   PageHeader,
   useAuthGuard,
 } from "./_components/live";
+import ContributeBox from "./_components/contribute";
 
 const EXAMPLES = [
   "Tranh chấp hợp đồng lao động",
@@ -158,13 +159,13 @@ export default function LegalLookupPage() {
           </ul>
         </div>
 
-        {/* Lĩnh vực hoạt động — cá nhân hoá tra cứu */}
+        {/* Lĩnh vực — cá nhân hoá tra cứu */}
         <div className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 mb-6">
           <label
             htmlFor="legal-live-business-field"
             className="text-sm font-semibold text-[#1C2333] flex items-center gap-1.5 mb-2"
           >
-            <Briefcase size={16} className="text-[#9C7A3C]" /> Lĩnh vực hoạt động
+            <Briefcase size={16} className="text-[#9C7A3C]" /> Lĩnh vực
           </label>
           <div className="flex gap-2">
             <input
@@ -174,7 +175,7 @@ export default function LegalLookupPage() {
               onChange={(e) => setBusinessField(e.target.value)}
               maxLength={200}
               placeholder="Ví dụ: Bất động sản, Thương mại điện tử, Xây dựng…"
-              aria-label="Lĩnh vực hoạt động"
+              aria-label="Lĩnh vực"
               className="flex-1 rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
             />
             <button
@@ -187,10 +188,14 @@ export default function LegalLookupPage() {
             </button>
           </div>
           <p className="mt-1.5 text-xs text-[#8A919C]">
-            Legal AI sẽ ưu tiên kết quả phù hợp với lĩnh vực này khi tra cứu, đặc biệt ở mục “Đánh
-            giá pháp lý &amp; rủi ro”.
+            Legal AI sẽ ưu tiên kết quả phù hợp với lĩnh vực này khi tra cứu, đặc biệt ở mục “Kết
+            quả tổng hợp”.
           </p>
         </div>
+
+        {/* Cập nhật VBPL/Án lệ/Bản án — Admin + khách hàng đóng góp nguồn */}
+        <ContributeBox />
+
 
         {/* Chế độ */}
         <div className="inline-flex rounded-md border border-[#DCD7C9] bg-white p-1 mb-3">
@@ -313,7 +318,7 @@ export default function LegalLookupPage() {
                   className="w-full rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
                 />
                 <p className="mt-1 text-xs text-[#8A919C]">
-                  Nêu rõ bạn cần gì để mục “Đánh giá pháp lý &amp; rủi ro” trả lời đúng trọng tâm hơn.
+                  Nêu rõ bạn cần gì để mục “Kết quả tổng hợp” trả lời đúng trọng tâm hơn.
                 </p>
               </div>
             </>

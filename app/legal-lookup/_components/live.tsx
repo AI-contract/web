@@ -63,7 +63,7 @@ export const GROUP_META: Record<
     badge: "bg-amber-50 text-amber-800 border-amber-200",
   },
   danh_gia: {
-    label: "Đánh giá pháp lý & rủi ro",
+    label: "Kết quả tổng hợp",
     hint: "Phân tích sơ bộ do AI tổng hợp từ quy định pháp luật và nguồn mở — chỉ tham khảo",
     excerptLabel: "Phân tích",
     badge: "bg-rose-50 text-rose-700 border-rose-200",

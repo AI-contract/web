@@ -832,4 +832,39 @@ export function saveLegalBusinessField(businessField: string) {
   });
 }
 
+// ---------------------------------------------------------------
+// "Cập nhật VBPL/Án lệ/Bản án" — Admin + khách hàng dán văn bản/nguồn,
+// Legal AI tự phân loại rồi lưu vào cơ sở dữ liệu tra cứu để dùng cho các
+// lượt tra cứu sau (POST /legal/contribute).
+// ---------------------------------------------------------------
+export interface LegalContributeResult {
+  id: number;
+  created: boolean;
+  doc_type: string;
+  doc_type_label: string;
+  fields: string[];
+  field_labels: string[];
+  topics: string[];
+  title: string;
+  status: string;
+  status_label: string;
+  chunk_count: number;
+  message: string;
+}
+
+export function contributeLegalDocument(
+  content: string,
+  sourceName?: string,
+  sourceUrl?: string
+) {
+  return request<LegalContributeResult>("/legal/contribute", {
+    method: "POST",
+    body: JSON.stringify({
+      content,
+      source_name: sourceName?.trim() || null,
+      source_url: sourceUrl?.trim() || null,
+    }),
+  });
+}
+
 export { ApiError };
