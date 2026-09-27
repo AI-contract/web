@@ -127,7 +127,25 @@ export interface ContractReviewOut {
   revised_contract_text: string | null;
   revised_contract_type: string | null;
   revised_contract_title: string | null;
+  detected_contract_type: string | null;
+  title_mismatch_warning: string | null;
   created_at: string;
+}
+
+// Kết quả bước phân loại loại hợp đồng, chạy TRƯỚC khi review đầy đủ
+// (xem POST /review-contract/classify) — dùng để hiển thị bước xác nhận
+// "Hệ thống nhận diện đây là: <loại>, bạn có xác nhận không?" trước khi
+// người dùng bấm "Phân tích hợp đồng", tránh review bị áp nhầm khung pháp
+// lý của một loại hợp đồng khác.
+export interface ContractClassifyOut {
+  contract_type: string;
+  type_label: string;
+  title_in_document: string | null;
+  title_mismatch: boolean;
+  reason: string;
+  // key (contract_type) -> nhãn hiển thị tiếng Việt, dùng để dựng dropdown
+  // cho người dùng tự chọn lại nếu AI đoán sai.
+  valid_types: Record<string, string>;
 }
 
 export interface ContractTypeFields {
@@ -282,9 +300,54 @@ export function downloadContractPdf(id: number, fileName: string) {
 // multipart form field — backend cần đọc field "goals" (str) rồi
 // json.loads(...) thành list[str], thay vì List[str] trực tiếp
 // (multipart form không hỗ trợ mảng JSON gốc).
+// Bước phân loại loại hợp đồng, gọi NGAY sau khi người dùng chọn file,
+// TRƯỚC khi chạy review đầy đủ — xem ContractClassifyOut ở trên. Không
+// trừ quota, không lưu gì vào DB (server-side stateless).
+export async function classifyContract(
+  file: File
+): Promise<ContractClassifyOut> {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_URL}/review-contract/classify`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail || detail;
+    } catch {
+      // response wasn't JSON — keep statusText
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  return res.json();
+}
+
 export async function reviewContract(
   file: File,
-  options?: { goals?: string[]; custom_instructions?: string }
+  options?: {
+    goals?: string[];
+    custom_instructions?: string;
+    // Loại hợp đồng người dùng đã XÁC NHẬN ở bước classifyContract() (hoặc
+    // tự chọn lại nếu AI đoán sai) — nên LUÔN truyền để tránh review bị áp
+    // nhầm khung pháp lý của loại hợp đồng khác.
+    contract_type?: string;
+    // Loại hợp đồng AI ĐỀ XUẤT BAN ĐẦU (nguyên giá trị classifyContract()
+    // trả về, TRƯỚC KHI người dùng có thể tự sửa lại ở dropdown) — PHẢI
+    // truyền tách biệt với `contract_type` ở trên. Nếu gộp chung 1 giá trị
+    // (gửi contract_type rồi để backend tự suy ra "detected"), một khi
+    // người dùng sửa lại loại AI đoán sai, backend sẽ mất hoàn toàn tín
+    // hiệu để đo lường độ chính xác phân loại — đây là lỗi đã từng xảy ra,
+    // xem CHANGELOG.
+    ai_detected_contract_type?: string;
+  }
 ): Promise<ContractReviewOut> {
   const token = getToken();
   const formData = new FormData();
@@ -295,6 +358,15 @@ export async function reviewContract(
   }
   if (options?.custom_instructions) {
     formData.append("custom_instructions", options.custom_instructions);
+  }
+  if (options?.contract_type) {
+    formData.append("contract_type", options.contract_type);
+  }
+  if (options?.ai_detected_contract_type) {
+    formData.append(
+      "ai_detected_contract_type",
+      options.ai_detected_contract_type
+    );
   }
 
   const res = await fetch(`${API_URL}/review-contract`, {

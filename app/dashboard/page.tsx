@@ -9,8 +9,10 @@ import {
   askAssistant,
   ChatMessage,
   ContractOut,
+  ContractClassifyOut,
   ContractReviewOut,
   UserMe,
+  classifyContract,
   clearToken,
   downloadContractDocx,
   downloadContractPdf,
@@ -1368,6 +1370,41 @@ export default function Home() {
   const [reviews, setReviews] = useState<ContractReviewOut[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
 
+  // ---- bước xác nhận loại hợp đồng (chạy TRƯỚC khi review đầy đủ) ----
+  // Gọi ngay sau khi người dùng chọn file, để hiển thị "Hệ thống nhận
+  // diện đây là: <loại>, bạn có xác nhận không?" — người dùng có thể tự
+  // chọn lại nếu AI đoán sai, TRƯỚC KHI bấm "Phân tích hợp đồng". Đây là
+  // bước khắc phục trực tiếp rủi ro "review nhầm loại hợp đồng" (vd hợp
+  // đồng mua bán quyền sử dụng đất bị review theo khung mua bán hàng hóa).
+  const [classifying, setClassifying] = useState(false);
+  const [classifyResult, setClassifyResult] =
+    useState<ContractClassifyOut | null>(null);
+  const [classifyError, setClassifyError] = useState<string | null>(null);
+  const [confirmedContractType, setConfirmedContractType] = useState<
+    string | null
+  >(null);
+
+  const runClassify = async (file: File) => {
+    setClassifying(true);
+    setClassifyError(null);
+    setClassifyResult(null);
+    setConfirmedContractType(null);
+    try {
+      const result = await classifyContract(file);
+      setClassifyResult(result);
+      setConfirmedContractType(result.contract_type);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Không phân loại được loại hợp đồng. Bạn vẫn có thể tiếp tục " +
+            "review, hệ thống sẽ tự phân loại lại khi phân tích.";
+      setClassifyError(message);
+    } finally {
+      setClassifying(false);
+    }
+  };
+
   // ---- yêu cầu review: mục tiêu (chọn nhanh) + văn bản pháp luật/
   // yêu cầu riêng (tự do) - tải mặc định đã lưu theo tài khoản khi
   // vào trang, nhưng vẫn sửa được cho từng lần review cụ thể ----
@@ -1659,6 +1696,12 @@ export default function Home() {
     const file = e.target.files?.[0] ?? null;
     setSelectedFile(file);
     setReviewError(null);
+    setClassifyResult(null);
+    setClassifyError(null);
+    setConfirmedContractType(null);
+    if (file) {
+      runClassify(file);
+    }
   };
 
   const handleReview = async (e: React.FormEvent) => {
@@ -1672,10 +1715,22 @@ export default function Home() {
       const review = await reviewContract(selectedFile, {
         goals: reviewGoals,
         custom_instructions: reviewInstructions,
+        // Loại hợp đồng người dùng đã xác nhận (hoặc tự chọn lại) ở bước
+        // phân loại phía trên — nếu vì lý do gì đó bước phân loại chưa
+        // chạy xong/lỗi, để trống và để backend tự phân loại nội bộ
+        // (kém an toàn hơn, chỉ là phương án dự phòng).
+        contract_type: confirmedContractType ?? undefined,
+        // Giá trị AI đề xuất BAN ĐẦU, lấy từ classifyResult (KHÔNG đổi
+        // theo dropdown) — tách biệt với contract_type ở trên (có thể đã
+        // bị người dùng sửa lại), để backend lưu đúng tín hiệu phục vụ đo
+        // lường độ chính xác phân loại.
+        ai_detected_contract_type: classifyResult?.contract_type ?? undefined,
       });
       setLastReview(review);
       setReviewResultTab("analysis");
       setSelectedFile(null);
+      setClassifyResult(null);
+      setConfirmedContractType(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       refreshReviews();
       refreshUser();
@@ -2290,6 +2345,71 @@ export default function Home() {
                   className="block w-full text-sm border rounded-lg px-3 py-2 bg-white disabled:opacity-50"
                 />
 
+                {/* Bước xác nhận loại hợp đồng — chạy TRƯỚC khi review
+                    đầy đủ, để tránh áp nhầm khung pháp lý của loại hợp
+                    đồng khác (vd hợp đồng mua bán quyền sử dụng đất bị
+                    review theo khung mua bán hàng hóa). */}
+                {selectedFile && (
+                  <div className="mt-4 border border-[#DCD7C9] rounded-md p-4 bg-[#FAF8F3]">
+                    {classifying && (
+                      <div className="flex items-center gap-2 text-sm text-[#5B6472]">
+                        <Loader2 size={16} className="animate-spin" />
+                        Đang nhận diện loại hợp đồng...
+                      </div>
+                    )}
+
+                    {!classifying && classifyError && (
+                      <p className="text-sm text-amber-700">
+                        {classifyError}
+                      </p>
+                    )}
+
+                    {!classifying && classifyResult && (
+                      <div>
+                        {classifyResult.title_mismatch && (
+                          <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-md p-3 mb-3 text-sm">
+                            <strong>Cảnh báo:</strong> Tên hợp đồng ghi
+                            trong file
+                            {classifyResult.title_in_document
+                              ? ` ("${classifyResult.title_in_document}")`
+                              : ""}{" "}
+                            có thể KHÔNG khớp với bản chất nội dung.{" "}
+                            {classifyResult.reason}
+                          </div>
+                        )}
+
+                        <label className="block text-sm font-medium mb-1 text-[#1C2333]">
+                          Hệ thống nhận diện đây là:{" "}
+                          <span className="font-semibold">
+                            {classifyResult.type_label}
+                          </span>
+                          . Bạn có xác nhận không?
+                        </label>
+                        <p className="text-xs text-[#5B6472] mb-2">
+                          Nếu không đúng, vui lòng chọn lại loại hợp đồng
+                          chính xác trước khi phân tích.
+                        </p>
+
+                        <select
+                          value={confirmedContractType ?? ""}
+                          onChange={(e) =>
+                            setConfirmedContractType(e.target.value)
+                          }
+                          className="w-full sm:w-auto border border-[#DCD7C9] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                        >
+                          {Object.entries(classifyResult.valid_types).map(
+                            ([key, label]) => (
+                              <option key={key} value={key}>
+                                {label}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-6 pt-6 border-t border-[#DCD7C9]">
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-sm font-medium text-[#1C2333]">
@@ -2352,6 +2472,7 @@ export default function Home() {
                   disabled={
                     reviewing ||
                     !selectedFile ||
+                    classifying ||
                     reviewBlockedForFree ||
                     reviewLimitReached
                   }
@@ -2377,6 +2498,13 @@ export default function Home() {
                   <h3 className="text-xl font-semibold mb-4 text-[#1C2333]">
                     {ui.resultTitle(lastReview.original_filename)}
                   </h3>
+
+                  {lastReview.title_mismatch_warning && (
+                    <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-md p-3 mb-4 text-sm">
+                      <strong>Cảnh báo:</strong>{" "}
+                      {lastReview.title_mismatch_warning}
+                    </div>
+                  )}
 
                   <div className="flex gap-2 mb-4">
                     <button
