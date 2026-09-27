@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Scale,
   ScanSearch,
+  Search,
   CheckCircle2,
   Menu,
   X,
@@ -170,6 +171,11 @@ const FEATURES: Record<
 > = {
   vi: [
     {
+      icon: Search,
+      title: "Tra cứu pháp lý theo từ khóa/tình huống",
+      desc: "Nhập từ khóa hoặc mô tả tình huống, AI tra cứu và trích dẫn đúng điều luật, nghị định liên quan kèm giải thích dễ hiểu.",
+    },
+    {
       icon: FileSignature,
       title: "Tạo hợp đồng từ thư viện điều khoản chuẩn",
       desc: "Soạn nhanh 5 loại hợp đồng phổ biến: Dịch vụ, Lao động, Mua bán, NDA, Thử việc — điền thông tin, AI ghép đúng thứ tự Điều khoản chuẩn.",
@@ -191,6 +197,11 @@ const FEATURES: Record<
     },
   ],
   en: [
+    {
+      icon: Search,
+      title: "Legal lookup by keyword or situation",
+      desc: "Enter a keyword or describe your situation — AI finds and cites the relevant laws and decrees with an easy-to-understand explanation.",
+    },
     {
       icon: FileSignature,
       title: "Generate contracts from a standard clause library",
@@ -214,6 +225,11 @@ const FEATURES: Record<
   ],
   zh: [
     {
+      icon: Search,
+      title: "按关键词/情况检索法律",
+      desc: "输入关键词或描述情况，AI 检索并引用相关法律法规，并给出通俗易懂的解释。",
+    },
+    {
       icon: FileSignature,
       title: "通过标准条款库生成合同",
       desc: "快速起草 5 种常见合同：服务、劳动、买卖、保密协议、试用——填写信息，AI 按标准条款顺序自动组合。",
@@ -236,6 +252,11 @@ const FEATURES: Record<
   ],
   ko: [
     {
+      icon: Search,
+      title: "키워드/상황별 법률 검색",
+      desc: "키워드를 입력하거나 상황을 설명하면 AI가 관련 법률·시행령을 찾아 인용하고 이해하기 쉬운 설명을 제공합니다.",
+    },
+    {
       icon: FileSignature,
       title: "표준 조항 라이브러리로 계약서 생성",
       desc: "서비스, 근로, 매매, NDA, 수습 등 5가지 계약서를 빠르게 작성 — 정보만 입력하면 AI가 표준 조항 순서대로 조합합니다.",
@@ -257,6 +278,11 @@ const FEATURES: Record<
     },
   ],
   ja: [
+    {
+      icon: Search,
+      title: "キーワード・状況別の法令検索",
+      desc: "キーワードを入力するか状況を説明すると、AIが関連する法律・政令を検索して引用し、分かりやすく説明します。",
+    },
     {
       icon: FileSignature,
       title: "標準条項ライブラリから契約書を作成",
@@ -767,10 +793,17 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {FEATURES[lang].map((f, i) => {
             const Icon = f.icon;
+            const items = FEATURES[lang];
+            const isLastOdd =
+              items.length % 2 === 1 && i === items.length - 1;
             return (
               <div
                 key={i}
-                className="bg-white rounded-lg border border-[#DCD7C9] p-6 flex gap-4"
+                className={`bg-white rounded-lg border border-[#DCD7C9] p-6 flex gap-4${
+                  isLastOdd
+                    ? " md:col-span-2 md:max-w-[calc(50%-0.75rem)] md:mx-auto"
+                    : ""
+                }`}
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#9C7A3C]/10 border border-[#9C7A3C]/30">
                   <Icon size={20} className="text-[#9C7A3C]" />
