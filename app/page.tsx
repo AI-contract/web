@@ -38,9 +38,9 @@ const T: Record<Lang, Record<string, string>> = {
     tryFree: "Dùng thử miễn phí",
     heroTag: "Nền tảng AI pháp lý",
     heroTitle:
-      "Soạn thảo & Review hợp đồng chuẩn theo pháp luật Việt Nam",
+      "Tra cứu pháp lý & Soạn thảo & Review hợp đồng chuẩn theo pháp luật Việt Nam",
     heroSubtitle:
-      "Tạo nhanh 5 loại hợp đồng phổ biến từ thư viện điều khoản chuẩn; Rà soát rủi ro pháp lý và kèm bản chỉnh sửa — chỉ trong vài phút.",
+      "Tra cứu pháp lý theo từ khóa/tình huống; Tạo nhanh các loại hợp đồng phổ biến từ thư viện điều khoản chuẩn; Rà soát rủi ro pháp lý và kèm bản chỉnh sửa — chỉ trong vài phút.",
     ctaLearnFeatures: "Tìm hiểu tính năng",
     featuresTag: "Tính năng",
     featuresTitle: "Tính năng nổi bật của Legal AI",
