@@ -605,11 +605,12 @@ const UI_TEXT: Record<Lang, {
     viewBtn: "Xem",
 
     heroTag: "Nền tảng AI pháp lý",
-    heroTitle: "Soạn thảo & Review hợp đồng chuẩn theo pháp luật Việt Nam",
+    heroTitle: "Tra cứu pháp lý; Soạn thảo & Review hợp đồng chuẩn theo pháp luật Việt Nam",
     heroSubtitle:
-      "Tạo nhanh 5 loại hợp đồng phổ biến từ thư viện điều khoản chuẩn; Rà soát rủi ro pháp lý và kèm bản chỉnh sửa — chỉ trong vài phút.",
+      "Tra cứu pháp lý theo tình huống/từ khóa, lĩnh vực; Tạo nhanh các loại hợp đồng phổ biến từ thư viện điều khoản chuẩn; Rà soát rủi ro pháp lý và kèm bản chỉnh sửa — chỉ trong vài phút.",
     featuresTitle: "Tính năng nổi bật của Legal AI",
     featuresList: [
+      "Tra cứu pháp lý theo tình huống/từ khóa, lĩnh vực.",
       "Tạo hợp đồng từ thư viện điều khoản chuẩn, đủ 5 loại hợp đồng phổ biến (Dịch vụ, Lao động, Mua bán, NDA, Thử việc).",
       "Rà soát rủi ro pháp lý của hợp đồng và tự soạn lại bản đã chỉnh sửa.",
       "Tùy chọn yêu cầu review theo mục tiêu bảo vệ quyền lợi và căn cứ pháp luật riêng.",
@@ -1835,6 +1836,13 @@ export default function Home() {
             <Info size={18} />
             <span className="text-sm">{ui.navIntro}</span>
           </button>
+          <Link
+            href="/legal-lookup"
+            className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
+          >
+            <Scale size={18} />
+            <span className="text-sm font-bold">Tra cứu pháp lý</span>
+          </Link>
           <button
             onClick={() => setTab("generate")}
             className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
@@ -1844,7 +1852,7 @@ export default function Home() {
             }`}
           >
             <FileText size={18} />
-            <span className="text-sm">{ui.navGenerate}</span>
+            <span className="text-sm font-bold">{ui.navGenerate}</span>
           </button>
           <button
             onClick={() => setTab("review")}
@@ -1855,19 +1863,12 @@ export default function Home() {
             }`}
           >
             <ScanSearch size={18} />
-            <span className="text-sm">{ui.navReview}</span>
+            <span className="text-sm font-bold">{ui.navReview}</span>
           </button>
 
           {/* Các tính năng mới: mở trang riêng (không dùng chung state
               `tab` ở trên) — giữ style border-l-2 nhất quán với các
               mục nav khác. */}
-          <Link
-            href="/legal-lookup"
-            className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
-          >
-            <Scale size={18} />
-            <span className="text-sm">Tra cứu pháp lý</span>
-          </Link>
           <Link
             href="/clause-library"
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"

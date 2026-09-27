@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Legal AI — Soạn thảo & Review hợp đồng",
+    default: "Legal AI - Tra cứu pháp lý, Soạn thảo và Review hợp đồng",
     template: "%s | Legal AI",
   },
   description:
