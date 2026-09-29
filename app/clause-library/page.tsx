@@ -30,6 +30,8 @@ export default function ClauseLibraryPage() {
 
   const [openClause, setOpenClause] = useState<ClauseContent | null>(null);
   const [loadingClauseContent, setLoadingClauseContent] = useState(false);
+  // Nhãn hiển thị của điều khoản đang mở (vd "Điều 3. Mục đích đặt cọc")
+  const [openLabel, setOpenLabel] = useState<string>("");
 
   const [error, setError] = useState<string | null>(null);
 
@@ -62,8 +64,9 @@ export default function ClauseLibraryPage() {
       .finally(() => setLoadingClauses(false));
   }
 
-  function openClauseContent(clauseName: string) {
+  function openClauseContent(clauseName: string, label: string) {
     if (!selectedIndustry) return;
+    setOpenLabel(label);
     setLoadingClauseContent(true);
     setError(null);
     getClauseContent(selectedIndustry, clauseName)
@@ -162,7 +165,9 @@ export default function ClauseLibraryPage() {
                 {clauses.map((clause) => (
                   <button
                     key={clause.clause_name}
-                    onClick={() => openClauseContent(clause.clause_name)}
+                    onClick={() =>
+                      openClauseContent(clause.clause_name, clause.label)
+                    }
                     className="w-full text-left bg-white border border-[#DCD7C9] rounded-md p-4 hover:border-[#9C7A3C] transition"
                   >
                     <div className="flex items-center justify-between">
@@ -171,7 +176,7 @@ export default function ClauseLibraryPage() {
                       </span>
                       <ChevronRight size={16} className="text-[#9C7A3C]" />
                     </div>
-                    {clause.preview && (
+                    {clause.preview && clause.article_number == null && (
                       <p className="text-sm text-[#5B6472] mt-1 line-clamp-1">
                         {clause.preview}
                       </p>
@@ -196,7 +201,7 @@ export default function ClauseLibraryPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-[#1C2333]">
-                {openClause?.clause_name ?? "Đang tải..."}
+                {openLabel || (openClause?.clause_name ?? "Đang tải...")}
               </h3>
               <button
                 onClick={() => setOpenClause(null)}

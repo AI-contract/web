@@ -152,6 +152,9 @@ export interface ContractTypeFields {
   contract_type: string;
   title: string;
   required_fields: string[];
+  // Nhãn tiếng Việt từng field do backend trả (chỉ có ở bản backend mới;
+  // bản cũ không có khóa này nên để optional).
+  field_labels?: Record<string, string>;
 }
 
 export interface BillingStatus {
@@ -473,6 +476,52 @@ export function savePartyBProfile(fields: Record<string, string>) {
 }
 
 // ---------------------------------------------------------------
+// Mẫu hợp đồng đã lưu (cá nhân hóa theo tài khoản)
+// ---------------------------------------------------------------
+export interface SavedContractTemplate {
+  id: number;
+  contract_type: string;
+  name: string;
+  data: Record<string, string>;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export function listSavedTemplates(contractType?: string) {
+  const qs = contractType
+    ? `?contract_type=${encodeURIComponent(contractType)}`
+    : "";
+  return request<SavedContractTemplate[]>(`/saved-templates${qs}`);
+}
+
+export function createSavedTemplate(
+  contractType: string,
+  name: string,
+  data: Record<string, string>
+) {
+  return request<SavedContractTemplate>("/saved-templates", {
+    method: "POST",
+    body: JSON.stringify({ contract_type: contractType, name, data }),
+  });
+}
+
+export function updateSavedTemplate(
+  id: number,
+  patch: { name?: string; data?: Record<string, string> }
+) {
+  return request<SavedContractTemplate>(`/saved-templates/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(patch),
+  });
+}
+
+export function deleteSavedTemplate(id: number) {
+  return request<{ detail: string }>(`/saved-templates/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// ---------------------------------------------------------------
 // Billing
 // ---------------------------------------------------------------
 
@@ -643,6 +692,9 @@ export interface ClauseSummary {
   clause_name: string;
   label: string;
   preview: string;
+  // Số Điều (1, 2, 3...) theo đúng thứ tự dựng hợp đồng; null với mục
+  // "Thông tin các bên" và các điều khoản mẫu bổ sung chưa có số Điều.
+  article_number?: number | null;
 }
 
 export interface ClauseContent {

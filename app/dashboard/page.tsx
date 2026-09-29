@@ -11,6 +11,7 @@ import {
   ContractOut,
   ContractClassifyOut,
   ContractReviewOut,
+  SavedContractTemplate,
   UserMe,
   classifyContract,
   clearToken,
@@ -19,6 +20,8 @@ import {
   downloadRevisedContractDocx,
   downloadRevisedContractDocxTrackChanges,
   downloadRevisedContractPdf,
+  createSavedTemplate,
+  deleteSavedTemplate,
   generateContract,
   getContractTypeFields,
   getMe,
@@ -26,6 +29,7 @@ import {
   getPartyBProfile,
   getReviewPreferences,
   isSafeCheckoutUrl,
+  listSavedTemplates,
   myContracts,
   myContractReviews,
   reviewContract,
@@ -33,6 +37,7 @@ import {
   savePartyBProfile,
   saveReviewPreferences,
   startCheckout,
+  updateSavedTemplate,
   submitSepayCheckoutForm,
 } from "@/lib/api";
 import DiffView from "@/app/components/DiffView";
@@ -186,6 +191,96 @@ const CONTRACT_TYPES: { value: string; label: Record<Lang, string> }[] = [
       ja: "試用契約書",
     },
   },
+  {
+    value: "land_use_transfer",
+    label: {
+      vi: "Hợp đồng chuyển nhượng quyền sử dụng đất",
+      en: "Land Use Right Transfer Contract",
+      zh: "土地使用权转让合同",
+      ko: "토지사용권 양도 계약서",
+      ja: "土地使用権譲渡契約書",
+    },
+  },
+  {
+    value: "lease",
+    label: {
+      vi: "Hợp đồng thuê tài sản",
+      en: "Asset Lease Contract",
+      zh: "财产租赁合同",
+      ko: "자산 임대차 계약서",
+      ja: "資産賃貸借契約書",
+    },
+  },
+  {
+    value: "house_lease",
+    label: {
+      vi: "Hợp đồng thuê nhà",
+      en: "House Lease Contract",
+      zh: "房屋租赁合同",
+      ko: "주택 임대차 계약서",
+      ja: "住宅賃貸借契約書",
+    },
+  },
+  {
+    value: "factory_lease",
+    label: {
+      vi: "Hợp đồng cho thuê nhà xưởng",
+      en: "Factory Lease Contract",
+      zh: "厂房租赁合同",
+      ko: "공장 임대차 계약서",
+      ja: "工場賃貸借契約書",
+    },
+  },
+  {
+    value: "deposit",
+    label: {
+      vi: "Hợp đồng đặt cọc",
+      en: "Deposit Contract",
+      zh: "定金合同",
+      ko: "계약금 계약서",
+      ja: "手付金契約書",
+    },
+  },
+  {
+    value: "capital_contribution",
+    label: {
+      vi: "Hợp đồng góp vốn",
+      en: "Capital Contribution Contract",
+      zh: "出资合同",
+      ko: "출자 계약서",
+      ja: "出資契約書",
+    },
+  },
+  {
+    value: "cooperation",
+    label: {
+      vi: "Hợp đồng hợp tác",
+      en: "Cooperation Contract",
+      zh: "合作合同",
+      ko: "협력 계약서",
+      ja: "協力契約書",
+    },
+  },
+  {
+    value: "processing",
+    label: {
+      vi: "Hợp đồng gia công",
+      en: "Processing Contract",
+      zh: "加工合同",
+      ko: "가공 계약서",
+      ja: "加工契約書",
+    },
+  },
+  {
+    value: "admin_poa",
+    label: {
+      vi: "Hợp đồng ủy quyền thực hiện thủ tục hành chính",
+      en: "Power of Attorney for Administrative Procedures",
+      zh: "行政手续委托合同",
+      ko: "행정절차 위임 계약서",
+      ja: "行政手続委任契約書",
+    },
+  },
 ];
 
 function contractTypeLabel(value: string, lang: Lang): string {
@@ -264,6 +359,28 @@ const LONG_TEXT_FIELDS = new Set([
   "SERVICE_DESCRIPTION",
   "JOB_DESCRIPTION",
   "SPECIFICATIONS",
+  // ---- loại hợp đồng mới ----
+  "ASSET_DESCRIPTION",
+  "ASSET_CONDITION",
+  "ATTACHED_ASSETS",
+  "HOUSE_FURNITURE_CONDITION",
+  "FACTORY_FACILITIES_CONDITION",
+  "RENT_ADJUSTMENT_TERMS",
+  "CAPITAL_PURPOSE",
+  "CAPITAL_CONTRIBUTION_SCHEDULE",
+  "COOPERATION_SUBJECT",
+  "COOPERATION_SCOPE",
+  "CONTRIBUTION_SCHEDULE",
+  "PARTY_A_CONTRIBUTION",
+  "PARTY_B_CONTRIBUTION",
+  "PRODUCT_DESCRIPTION",
+  "PRODUCT_SPECIFICATIONS",
+  "MATERIAL_DESCRIPTION",
+  "ADMIN_PROCEDURE",
+  "PROCEDURE_SUBJECT",
+  "POA_PURPOSE",
+  "POA_SPECIFIC_POWERS",
+  "SUB_DELEGATION_TERMS",
 ]);
 
 // Fields that must hold a bare number or percentage — nothing else.
@@ -383,10 +500,60 @@ const FIELD_LABEL_OVERRIDES_BY_TYPE: Record<
   },
 };
 
-function labelForField(key: string, contractType: string): string {
+// Nhãn Bên A/Bên B cho các loại hợp đồng mới: mỗi loại có vai trò riêng
+// (bên cho thuê/bên thuê, bên đặt cọc/bên nhận đặt cọc...). `individual`
+// = cả hai bên là cá nhân (Ông/Bà, CCCD, nơi cư trú); ngược lại là
+// doanh nghiệp/tổ chức (mã số thuế, người đại diện, trụ sở chính).
+function partyOverrides(
+  roleA: string,
+  roleB: string,
+  individual: boolean
+): Record<string, string> {
+  const addr = individual ? "Nơi cư trú" : "Địa chỉ trụ sở chính";
+  return {
+    PARTY_A_NAME: `${roleA} (BÊN A)`,
+    PARTY_B_NAME: `${roleB} (BÊN B)`,
+    PARTY_A_ADDRESS: `${addr} Bên A`,
+    PARTY_B_ADDRESS: `${addr} Bên B`,
+    ...(individual
+      ? {
+          PARTY_A_DOB: "Ngày tháng năm sinh Bên A",
+          PARTY_A_ID_NUMBER: "Số CCCD Bên A",
+          PARTY_A_ID_ISSUE_DATE: "Ngày cấp CCCD Bên A",
+          PARTY_A_ID_ISSUE_PLACE: "Nơi cấp CCCD Bên A",
+          PARTY_B_DOB: "Ngày tháng năm sinh Bên B",
+          PARTY_B_ID_NUMBER: "Số CCCD Bên B",
+          PARTY_B_ID_ISSUE_DATE: "Ngày cấp CCCD Bên B",
+          PARTY_B_ID_ISSUE_PLACE: "Nơi cấp CCCD Bên B",
+        }
+      : {}),
+  };
+}
+
+Object.assign(FIELD_LABEL_OVERRIDES_BY_TYPE, {
+  land_use_transfer: partyOverrides("BÊN CHUYỂN NHƯỢNG", "BÊN NHẬN CHUYỂN NHƯỢNG", true),
+  lease: partyOverrides("BÊN CHO THUÊ", "BÊN THUÊ", true),
+  house_lease: partyOverrides("BÊN CHO THUÊ", "BÊN THUÊ", true),
+  factory_lease: partyOverrides("BÊN CHO THUÊ", "BÊN THUÊ", false),
+  deposit: partyOverrides("BÊN ĐẶT CỌC", "BÊN NHẬN ĐẶT CỌC", true),
+  capital_contribution: partyOverrides("BÊN GÓP VỐN", "BÊN NHẬN GÓP VỐN", true),
+  cooperation: partyOverrides("BÊN HỢP TÁC THỨ NHẤT", "BÊN HỢP TÁC THỨ HAI", false),
+  processing: partyOverrides("BÊN ĐẶT GIA CÔNG", "BÊN NHẬN GIA CÔNG", false),
+  admin_poa: partyOverrides("BÊN ỦY QUYỀN", "BÊN ĐƯỢC ỦY QUYỀN", true),
+});
+
+// Thứ tự ưu tiên nhãn: (1) nhãn riêng theo loại hợp đồng, (2) nhãn tĩnh
+// đã có sẵn, (3) nhãn tiếng Việt backend trả kèm (field_labels) - giúp
+// mọi field của loại hợp đồng mới đều có nhãn, (4) tự sinh từ tên field.
+function labelForField(
+  key: string,
+  contractType: string,
+  backendLabels?: Record<string, string>
+): string {
   return (
     FIELD_LABEL_OVERRIDES_BY_TYPE[contractType]?.[key] ||
     FIELD_LABELS[key] ||
+    backendLabels?.[key] ||
     humanizeFieldKey(key)
   );
 }
@@ -1287,6 +1454,67 @@ const UI_TEXT: Record<Lang, {
 };
 
 // ---- top-level tab ----
+// ---- văn bản của khối "Mẫu hợp đồng đã lưu" (tách riêng khỏi UI_TEXT
+// để không phải sửa 5 khối ngôn ngữ dài; văn bản hợp đồng vẫn tiếng Việt).
+const TEMPLATE_TEXT: Record<Lang, {
+  title: string; none: string; use: string; namePlaceholder: string;
+  saveNew: string; update: string; rename: string; del: string;
+  confirmDel: string; needName: string; savedOk: string; updatedOk: string;
+  renamedOk: string; deletedOk: string; loadedOk: string; err: string;
+  hint: string;
+}> = {
+  vi: {
+    title: "Mẫu hợp đồng đã lưu", none: "— Chọn mẫu đã lưu —", use: "Dùng mẫu",
+    namePlaceholder: "Tên mẫu, vd: Thuê nhà quận 1", saveNew: "Lưu thành mẫu mới",
+    update: "Cập nhật mẫu này", rename: "Đổi tên", del: "Xóa mẫu",
+    confirmDel: "Xóa mẫu này? Thao tác không thể hoàn tác.",
+    needName: "Vui lòng nhập tên mẫu", savedOk: "Đã lưu mẫu", updatedOk: "Đã cập nhật mẫu",
+    renamedOk: "Đã đổi tên mẫu", deletedOk: "Đã xóa mẫu", loadedOk: "Đã điền sẵn từ mẫu",
+    err: "Có lỗi xảy ra với mẫu hợp đồng",
+    hint: "Lưu toàn bộ nội dung đang điền để dùng lại cho các hợp đồng sau.",
+  },
+  en: {
+    title: "Saved contract templates", none: "— Select a saved template —", use: "Use template",
+    namePlaceholder: "Template name, e.g. Downtown lease", saveNew: "Save as new template",
+    update: "Update this template", rename: "Rename", del: "Delete",
+    confirmDel: "Delete this template? This cannot be undone.",
+    needName: "Please enter a template name", savedOk: "Template saved", updatedOk: "Template updated",
+    renamedOk: "Template renamed", deletedOk: "Template deleted", loadedOk: "Form filled from template",
+    err: "Something went wrong with the template",
+    hint: "Save everything you have filled in to reuse for future contracts.",
+  },
+  zh: {
+    title: "已保存的合同模板", none: "— 选择已保存模板 —", use: "使用模板",
+    namePlaceholder: "模板名称", saveNew: "另存为新模板",
+    update: "更新此模板", rename: "重命名", del: "删除",
+    confirmDel: "确定删除此模板？此操作无法撤销。",
+    needName: "请输入模板名称", savedOk: "模板已保存", updatedOk: "模板已更新",
+    renamedOk: "已重命名", deletedOk: "模板已删除", loadedOk: "已按模板填写",
+    err: "模板操作出错",
+    hint: "保存当前填写的全部内容，方便以后重复使用。",
+  },
+  ko: {
+    title: "저장된 계약서 템플릿", none: "— 저장된 템플릿 선택 —", use: "템플릿 사용",
+    namePlaceholder: "템플릿 이름", saveNew: "새 템플릿으로 저장",
+    update: "이 템플릿 업데이트", rename: "이름 변경", del: "삭제",
+    confirmDel: "이 템플릿을 삭제할까요? 되돌릴 수 없습니다.",
+    needName: "템플릿 이름을 입력하세요", savedOk: "템플릿이 저장되었습니다", updatedOk: "템플릿이 업데이트되었습니다",
+    renamedOk: "이름이 변경되었습니다", deletedOk: "템플릿이 삭제되었습니다", loadedOk: "템플릿으로 채웠습니다",
+    err: "템플릿 처리 중 오류가 발생했습니다",
+    hint: "입력한 내용을 저장해 다음 계약서에 재사용하세요.",
+  },
+  ja: {
+    title: "保存済みの契約書テンプレート", none: "— 保存済みテンプレートを選択 —", use: "テンプレートを使う",
+    namePlaceholder: "テンプレート名", saveNew: "新規テンプレートとして保存",
+    update: "このテンプレートを更新", rename: "名前を変更", del: "削除",
+    confirmDel: "このテンプレートを削除しますか？元に戻せません。",
+    needName: "テンプレート名を入力してください", savedOk: "テンプレートを保存しました", updatedOk: "テンプレートを更新しました",
+    renamedOk: "名前を変更しました", deletedOk: "テンプレートを削除しました", loadedOk: "テンプレートで入力しました",
+    err: "テンプレートの処理でエラーが発生しました",
+    hint: "入力内容を保存して、次回以降の契約書で再利用できます。",
+  },
+};
+
 type Tab = "generate" | "review" | "intro";
 
 export default function Home() {
@@ -1335,6 +1563,16 @@ export default function Home() {
     partyBProfileRef.current = partyBProfile;
   }, [partyBProfile]);
 
+  // ---- mẫu hợp đồng đã lưu (theo tài khoản + loại hợp đồng đang chọn) ----
+  const [savedTemplates, setSavedTemplates] = useState<SavedContractTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | "">("");
+  const [templateName, setTemplateName] = useState("");
+  const [templateBusy, setTemplateBusy] = useState(false);
+  const [templateMsg, setTemplateMsg] = useState<
+    { kind: "ok" | "err"; text: string } | null
+  >(null);
+  const tt = TEMPLATE_TEXT[lang];
+
   const [contracts, setContracts] = useState<ContractOut[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
@@ -1353,6 +1591,7 @@ export default function Home() {
   // actually requires right now.
   const [currentFields, setCurrentFields] = useState<string[]>([]);
   const [contractTitle, setContractTitle] = useState<string>("");
+  const [fieldLabelsFromApi, setFieldLabelsFromApi] = useState<Record<string, string>>({});
   const [loadingFields, setLoadingFields] = useState(false);
   const [fieldsError, setFieldsError] = useState<string | null>(null);
 
@@ -1491,6 +1730,7 @@ export default function Home() {
       .then((data) => {
         if (cancelledRef.current) return;
         setCurrentFields(data.required_fields);
+        setFieldLabelsFromApi(data.field_labels ?? {});
         setContractTitle(data.title);
 
         // Tự điền các field PARTY_A_*/PARTY_B_* từ hồ sơ đã lưu (nếu
@@ -1537,6 +1777,132 @@ export default function Home() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contractType, authChecked]);
+
+  // ---- tải danh sách mẫu đã lưu của loại hợp đồng đang chọn ----
+  // (đợi promise resolve rồi mới setState, không gọi setState đồng bộ
+  // ngay đầu effect — tránh lỗi lint react-hooks/set-state-in-effect)
+  useEffect(() => {
+    if (!authChecked) return;
+    let cancelled = false;
+    listSavedTemplates(contractType)
+      .then((list) => {
+        if (cancelled) return;
+        setSavedTemplates(list);
+        setSelectedTemplateId("");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // non-fatal — không tải được thì ẩn danh sách, form vẫn dùng bình thường
+        setSavedTemplates([]);
+        setSelectedTemplateId("");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contractType, authChecked]);
+
+  const templateErr = (err: unknown) =>
+    setTemplateMsg({
+      kind: "err",
+      text: err instanceof ApiError ? err.message : tt.err,
+    });
+
+  // Chỉ lưu các field thuộc loại hợp đồng đang chọn và không rỗng.
+  const currentFormData = () => {
+    const data: Record<string, string> = {};
+    for (const key of currentFields) {
+      if (form[key] && form[key].trim()) data[key] = form[key];
+    }
+    return data;
+  };
+
+  const handleUseTemplate = () => {
+    const tpl = savedTemplates.find((t) => t.id === selectedTemplateId);
+    if (!tpl) return;
+    setForm({ ...tpl.data });
+    setTemplateName(tpl.name);
+    setGenError(null);
+    setTemplateMsg({ kind: "ok", text: tt.loadedOk });
+  };
+
+  const handleSaveTemplateNew = async () => {
+    const name = templateName.trim();
+    if (!name) {
+      setTemplateMsg({ kind: "err", text: tt.needName });
+      return;
+    }
+    setTemplateBusy(true);
+    setTemplateMsg(null);
+    try {
+      const created = await createSavedTemplate(contractType, name, currentFormData());
+      setSavedTemplates((prev) => [created, ...prev]);
+      setSelectedTemplateId(created.id);
+      setTemplateMsg({ kind: "ok", text: tt.savedOk });
+    } catch (err) {
+      templateErr(err);
+    } finally {
+      setTemplateBusy(false);
+    }
+  };
+
+  const handleUpdateTemplate = async () => {
+    if (selectedTemplateId === "") return;
+    setTemplateBusy(true);
+    setTemplateMsg(null);
+    try {
+      const updated = await updateSavedTemplate(selectedTemplateId, {
+        data: currentFormData(),
+      });
+      setSavedTemplates((prev) =>
+        prev.map((t) => (t.id === updated.id ? updated : t))
+      );
+      setTemplateMsg({ kind: "ok", text: tt.updatedOk });
+    } catch (err) {
+      templateErr(err);
+    } finally {
+      setTemplateBusy(false);
+    }
+  };
+
+  const handleRenameTemplate = async () => {
+    if (selectedTemplateId === "") return;
+    const name = templateName.trim();
+    if (!name) {
+      setTemplateMsg({ kind: "err", text: tt.needName });
+      return;
+    }
+    setTemplateBusy(true);
+    setTemplateMsg(null);
+    try {
+      const updated = await updateSavedTemplate(selectedTemplateId, { name });
+      setSavedTemplates((prev) =>
+        prev.map((t) => (t.id === updated.id ? updated : t))
+      );
+      setTemplateMsg({ kind: "ok", text: tt.renamedOk });
+    } catch (err) {
+      templateErr(err);
+    } finally {
+      setTemplateBusy(false);
+    }
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (selectedTemplateId === "") return;
+    if (!window.confirm(tt.confirmDel)) return;
+    setTemplateBusy(true);
+    setTemplateMsg(null);
+    try {
+      await deleteSavedTemplate(selectedTemplateId);
+      setSavedTemplates((prev) => prev.filter((t) => t.id !== selectedTemplateId));
+      setSelectedTemplateId("");
+      setTemplateName("");
+      setTemplateMsg({ kind: "ok", text: tt.deletedOk });
+    } catch (err) {
+      templateErr(err);
+    } finally {
+      setTemplateBusy(false);
+    }
+  };
 
   // ---- auth check on mount ----
   useEffect(() => {
@@ -1636,6 +2002,12 @@ export default function Home() {
     setContractType(value);
     setForm({}); // reset form data when switching contract type
     setGenError(null);
+    setTemplateName("");
+    setTemplateMsg(null);
+    // Xóa ngay danh sách mẫu của loại cũ (thay vì chờ effect tải xong
+    // mẫu của loại mới) để không hiện nhầm mẫu loại khác trong lúc chờ.
+    setSavedTemplates([]);
+    setSelectedTemplateId("");
   };
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -2054,6 +2426,104 @@ export default function Home() {
                   </select>
                 </div>
 
+                {/* Mẫu hợp đồng đã lưu (cá nhân hóa theo tài khoản) */}
+                <div className="mb-6 rounded-md border border-[#DCD7C9] bg-[#FAF8F3] p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileSignature size={16} className="text-[#9C7A3C]" />
+                    <span className="text-sm font-semibold text-[#1C2333]">
+                      {tt.title}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#5B6472] mb-3">{tt.hint}</p>
+
+                  {savedTemplates.length > 0 && (
+                    <div className="flex flex-col md:flex-row gap-2 mb-3">
+                      <select
+                        value={selectedTemplateId}
+                        onChange={(e) => {
+                          const v = e.target.value === "" ? "" : Number(e.target.value);
+                          setSelectedTemplateId(v);
+                          const t = savedTemplates.find((x) => x.id === v);
+                          if (t) setTemplateName(t.name);
+                        }}
+                        className="flex-1 border border-[#DCD7C9] rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                      >
+                        <option value="">{tt.none}</option>
+                        {savedTemplates.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleUseTemplate}
+                        disabled={selectedTemplateId === "" || templateBusy}
+                        className="px-4 py-2 rounded-md bg-[#16213E] hover:bg-[#0E1629] text-white text-sm font-medium disabled:opacity-50 transition"
+                      >
+                        {tt.use}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col md:flex-row gap-2">
+                    <input
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                      placeholder={tt.namePlaceholder}
+                      maxLength={255}
+                      className="flex-1 border border-[#DCD7C9] rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveTemplateNew}
+                      disabled={templateBusy || loadingFields}
+                      className="px-4 py-2 rounded-md border border-[#9C7A3C] text-[#9C7A3C] hover:bg-[#9C7A3C]/10 text-sm font-medium disabled:opacity-50 transition"
+                    >
+                      {tt.saveNew}
+                    </button>
+                  </div>
+
+                  {selectedTemplateId !== "" && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={handleUpdateTemplate}
+                        disabled={templateBusy}
+                        className="px-3 py-1.5 rounded-md border border-[#DCD7C9] bg-white text-sm hover:border-[#9C7A3C] disabled:opacity-50 transition"
+                      >
+                        {tt.update}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRenameTemplate}
+                        disabled={templateBusy}
+                        className="px-3 py-1.5 rounded-md border border-[#DCD7C9] bg-white text-sm hover:border-[#9C7A3C] disabled:opacity-50 transition"
+                      >
+                        {tt.rename}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeleteTemplate}
+                        disabled={templateBusy}
+                        className="px-3 py-1.5 rounded-md border border-red-200 bg-white text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 transition"
+                      >
+                        {tt.del}
+                      </button>
+                    </div>
+                  )}
+
+                  {templateMsg && (
+                    <p
+                      className={`text-sm mt-2 ${
+                        templateMsg.kind === "ok" ? "text-green-700" : "text-red-600"
+                      }`}
+                    >
+                      {templateMsg.text}
+                    </p>
+                  )}
+                </div>
+
                 {loadingFields && (
                   <p className="text-[#5B6472] text-sm flex items-center gap-2 mb-4">
                     <Loader2 size={16} className="animate-spin" />
@@ -2091,7 +2561,7 @@ export default function Home() {
                       const fieldEl = LONG_TEXT_FIELDS.has(key) ? (
                         <div className="md:col-span-2">
                           <label className="block text-sm font-medium mb-1">
-                            {labelForField(key, contractType)}
+                            {labelForField(key, contractType, fieldLabelsFromApi)}
                           </label>
                           <div className="relative">
                             <Icon
@@ -2111,7 +2581,7 @@ export default function Home() {
                       ) : (
                         <div>
                           <label className="block text-sm font-medium mb-1">
-                            {labelForField(key, contractType)}
+                            {labelForField(key, contractType, fieldLabelsFromApi)}
                           </label>
                           <div className="relative">
                             <Icon
