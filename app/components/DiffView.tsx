@@ -73,11 +73,40 @@ interface DiffViewProps {
 
 const ARTICLE_RE = /^\s*\**\s*ĐIỀU\s+(\d+)(?!\d)/i;
 const END_MARK_RE =
-  /^\s*\**\s*[(\[]?\s*Điều khoản kết thúc ở đây\s*[)\]]?\s*\.?\s*\**\s*$/i;
+  /^\s*\**\s*[([\-–—\s]*(?:[^)\]\n]{0,40}?kết thúc\s+(?:tại|ở)\s+đây|hết\s+(?:hợp đồng|điều khoản)|hợp đồng\s+hết|--+\s*hết\s*--+)[^)\]\n]{0,20}[)\]\-–—\s]*\.?\s*\**\s*$/i;
 const TITLE_PREFIXES = ["HỢP ĐỒNG", "THỎA THUẬN", "BIÊN BẢN", "VĂN BẢN", "GIẤY"];
 
+// Văn bản trích từ Word/PDF có thể dùng ký tự tổ hợp (vd "Ề" = "Ê" + dấu
+// huyền rời) và cách đặt dấu khác nhau ("HOÀ"/"HÒA"): luôn chuẩn hóa trước
+// khi so khớp, nếu không "ĐIỀU 1" sẽ không được nhận ra.
+function nfc(s: string): string {
+  return (s || "").normalize("NFC");
+}
+
+function fold(s: string): string {
+  let out = nfc(s).toLowerCase();
+  const pairs: [string, string][] = [
+    ["oà", "òa"], ["oá", "óa"], ["oả", "ỏa"], ["oã", "õa"], ["oạ", "ọa"],
+    ["uỳ", "ùy"], ["uý", "úy"], ["uỷ", "ủy"], ["uỹ", "ũy"], ["uỵ", "ụy"],
+  ];
+  for (const [a, b] of pairs) out = out.split(a).join(b);
+  return out;
+}
+
+function isEndMarker(line: string): boolean {
+  return END_MARK_RE.test(fold(line).trim());
+}
+
+// Dùng cho chế độ so sánh toàn văn: chuẩn hóa ký tự và bỏ dòng đánh dấu kết thúc.
+function cleanFull(text: string): string {
+  return nfc(text)
+    .split(/\r?\n/)
+    .filter((l) => !isEndMarker(l))
+    .join("\n");
+}
+
 function plain(line: string): string {
-  return line.replace(/[*_#]/g, "").trim();
+  return nfc(line).replace(/[*_#]/g, "").trim();
 }
 
 function isTitleLine(line: string): boolean {
@@ -93,12 +122,12 @@ function isTitleLine(line: string): boolean {
 // Cắt phần ký tên ở cuối (nếu có) khỏi danh sách dòng.
 function stripSignature(lines: string[]): string[] {
   const idx = lines.findIndex((l) =>
-    l.toLowerCase().includes("(ký, ghi rõ họ tên)")
+    fold(l).includes("(ký, ghi rõ họ tên)")
   );
   if (idx === -1) return lines;
 
   let cut = idx;
-  if (cut > 0 && lines[cut - 1].toLowerCase().includes("đại diện")) cut -= 1;
+  if (cut > 0 && fold(lines[cut - 1]).includes("đại diện")) cut -= 1;
   while (cut > 0 && !lines[cut - 1].trim()) cut -= 1;
 
   return lines.slice(0, cut);
@@ -110,7 +139,7 @@ function normalizeHeader(lines: string[]): string {
   return lines
     .filter((line) => {
       const s = plain(line);
-      const low = s.toLowerCase();
+      const low = fold(s);
       if (!s) return false;
       if (/^[-–—_=.\s]+$/.test(s)) return false;
       if (low.includes("cộng hòa xã hội chủ nghĩa việt nam")) return false;
@@ -134,7 +163,7 @@ interface Parsed {
 
 function parse(text: string): Parsed {
   const lines = stripSignature(
-    (text || "").split(/\r?\n/).filter((l) => !END_MARK_RE.test(l))
+    nfc(text).split(/\r?\n/).filter((l) => !isEndMarker(l))
   );
 
   const headerLines: string[] = [];
@@ -258,7 +287,7 @@ export default function DiffView({
 
       <div className={box}>
         {useFullTextFallback ? (
-          <DiffSpans a={originalText || ""} b={revisedText || ""} />
+          <DiffSpans a={cleanFull(originalText)} b={cleanFull(revisedText)} />
         ) : (
           <>
             {(orig.header || rev.header) && (
