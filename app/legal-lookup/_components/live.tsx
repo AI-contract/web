@@ -275,7 +275,77 @@ function VerificationNote({ item }: { item: LiveItem }) {
   );
 }
 
-export function LiveResultCard({ item, group }: { item: LiveItem; group: LiveGroup }) {
+// Số hiệu văn bản AI nêu trong phân tích + trạng thái đối chiếu với trang nguồn.
+// `resolveDoc(key)` trả về link tới đúng văn bản (kết quả nhóm "Quy định pháp luật"
+// cùng lượt tra cứu có cùng số hiệu) nếu có.
+function CitedDocuments({
+  docs,
+  resolveDoc,
+}: {
+  docs: LiveItem["cited_documents"];
+  resolveDoc?: (key: string) => string | null;
+}) {
+  if (!docs || docs.length === 0) return null;
+  return (
+    <div className="mt-4">
+      <p className="text-sm font-semibold text-[#5B6472] mb-1.5">Văn bản được dẫn chiếu</p>
+      <ul className="flex flex-wrap gap-2">
+        {docs.map((d) => {
+          const link = safeUrl(resolveDoc?.(d.key) ?? d.url);
+          const verified = d.status === "verified" || !!resolveDoc?.(d.key);
+          const tone = verified
+            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+            : d.status === "unverified"
+              ? "bg-amber-50 text-amber-800 border-amber-200"
+              : "bg-slate-100 text-slate-600 border-slate-300";
+          const note = verified
+            ? "Số hiệu đã đối chiếu với trang nguồn"
+            : d.status === "unverified"
+              ? "Không thấy số hiệu này trên trang nguồn — cần kiểm tra lại"
+              : "Chưa đối chiếu được số hiệu với trang nguồn";
+          const body = (
+            <>
+              {verified ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+              {d.number}
+            </>
+          );
+          return (
+            <li key={d.key}>
+              {link ? (
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={note}
+                  className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border hover:underline ${tone}`}
+                >
+                  {body}
+                </a>
+              ) : (
+                <span
+                  title={note}
+                  className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${tone}`}
+                >
+                  {body}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+export function LiveResultCard({
+  item,
+  group,
+  resolveDoc,
+}: {
+  item: LiveItem;
+  group: LiveGroup;
+  resolveDoc?: (key: string) => string | null;
+}) {
   const meta = GROUP_META[group];
   const src = safeUrl(item.url);
   const info = [
@@ -391,6 +461,10 @@ export function LiveResultCard({ item, group }: { item: LiveItem; group: LiveGro
             })}
           </ul>
         </div>
+      )}
+
+      {group === "danh_gia" && (
+        <CitedDocuments docs={item.cited_documents} resolveDoc={resolveDoc} />
       )}
 
       {group === "danh_gia" ? (
