@@ -1,0 +1,332 @@
+"use client";
+
+/**
+ * app/legal-lookup/_components/overview.tsx
+ *
+ * Kết quả tra cứu dạng "Tổng quan" (giống AI Overview của Google):
+ *   1. Tổng quan: kết luận nhanh + câu hỏi gợi ý (từ nhóm "danh_gia").
+ *   2. Các mục chi tiết: Kết quả tổng hợp (theo tiêu đề vấn đề), Quy định pháp luật,
+ *      Án lệ/Bản án.
+ *   3. Cột "Nguồn" (bên phải trên màn hình rộng, bên dưới trên điện thoại): tất cả
+ *      trang nguồn của cả 4 nhóm, kèm trạng thái đối chiếu.
+ *
+ * Vẫn gọi 4 API song song (mỗi nhóm tải/lỗi/thử lại độc lập) nên không đổi hạn mức
+ * lượt tra cứu. Nội dung là text thuần, React tự escape.
+ */
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CheckCircle2, ExternalLink, HelpCircle, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import {
+  ApiError,
+  LiveGroup,
+  LiveItem,
+  LiveMode,
+  LiveSearchResponse,
+  searchLegalLive,
+} from "@/lib/api";
+import { GROUP_META, LiveResultCard, errorMessage, safeUrl } from "./live";
+
+type GroupState = {
+  nonce: number;
+  data: LiveSearchResponse | null;
+  error: string | null;
+  status: number | null;
+};
+
+const ALL_GROUPS: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia"];
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+interface SourceCard {
+  url: string;
+  title: string;
+  group: LiveGroup;
+  note: { text: string; tone: "ok" | "warn" | "neutral" };
+}
+
+function sourceNote(item: LiveItem, group: LiveGroup): SourceCard["note"] {
+  if (group === "danh_gia") return { text: "Nguồn tham khảo cho phần tổng hợp", tone: "neutral" };
+  if (item.verification === "verified") return { text: "Đã đối chiếu trích dẫn", tone: "ok" };
+  if (item.verification === "unverified") return { text: "Một phần trích dẫn đã bị ẩn", tone: "warn" };
+  return { text: "Chưa đối chiếu được", tone: "neutral" };
+}
+
+export default function LiveOverview({
+  query,
+  mode,
+  requestText,
+  onRemaining,
+  onUnauthorized,
+  onAsk,
+  disabled,
+}: {
+  query: string;
+  mode: LiveMode;
+  requestText?: string;
+  onRemaining: (remaining: number | null) => void;
+  onUnauthorized: () => void;
+  onAsk: (followup: string) => void;
+  disabled?: boolean;
+}) {
+  const [nonce, setNonce] = useState(0);
+  const [state, setState] = useState<Partial<Record<LiveGroup, GroupState>>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    ALL_GROUPS.forEach((g) => {
+      searchLegalLive(g, query, mode, requestText)
+        .then((data) => {
+          if (cancelled) return;
+          setState((prev) => ({ ...prev, [g]: { nonce, data, error: null, status: null } }));
+          onRemaining(data.remaining_calls);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (err instanceof ApiError && err.status === 401) {
+            onUnauthorized();
+            return;
+          }
+          setState((prev) => ({
+            ...prev,
+            [g]: {
+              nonce,
+              data: null,
+              error: errorMessage(err),
+              status: err instanceof ApiError ? err.status : null,
+            },
+          }));
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [query, mode, requestText, nonce, onRemaining, onUnauthorized]);
+
+  const current = (g: LiveGroup): GroupState | null => {
+    const s = state[g];
+    return s && s.nonce === nonce ? s : null;
+  };
+  const loadingOf = (g: LiveGroup) => current(g) === null;
+  const itemsOf = (g: LiveGroup): LiveItem[] => current(g)?.data?.items ?? [];
+  const errorOf = (g: LiveGroup) => current(g)?.error ?? null;
+
+  // Dẫn chiếu đúng văn bản: số hiệu AI nêu trong phần tổng hợp → link tới kết quả
+  // "Quy định pháp luật" có CÙNG số hiệu chuẩn hoá (nếu có).
+  const docLinks = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const it of state.van_ban && state.van_ban.nonce === nonce ? state.van_ban.data?.items ?? [] : []) {
+      if (it.number_key && safeUrl(it.url) && !map.has(it.number_key)) map.set(it.number_key, it.url);
+    }
+    return map;
+  }, [state.van_ban, nonce]);
+  const resolveDoc = useCallback((key: string) => docLinks.get(key) ?? null, [docLinks]);
+
+  const assessment = current("danh_gia")?.data ?? null;
+  const overview = assessment?.overview ?? null;
+  const followups = assessment?.followups ?? [];
+
+  const sources = useMemo<SourceCard[]>(() => {
+    const out: SourceCard[] = [];
+    const seen = new Set<string>();
+    const push = (url: string, title: string, group: LiveGroup, note: SourceCard["note"]) => {
+      if (!safeUrl(url) || seen.has(url)) return;
+      seen.add(url);
+      out.push({ url, title, group, note });
+    };
+    (["van_ban", "an_le", "ban_an"] as LiveGroup[]).forEach((g) => {
+      const s = state[g];
+      if (!s || s.nonce !== nonce) return;
+      (s.data?.items ?? []).forEach((it) => push(it.url, it.title, g, sourceNote(it, g)));
+    });
+    const dg = state.danh_gia;
+    if (dg && dg.nonce === nonce) {
+      (dg.data?.items ?? []).forEach((it) => {
+        push(it.url, it.title, "danh_gia", sourceNote(it, "danh_gia"));
+        it.references.forEach((r) => push(r.url, r.title, "danh_gia", sourceNote(it, "danh_gia")));
+      });
+    }
+    return out;
+  }, [state, nonce]);
+
+  const anyError = ALL_GROUPS.map(errorOf).filter(Boolean) as string[];
+  const canRetry = ALL_GROUPS.some((g) => {
+    const s = current(g);
+    return !!s?.error && s.status !== 429;
+  });
+  const allLoaded = ALL_GROUPS.every((g) => !loadingOf(g));
+
+  function renderLoading(label: string) {
+    return (
+      <div className="flex items-center gap-2 bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 text-sm text-[#5B6472]">
+        <Loader2 size={16} className="animate-spin text-[#9C7A3C]" />
+        {label}
+      </div>
+    );
+  }
+
+  function renderSection(group: LiveGroup | LiveGroup[], title: string, hint?: string) {
+    const groups = Array.isArray(group) ? group : [group];
+    const loading = groups.some(loadingOf);
+    const entries = groups.flatMap((g) => itemsOf(g).map((item) => ({ item, g })));
+    return (
+      <section aria-label={title} className="mb-8">
+        <h2 className="text-base font-semibold text-[#1C2333] mb-1">
+          {title}
+          {!loading && entries.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-[#5B6472]">({entries.length})</span>
+          )}
+        </h2>
+        {hint && <p className="text-xs text-[#8A919C] mb-3">{hint}</p>}
+        {loading ? (
+          renderLoading("Đang tìm trên các nguồn chính thống… (có thể mất 10–60 giây)")
+        ) : entries.length === 0 ? (
+          <div className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 text-sm text-[#5B6472]">
+            {groups.map((g) => current(g)?.data?.notice).find(Boolean) ??
+              "Không tìm thấy nội dung phù hợp trên các nguồn chính thống."}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {entries.map(({ item, g }) => (
+              <LiveResultCard key={`${g}-${item.url}`} item={item} group={g} resolveDoc={resolveDoc} />
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+      <div>
+        {/* Tổng quan */}
+        <section aria-label="Tổng quan" className="mb-8">
+          <div className="bg-white border border-[#DCD7C9] border-l-4 border-l-[#9C7A3C] rounded-lg px-5 py-4">
+            <p className="text-sm font-semibold text-[#9C7A3C] flex items-center gap-1.5 mb-2">
+              <Sparkles size={15} /> Tổng quan
+            </p>
+            {loadingOf("danh_gia") ? (
+              <p className="flex items-center gap-2 text-sm text-[#5B6472]">
+                <Loader2 size={16} className="animate-spin text-[#9C7A3C]" />
+                Đang tổng hợp kết luận nhanh…
+              </p>
+            ) : overview ? (
+              <>
+                <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{overview}</p>
+                <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  Do AI tổng hợp từ các nguồn bên dưới, chỉ mang tính tham khảo; hãy mở nguồn để đối chiếu
+                  nguyên văn và tình trạng hiệu lực.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-[#5B6472]">
+                Chưa có kết luận nhanh cho câu hỏi này. Hãy xem các mục chi tiết bên dưới.
+              </p>
+            )}
+            {followups.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-[#EAE5D8]">
+                <p className="text-xs font-medium text-[#5B6472] mb-1.5">Câu hỏi gợi ý tiếp theo</p>
+                <div className="flex flex-wrap gap-2">
+                  {followups.map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => onAsk(f)}
+                      className="text-xs px-3 py-1 rounded-full border border-[#DCD7C9] bg-[#FAF8F3] text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-60"
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {allLoaded && anyError.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-5 py-4 text-sm text-red-700 mb-6">
+            {ALL_GROUPS.filter((g) => errorOf(g)).map((g) => (
+              <p key={g}>
+                {GROUP_META[g].label}: {errorOf(g)}
+              </p>
+            ))}
+            {canRetry && (
+              <button
+                onClick={() => setNonce((n) => n + 1)}
+                className="mt-2 inline-flex items-center gap-1.5 text-red-700 underline"
+              >
+                <RefreshCw size={13} /> Thử lại
+              </button>
+            )}
+          </div>
+        )}
+
+        {renderSection("danh_gia", "Phân tích chi tiết", GROUP_META.danh_gia.hint)}
+        {renderSection("van_ban", "Căn cứ pháp lý", GROUP_META.van_ban.hint)}
+        {renderSection(
+          ["an_le", "ban_an"],
+          "Án lệ/Bản án",
+          `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`
+        )}
+      </div>
+
+      {/* Cột nguồn */}
+      <aside aria-label="Nguồn" className="mb-8 lg:mb-0">
+        <div className="lg:sticky lg:top-4">
+          <h2 className="text-base font-semibold text-[#1C2333] mb-3">
+            Nguồn{sources.length > 0 && <span className="ml-2 text-sm font-normal text-[#5B6472]">({sources.length})</span>}
+          </h2>
+          {sources.length === 0 ? (
+            <p className="text-sm text-[#8A919C]">
+              {allLoaded ? "Chưa có nguồn nào được xác thực." : "Các nguồn sẽ hiện khi có kết quả…"}
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {sources.map((s, i) => (
+                <li key={s.url}>
+                  <a
+                    href={safeUrl(s.url) ?? undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block bg-white border border-[#DCD7C9] rounded-lg px-3 py-2.5 hover:border-[#9C7A3C] transition"
+                  >
+                    <p className="text-xs text-[#8A919C] flex items-center gap-1">
+                      <span className="font-medium text-[#5B6472]">{i + 1}.</span> {hostOf(s.url)}
+                      <ExternalLink size={11} className="ml-auto shrink-0" />
+                    </p>
+                    <p className="text-sm font-medium text-[#1C2333] leading-snug mt-0.5 line-clamp-2">{s.title}</p>
+                    <p
+                      className={`mt-1 text-xs flex items-center gap-1 ${
+                        s.note.tone === "ok"
+                          ? "text-emerald-700"
+                          : s.note.tone === "warn"
+                            ? "text-amber-700"
+                            : "text-[#8A919C]"
+                      }`}
+                    >
+                      {s.note.tone === "ok" ? (
+                        <CheckCircle2 size={12} />
+                      ) : s.note.tone === "warn" ? (
+                        <AlertTriangle size={12} />
+                      ) : (
+                        <HelpCircle size={12} />
+                      )}
+                      {GROUP_META[s.group].label} · {s.note.text}
+                    </p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}

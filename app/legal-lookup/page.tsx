@@ -1,58 +1,60 @@
 "use client";
 
 /**
- * app/legal-lookup/page.tsx — trang "Tra cứu pháp lý" (trang duy nhất).
+ * app/legal-lookup/page.tsx — trang "Tra cứu pháp lý".
  *
- * Người dùng nhập từ khóa (vd "Tranh chấp hợp đồng lao động") hoặc dán một điều
- * khoản hợp đồng; Legal AI tìm TRỰC TIẾP trên các trang chính thống — không lưu
- * trữ văn bản pháp luật, án lệ, bản án — và hiện 3 nhóm kết quả:
- *   1. quy định pháp luật; 2. án lệ (trích nội dung); 3. bản án.
- * Ba nhóm được gọi song song, mỗi nhóm tải/lỗi/thử lại độc lập.
+ * Bố cục kiểu Google: MỘT ô tìm kiếm duy nhất nhận cả từ khóa lẫn câu hỏi/tình huống
+ * (vd "đăng ký bổ sung ngành nghề kinh doanh headhunter cho doanh nghiệp FDI").
+ * Lĩnh vực và yêu cầu tra cứu (thủ tục, điều kiện, rủi ro...) được hệ thống tự suy ra
+ * từ câu hỏi ở backend; lĩnh vực đã lưu của tài khoản (nếu có) vẫn được dùng làm bối
+ * cảnh và chỉnh trong mục "Cá nhân hoá" thu gọn bên dưới.
+ *
+ * Giữ nguyên mục "Cập nhật VBPL/Án lệ/Bản án". Legal AI không lưu trữ văn bản pháp
+ * luật: mỗi lượt tra cứu tìm trực tiếp trên nguồn chính thống.
  */
 
 import { useCallback, useEffect, useState } from "react";
-import type { FormEvent } from "react";
-import { Briefcase, History, Info, Loader2, Search } from "lucide-react";
+import type { FormEvent, KeyboardEvent } from "react";
+import { Briefcase, History, Info, Loader2, Search, X } from "lucide-react";
 import {
   ApiError,
   LiveGroup,
   LiveInfo,
   LiveMode,
+  clearLegalLiveHistory,
   getLegalLiveInfo,
   saveLegalBusinessField,
 } from "@/lib/api";
-import {
-  DISCLAIMER_FALLBACK,
-  DISPLAY_SECTIONS,
-  LiveGroupSection,
-  LiveMergedGroupSection,
-  PageHeader,
-  useAuthGuard,
-} from "./_components/live";
+import { DISCLAIMER_FALLBACK, DISPLAY_SECTIONS, PageHeader, useAuthGuard } from "./_components/live";
+import LiveOverview from "./_components/overview";
 import ContributeBox from "./_components/contribute";
 
 const EXAMPLES = [
+  "Đăng ký bổ sung ngành nghề kinh doanh cho doanh nghiệp FDI",
   "Tranh chấp hợp đồng lao động",
   "Phạt vi phạm hợp đồng",
   "Đơn phương chấm dứt hợp đồng lao động",
-  "Bồi thường thiệt hại ngoài hợp đồng",
 ];
+
+// Backend: "keyword" nhận tối đa 500 ký tự; dài hơn (vd dán cả điều khoản) → "clause".
+const KEYWORD_MAX = 500;
+const QUERY_MAX = 1500;
 
 interface Submitted {
   id: number;
   q: string;
   mode: LiveMode;
-  requestText: string;
+}
+
+function modeFor(text: string): LiveMode {
+  return text.length > KEYWORD_MAX ? "clause" : "keyword";
 }
 
 export default function LegalLookupPage() {
   const { ok, onUnauthorized } = useAuthGuard();
 
   const [info, setInfo] = useState<LiveInfo | null>(null);
-  const [mode, setMode] = useState<LiveMode>("keyword");
-  const [keyword, setKeyword] = useState("");
-  const [clause, setClause] = useState("");
-  const [requestText, setRequestText] = useState("");
+  const [text, setText] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
   const [remaining, setRemaining] = useState<number | null | undefined>(undefined);
@@ -93,31 +95,49 @@ export default function LegalLookupPage() {
     }
   }
 
-  // Identity ổn định: LiveGroupSection dùng trong dependency của effect.
+  async function onDeleteHistory(query?: string) {
+    try {
+      await clearLegalLiveHistory(query);
+      setInfo((prev) =>
+        prev
+          ? { ...prev, recent_searches: query ? prev.recent_searches.filter((h) => h.query !== query) : [] }
+          : prev
+      );
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) onUnauthorized();
+    }
+  }
+
+  // Identity ổn định: LiveOverview dùng trong dependency của effect.
   const onRemaining = useCallback((value: number | null) => setRemaining(value), []);
 
-  function run(q: string, m: LiveMode) {
-    const text = q.trim();
-    if (m === "keyword" && text.length < 2) {
-      setFormError("Vui lòng nhập từ khóa (ít nhất 2 ký tự).");
+  function run(raw: string, forcedMode?: LiveMode) {
+    const q = raw.replace(/\s+/g, " ").trim();
+    if (q.length < 2) {
+      setFormError("Vui lòng nhập câu hỏi hoặc từ khóa (ít nhất 2 ký tự).");
       return;
     }
-    if (m === "clause" && text.length < 10) {
-      setFormError("Vui lòng dán đoạn điều khoản dài hơn (tối thiểu 10 ký tự).");
+    const mode = forcedMode ?? modeFor(q);
+    if (mode === "clause" && q.length < 10) {
+      setFormError("Đoạn điều khoản cần tối thiểu 10 ký tự.");
       return;
     }
     setFormError(null);
-    setSubmitted((prev) => ({
-      id: (prev?.id ?? 0) + 1,
-      q: text,
-      mode: m,
-      requestText: requestText.trim(),
-    }));
+    setText(q);
+    setSubmitted((prev) => ({ id: (prev?.id ?? 0) + 1, q, mode }));
   }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    run(mode === "keyword" ? keyword : clause, mode);
+    run(text);
+  }
+
+  function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    // Enter = tra cứu (như Google); Shift+Enter = xuống dòng.
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      run(text);
+    }
   }
 
   if (!ok) {
@@ -132,218 +152,113 @@ export default function LegalLookupPage() {
   const domainsOf = (g: LiveGroup) => info?.groups.find((x) => x.value === g)?.domains ?? [];
   const sectionDomainsOf = (section: (typeof DISPLAY_SECTIONS)[number]) =>
     section.groups.flatMap((g) => domainsOf(g));
-  const lowQuota = typeof remaining === "number" && remaining < 3;
+  const lowQuota = typeof remaining === "number" && remaining < 4;
+  const hasResults = submitted !== null;
 
   return (
     <div className="min-h-screen bg-[#FAF8F3]">
       <PageHeader title="Tra cứu pháp lý" backHref="/dashboard" backLabel="Quay lại" />
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* Giới thiệu nguồn */}
-        <div className="bg-white border border-[#DCD7C9] border-l-4 border-l-[#9C7A3C] rounded-lg px-5 py-4 mb-6 text-sm">
-          <p className="font-semibold text-[#9C7A3C] flex items-center gap-1.5 mb-1.5">
-            <Info size={16} /> Tra cứu trực tiếp trên nguồn chính thống
-          </p>
-          <p className="text-[#5B6472]">
-            Legal AI <strong>không lưu trữ</strong> văn bản pháp luật, án lệ và bản án. Mỗi lần tra
-            cứu, hệ thống tìm trực tiếp trên các trang chính thống rồi trích lục nội dung liên quan
-            đến từ khóa của bạn, kèm link nguồn để đối chiếu.
-          </p>
-          <ul className="list-disc pl-5 mt-2 space-y-0.5 text-[#5B6472]">
-            {DISPLAY_SECTIONS.map((section) => (
-              <li key={section.key}>
-                <strong>{section.label}:</strong>{" "}
-                {sectionDomainsOf(section).length ? sectionDomainsOf(section).join(", ") : section.hint}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Lĩnh vực — cá nhân hoá tra cứu */}
-        <div className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 mb-6">
-          <label
-            htmlFor="legal-live-business-field"
-            className="text-sm font-semibold text-[#1C2333] flex items-center gap-1.5 mb-2"
-          >
-            <Briefcase size={16} className="text-[#9C7A3C]" /> Lĩnh vực
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="legal-live-business-field"
-              type="text"
-              value={businessField}
-              onChange={(e) => setBusinessField(e.target.value)}
-              maxLength={200}
-              placeholder="Ví dụ: Bất động sản, Thương mại điện tử, Xây dựng…"
-              aria-label="Lĩnh vực"
-              className="flex-1 rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
+      <main className={`${hasResults ? "max-w-6xl" : "max-w-3xl"} mx-auto px-6 py-8`}>
+        {/* Ô tìm kiếm duy nhất */}
+        <form onSubmit={onSubmit} className={hasResults ? "mb-3" : "mt-6 mb-3"}>
+          {!hasResults && (
+            <p className="text-center text-sm text-[#5B6472] mb-4">
+              Nhập từ khóa hoặc mô tả tình huống pháp lý của bạn — Legal AI tìm trực tiếp trên nguồn chính thống.
+            </p>
+          )}
+          <div className="flex items-start gap-2 bg-white border border-[#DCD7C9] rounded-3xl pl-4 pr-2 py-2 shadow-sm focus-within:ring-1 focus-within:ring-[#9C7A3C]">
+            <Search size={18} className="text-[#9C7A3C] mt-2.5 shrink-0" />
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={onKeyDown}
+              maxLength={QUERY_MAX}
+              rows={text.length > 90 || text.includes("\n") ? 3 : 1}
+              placeholder="Ví dụ: Đăng ký bổ sung ngành nghề kinh doanh headhunter cho doanh nghiệp FDI"
+              aria-label="Tra cứu pháp lý"
+              className="flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-relaxed focus:outline-none"
             />
+            {text && (
+              <button
+                type="button"
+                onClick={() => setText("")}
+                aria-label="Xóa nội dung"
+                className="mt-1.5 p-1.5 rounded-full text-[#8A919C] hover:text-[#1C2333]"
+              >
+                <X size={16} />
+              </button>
+            )}
             <button
-              type="button"
-              onClick={onSaveBusinessField}
-              disabled={savingField || businessField.trim() === (businessFieldSaved ?? "")}
-              className="rounded-md border border-[#DCD7C9] px-4 py-2 text-sm text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-50"
+              type="submit"
+              disabled={!enabled}
+              className="mt-0.5 rounded-full bg-[#16213E] text-white px-5 py-2 text-sm hover:bg-[#1C2333] disabled:opacity-60 transition"
             >
-              {savingField ? "Đang lưu…" : "Lưu"}
+              Tra cứu
             </button>
           </div>
-          <p className="mt-1.5 text-xs text-[#8A919C]">
-            Legal AI sẽ ưu tiên kết quả phù hợp với lĩnh vực này khi tra cứu, đặc biệt ở mục “Kết
-            quả tổng hợp”.
-          </p>
-        </div>
+          {formError && <p className="mt-2 text-sm text-red-600">{formError}</p>}
+        </form>
 
-        {/* Cập nhật VBPL/Án lệ/Bản án — Admin + khách hàng đóng góp nguồn */}
-        <ContributeBox />
+        {/* Gợi ý nhanh + tra cứu gần đây */}
+        <div className="mb-4 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                disabled={!enabled}
+                onClick={() => run(ex)}
+                className="text-xs px-3 py-1 rounded-full border border-[#DCD7C9] bg-white text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-60"
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
 
-
-        {/* Chế độ */}
-        <div className="inline-flex rounded-md border border-[#DCD7C9] bg-white p-1 mb-3">
-          {(
-            [
-              ["keyword", "Từ khóa"],
-              ["clause", "Căn cứ cho điều khoản"],
-            ] as [LiveMode, string][]
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              onClick={() => {
-                setMode(value);
-                setFormError(null);
-              }}
-              aria-pressed={mode === value}
-              className={`px-4 py-1.5 text-sm rounded transition ${
-                mode === value ? "bg-[#16213E] text-white" : "text-[#5B6472] hover:text-[#1C2333]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Ô tìm kiếm */}
-        <form
-          onSubmit={onSubmit}
-          className="bg-white border border-[#DCD7C9] rounded-lg p-5 mb-3 space-y-3"
-        >
-          {mode === "keyword" ? (
-            <>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9C7A3C]"
-                  />
-                  <input
-                    type="text"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    maxLength={200}
-                    placeholder="Ví dụ: Tranh chấp hợp đồng lao động"
-                    aria-label="Từ khóa"
-                    className="w-full rounded-md border border-[#DCD7C9] pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
-                  />
-                </div>
+          {!!info?.recent_searches.length && (
+            <div>
+              <p className="text-xs font-medium text-[#5B6472] flex items-center gap-1 mb-1.5">
+                <History size={12} /> Tra cứu gần đây
                 <button
-                  type="submit"
-                  disabled={!enabled}
-                  className="rounded-md bg-[#16213E] text-white px-5 py-2 text-sm hover:bg-[#1C2333] disabled:opacity-60 transition"
+                  type="button"
+                  onClick={() => onDeleteHistory()}
+                  className="ml-2 font-normal text-[#8A919C] underline hover:text-[#9C7A3C]"
                 >
-                  Tra cứu
+                  Xóa lịch sử
                 </button>
-              </div>
+              </p>
               <div className="flex flex-wrap gap-2">
-                {EXAMPLES.map((ex) => (
-                  <button
-                    key={ex}
-                    type="button"
-                    disabled={!enabled}
-                    onClick={() => {
-                      setKeyword(ex);
-                      run(ex, "keyword");
-                    }}
-                    className="text-xs px-3 py-1 rounded-full border border-[#DCD7C9] bg-white text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-60"
+                {info.recent_searches.map((h) => (
+                  <span
+                    key={h.query}
+                    className="inline-flex items-center rounded-full border border-dashed border-[#DCD7C9] bg-[#FAF8F3] text-xs text-[#5B6472] hover:border-[#9C7A3C]"
                   >
-                    {ex}
-                  </button>
+                    <button
+                      type="button"
+                      disabled={!enabled}
+                      onClick={() => run(h.query, h.mode)}
+                      className="pl-3 pr-1.5 py-1 disabled:opacity-60"
+                    >
+                      {h.query.length > 60 ? `${h.query.slice(0, 60)}…` : h.query}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteHistory(h.query)}
+                      aria-label="Xóa khỏi lịch sử"
+                      className="pr-2 py-1 text-[#8A919C] hover:text-red-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
                 ))}
               </div>
-
-              {!!info?.recent_searches.length && (
-                <div>
-                  <p className="text-xs font-medium text-[#5B6472] flex items-center gap-1 mb-1.5">
-                    <History size={12} /> Tra cứu gần đây
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {info.recent_searches.map((h) => (
-                      <button
-                        key={h.query}
-                        type="button"
-                        disabled={!enabled}
-                        onClick={() => {
-                          if (h.mode === "keyword") {
-                            setMode("keyword");
-                            setKeyword(h.query);
-                            run(h.query, "keyword");
-                          } else {
-                            setMode("clause");
-                            setClause(h.query);
-                            run(h.query, "clause");
-                          }
-                        }}
-                        className="text-xs px-3 py-1 rounded-full border border-dashed border-[#DCD7C9] bg-[#FAF8F3] text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-60"
-                      >
-                        {h.query.length > 60 ? `${h.query.slice(0, 60)}…` : h.query}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label
-                  htmlFor="legal-live-request"
-                  className="block text-xs font-medium text-[#5B6472] mb-1"
-                >
-                  Yêu cầu tra cứu <span className="font-normal text-[#8A919C]">(tuỳ chọn)</span>
-                </label>
-                <input
-                  id="legal-live-request"
-                  type="text"
-                  value={requestText}
-                  onChange={(e) => setRequestText(e.target.value)}
-                  maxLength={500}
-                  placeholder="Ví dụ: Trình tự thủ tục cần thực hiện; Biện pháp giúp hạn chế rủi ro pháp lý…"
-                  aria-label="Yêu cầu tra cứu"
-                  className="w-full rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
-                />
-                <p className="mt-1 text-xs text-[#8A919C]">
-                  Nêu rõ bạn cần gì để mục “Kết quả tổng hợp” trả lời đúng trọng tâm hơn.
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <textarea
-                value={clause}
-                onChange={(e) => setClause(e.target.value)}
-                maxLength={1500}
-                rows={5}
-                placeholder="Dán nội dung điều khoản hợp đồng cần tìm căn cứ pháp lý..."
-                aria-label="Nội dung điều khoản"
-                className="w-full rounded-md border border-[#DCD7C9] px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
-              />
-              <button
-                type="submit"
-                disabled={!enabled}
-                className="rounded-md bg-[#16213E] text-white px-5 py-2 text-sm hover:bg-[#1C2333] disabled:opacity-60 transition"
-              >
-                Tìm căn cứ
-              </button>
-            </>
+            </div>
           )}
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
-        </form>
+        </div>
+
+        {/* Cập nhật VBPL/Án lệ/Bản án — Admin + khách hàng đóng góp nguồn (giữ nguyên) */}
+        <ContributeBox />
 
         {!enabled && (
           <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
@@ -355,10 +270,10 @@ export default function LegalLookupPage() {
           {typeof remaining === "number"
             ? `Còn ${remaining} lượt tra cứu hôm nay (mỗi lần tra cứu dùng 4 lượt). `
             : ""}
-          {lowQuota && "Số lượt còn ít: một số nhóm kết quả có thể không tra cứu được."}
+          {lowQuota && "Số lượt còn ít: một số phần kết quả có thể không tra cứu được."}
         </p>
 
-        {/* Kết quả: 3 nhóm, gọi song song */}
+        {/* Kết quả dạng Tổng quan + cột nguồn */}
         {submitted && (
           <div key={submitted.id}>
             <p className="text-sm text-[#5B6472] mb-4">
@@ -367,36 +282,74 @@ export default function LegalLookupPage() {
                 “{submitted.q.length > 120 ? `${submitted.q.slice(0, 120)}…` : submitted.q}”
               </span>
             </p>
-            {DISPLAY_SECTIONS.map((section) =>
-              section.groups.length === 1 ? (
-                <LiveGroupSection
-                  key={section.key}
-                  group={section.groups[0]}
-                  domains={sectionDomainsOf(section)}
-                  query={submitted.q}
-                  mode={submitted.mode}
-                  requestText={submitted.requestText}
-                  onRemaining={onRemaining}
-                  onUnauthorized={onUnauthorized}
-                />
-              ) : (
-                <LiveMergedGroupSection
-                  key={section.key}
-                  groups={section.groups}
-                  label={section.label}
-                  domains={sectionDomainsOf(section)}
-                  query={submitted.q}
-                  mode={submitted.mode}
-                  requestText={submitted.requestText}
-                  onRemaining={onRemaining}
-                  onUnauthorized={onUnauthorized}
-                />
-              )
-            )}
+            <LiveOverview
+              query={submitted.q}
+              mode={submitted.mode}
+              onRemaining={onRemaining}
+              onUnauthorized={onUnauthorized}
+              onAsk={(f) => run(f, "keyword")}
+              disabled={!enabled}
+            />
           </div>
         )}
 
-        <p className="mt-2 text-xs text-[#5B6472] flex gap-1.5">
+        {/* Cá nhân hoá + nguồn tra cứu (thu gọn để trang gọn như Google) */}
+        <div className="mt-6 space-y-3">
+          <details className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-3">
+            <summary className="cursor-pointer text-sm font-semibold text-[#1C2333] flex items-center gap-1.5 list-none">
+              <Briefcase size={16} className="text-[#9C7A3C]" /> Cá nhân hoá: lĩnh vực hoạt động của tôi
+              {businessFieldSaved && (
+                <span className="font-normal text-[#5B6472]">— {businessFieldSaved}</span>
+              )}
+            </summary>
+            <div className="mt-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={businessField}
+                  onChange={(e) => setBusinessField(e.target.value)}
+                  maxLength={200}
+                  placeholder="Ví dụ: Bất động sản, Thương mại điện tử, Xây dựng…"
+                  aria-label="Lĩnh vực hoạt động"
+                  className="flex-1 rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
+                />
+                <button
+                  type="button"
+                  onClick={onSaveBusinessField}
+                  disabled={savingField || businessField.trim() === (businessFieldSaved ?? "")}
+                  className="rounded-md border border-[#DCD7C9] px-4 py-2 text-sm text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-50"
+                >
+                  {savingField ? "Đang lưu…" : "Lưu"}
+                </button>
+              </div>
+              <p className="mt-1.5 text-xs text-[#8A919C]">
+                Không bắt buộc. Hệ thống tự nhận biết lĩnh vực từ câu hỏi; lĩnh vực đã lưu chỉ dùng làm bối
+                cảnh để ưu tiên kết quả phù hợp.
+              </p>
+            </div>
+          </details>
+
+          <details className="bg-white border border-[#DCD7C9] border-l-4 border-l-[#9C7A3C] rounded-lg px-5 py-3 text-sm">
+            <summary className="cursor-pointer font-semibold text-[#9C7A3C] flex items-center gap-1.5 list-none">
+              <Info size={16} /> Tra cứu trực tiếp trên nguồn chính thống
+            </summary>
+            <p className="text-[#5B6472] mt-2">
+              Legal AI <strong>không lưu trữ</strong> văn bản pháp luật, án lệ và bản án. Mỗi lần tra cứu, hệ
+              thống tìm trực tiếp trên các trang chính thống rồi trích lục nội dung liên quan, kèm link nguồn để
+              đối chiếu.
+            </p>
+            <ul className="list-disc pl-5 mt-2 space-y-0.5 text-[#5B6472]">
+              {DISPLAY_SECTIONS.map((section) => (
+                <li key={section.key}>
+                  <strong>{section.label}:</strong>{" "}
+                  {sectionDomainsOf(section).length ? sectionDomainsOf(section).join(", ") : section.hint}
+                </li>
+              ))}
+            </ul>
+          </details>
+        </div>
+
+        <p className="mt-4 text-xs text-[#5B6472] flex gap-1.5">
           <Info size={14} className="shrink-0 mt-0.5" />
           {info?.disclaimer || DISCLAIMER_FALLBACK}
         </p>

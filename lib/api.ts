@@ -862,10 +862,21 @@ export interface LiveReference {
   url: string;
 }
 
+export interface LiveCitedDocument {
+  number: string;
+  // Khoá chuẩn hoá (bỏ dấu, chữ thường, không khoảng trắng) — khớp với LiveItem.number_key.
+  key: string;
+  // verified: số hiệu nằm trên trang nguồn đã đọc; unverified: đọc được trang nhưng không thấy;
+  // unknown: không đọc được trang nào để đối chiếu.
+  status: "verified" | "unverified" | "unknown";
+  url: string | null;
+}
+
 export interface LiveItem {
   url: string;
   title: string;
   number: string | null;
+  number_key: string | null;
   issuer: string | null;
   issued_on: string | null;
   effective_on: string | null;
@@ -888,6 +899,7 @@ export interface LiveItem {
   // Chỉ dùng cho nhóm "danh_gia" (Đánh giá pháp lý & rủi ro).
   risk_level: "cao" | "trung_binh" | "thap" | null;
   references: LiveReference[];
+  cited_documents: LiveCitedDocument[];
   disclaimer: string | null;
 }
 
@@ -898,6 +910,9 @@ export interface LiveSearchResponse {
   mode: LiveMode;
   items: LiveItem[];
   notice: string | null;
+  // Chỉ nhóm danh_gia: kết luận nhanh + câu hỏi gợi ý tiếp theo.
+  overview: string | null;
+  followups: string[];
   from_cache: boolean;
   searched_domains: string[];
   generated_at: string;
@@ -945,6 +960,12 @@ export function searchLegalLive(
   const qs = new URLSearchParams({ group, q, mode });
   if (requestText && requestText.trim()) qs.set("request", requestText.trim());
   return request<LiveSearchResponse>(`/legal/live/search?${qs.toString()}`);
+}
+
+// Xoá lịch sử tra cứu của tài khoản: truyền `query` để xoá một cụm, bỏ trống để xoá tất cả.
+export function clearLegalLiveHistory(query?: string) {
+  const qs = query && query.trim() ? `?${new URLSearchParams({ query: query.trim() }).toString()}` : "";
+  return request<{ deleted: number }>(`/legal/live/history${qs}`, { method: "DELETE" });
 }
 
 // Lĩnh vực hoạt động khách tự khai báo — dùng làm bối cảnh cá nhân hoá cho
