@@ -29,13 +29,6 @@ import { DISCLAIMER_FALLBACK, DISPLAY_SECTIONS, PageHeader, useAuthGuard } from 
 import LiveOverview from "./_components/overview";
 import ContributeBox from "./_components/contribute";
 
-const EXAMPLES = [
-  "Đăng ký bổ sung ngành nghề kinh doanh cho doanh nghiệp FDI",
-  "Tranh chấp hợp đồng lao động",
-  "Phạt vi phạm hợp đồng",
-  "Đơn phương chấm dứt hợp đồng lao động",
-];
-
 // Backend: "keyword" nhận tối đa 500 ký tự; dài hơn (vd dán cả điều khoản) → "clause".
 const KEYWORD_MAX = 500;
 const QUERY_MAX = 1500;
@@ -175,7 +168,7 @@ export default function LegalLookupPage() {
               onKeyDown={onKeyDown}
               maxLength={QUERY_MAX}
               rows={text.length > 90 || text.includes("\n") ? 3 : 1}
-              placeholder="Ví dụ: Đăng ký bổ sung ngành nghề kinh doanh headhunter cho doanh nghiệp FDI"
+              placeholder="Từ khóa/tình huống pháp lý cần tìm kiếm"
               aria-label="Tra cứu pháp lý"
               className="flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-relaxed focus:outline-none"
             />
@@ -200,22 +193,8 @@ export default function LegalLookupPage() {
           {formError && <p className="mt-2 text-sm text-red-600">{formError}</p>}
         </form>
 
-        {/* Gợi ý nhanh + tra cứu gần đây */}
+        {/* Tra cứu gần đây */}
         <div className="mb-4 space-y-3">
-          <div className="flex flex-wrap gap-2">
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                type="button"
-                disabled={!enabled}
-                onClick={() => run(ex)}
-                className="text-xs px-3 py-1 rounded-full border border-[#DCD7C9] bg-white text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-60"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-
           {!!info?.recent_searches.length && (
             <div>
               <p className="text-xs font-medium text-[#5B6472] flex items-center gap-1 mb-1.5">
