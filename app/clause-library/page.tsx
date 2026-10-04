@@ -14,9 +14,81 @@ import {
   getClausesByIndustry,
   getMe,
 } from "@/lib/api";
+import { useLang, type Lang } from "@/lib/lang";
+import LangSwitcher from "@/app/components/LangSwitcher";
+
+// ---- văn bản giao diện (tiêu đề/nút/thông báo) dịch đủ 5 ngôn ngữ.
+// LƯU Ý: tên ngành, tên điều khoản và NỘI DUNG điều khoản do backend trả về
+// bằng tiếng Việt và được giữ nguyên, vì văn bản hợp đồng luôn soạn bằng
+// tiếng Việt theo quy định pháp luật. ----
+const TEXT: Record<
+  Lang,
+  {
+    back: string;
+    title: string;
+    intro: string;
+    loading: string;
+    errGeneric: string;
+    sampleClauses: (n: number) => string;
+    chooseOther: string;
+  }
+> = {
+  vi: {
+    back: "Quay lại",
+    title: "Thư viện điều khoản theo ngành",
+    intro:
+      "Chọn một ngành/loại hợp đồng để xem các điều khoản mẫu có sẵn, dùng để tham khảo khi tự soạn thảo hoặc đối chiếu với hợp đồng đang review.",
+    loading: "Đang tải...",
+    errGeneric: "Có lỗi xảy ra",
+    sampleClauses: (n) => `${n} điều khoản mẫu`,
+    chooseOther: "Chọn ngành khác",
+  },
+  en: {
+    back: "Back",
+    title: "Clause Library by Industry",
+    intro:
+      "Choose an industry/contract type to browse the available sample clauses, for reference when drafting your own contract or comparing against a contract under review.",
+    loading: "Loading...",
+    errGeneric: "Something went wrong",
+    sampleClauses: (n) => `${n} sample clause${n === 1 ? "" : "s"}`,
+    chooseOther: "Choose another industry",
+  },
+  zh: {
+    back: "返回",
+    title: "按行业分类的条款库",
+    intro:
+      "选择行业/合同类型，查看现有的示范条款，可在自行起草或对照正在审查的合同时参考。",
+    loading: "加载中...",
+    errGeneric: "出错了",
+    sampleClauses: (n) => `${n} 条示范条款`,
+    chooseOther: "选择其他行业",
+  },
+  ko: {
+    back: "뒤로",
+    title: "업종별 조항 라이브러리",
+    intro:
+      "업종/계약 유형을 선택하여 제공되는 샘플 조항을 확인하세요. 계약서를 직접 작성하거나 검토 중인 계약서와 대조할 때 참고할 수 있습니다.",
+    loading: "불러오는 중...",
+    errGeneric: "오류가 발생했습니다",
+    sampleClauses: (n) => `샘플 조항 ${n}개`,
+    chooseOther: "다른 업종 선택",
+  },
+  ja: {
+    back: "戻る",
+    title: "業種別条項ライブラリ",
+    intro:
+      "業種／契約の種類を選ぶと、利用可能なサンプル条項を確認できます。契約書を自作する際や、レビュー中の契約書との照合の参考にしてください。",
+    loading: "読み込み中...",
+    errGeneric: "エラーが発生しました",
+    sampleClauses: (n) => `サンプル条項 ${n} 件`,
+    chooseOther: "別の業種を選ぶ",
+  },
+};
 
 export default function ClauseLibraryPage() {
   const router = useRouter();
+  const [lang] = useLang();
+  const t = TEXT[lang];
   const [authChecked, setAuthChecked] = useState(false);
 
   const [industries, setIndustries] = useState<ClauseIndustry[]>([]);
@@ -46,9 +118,10 @@ export default function ClauseLibraryPage() {
     getClauseIndustries()
       .then((res) => setIndustries(res.industries))
       .catch((err) =>
-        setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra")
+        setError(err instanceof ApiError ? err.message : t.errGeneric)
       )
       .finally(() => setLoadingIndustries(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked]);
 
   function openIndustry(key: string) {
@@ -59,7 +132,7 @@ export default function ClauseLibraryPage() {
     getClausesByIndustry(key)
       .then((res) => setClauses(res.clauses))
       .catch((err) =>
-        setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra")
+        setError(err instanceof ApiError ? err.message : t.errGeneric)
       )
       .finally(() => setLoadingClauses(false));
   }
@@ -72,7 +145,7 @@ export default function ClauseLibraryPage() {
     getClauseContent(selectedIndustry, clauseName)
       .then(setOpenClause)
       .catch((err) =>
-        setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra")
+        setError(err instanceof ApiError ? err.message : t.errGeneric)
       )
       .finally(() => setLoadingClauseContent(false));
   }
@@ -93,12 +166,13 @@ export default function ClauseLibraryPage() {
           className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"
         >
           <ArrowLeft size={16} />
-          Quay lại
+          {t.back}
         </Link>
         <div className="flex items-center gap-2">
           <BookOpen size={20} className="text-[#C6A15C]" />
-          <h1 className="text-lg font-semibold">Thư viện điều khoản theo ngành</h1>
+          <h1 className="text-lg font-semibold">{t.title}</h1>
         </div>
+        <LangSwitcher />
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
@@ -110,14 +184,10 @@ export default function ClauseLibraryPage() {
 
         {!selectedIndustry ? (
           <>
-            <p className="text-[#5B6472] mb-6">
-              Chọn một ngành/loại hợp đồng để xem các điều khoản mẫu có
-              sẵn, dùng để tham khảo khi tự soạn thảo hoặc đối chiếu với
-              hợp đồng đang review.
-            </p>
+            <p className="text-[#5B6472] mb-6">{t.intro}</p>
 
             {loadingIndustries ? (
-              <p className="text-[#5B6472]">Đang tải...</p>
+              <p className="text-[#5B6472]">{t.loading}</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {industries.map((ind) => (
@@ -133,7 +203,7 @@ export default function ClauseLibraryPage() {
                       <ChevronRight size={18} className="text-[#9C7A3C]" />
                     </div>
                     <p className="text-sm text-[#5B6472] mt-1">
-                      {ind.clause_count} điều khoản mẫu
+                      {t.sampleClauses(ind.clause_count)}
                     </p>
                   </button>
                 ))}
@@ -150,7 +220,7 @@ export default function ClauseLibraryPage() {
               className="flex items-center gap-1.5 text-sm text-[#9C7A3C] hover:underline mb-4"
             >
               <ArrowLeft size={14} />
-              Chọn ngành khác
+              {t.chooseOther}
             </button>
 
             <h2 className="text-xl font-semibold text-[#1C2333] mb-4">
@@ -159,7 +229,7 @@ export default function ClauseLibraryPage() {
             </h2>
 
             {loadingClauses ? (
-              <p className="text-[#5B6472]">Đang tải...</p>
+              <p className="text-[#5B6472]">{t.loading}</p>
             ) : (
               <div className="space-y-2">
                 {clauses.map((clause) => (
@@ -201,7 +271,7 @@ export default function ClauseLibraryPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-[#1C2333]">
-                {openLabel || (openClause?.clause_name ?? "Đang tải...")}
+                {openLabel || (openClause?.clause_name ?? t.loading)}
               </h3>
               <button
                 onClick={() => setOpenClause(null)}
@@ -211,7 +281,7 @@ export default function ClauseLibraryPage() {
               </button>
             </div>
             {loadingClauseContent ? (
-              <p className="text-[#5B6472]">Đang tải...</p>
+              <p className="text-[#5B6472]">{t.loading}</p>
             ) : (
               <pre className="whitespace-pre-wrap text-sm text-[#1C2333] font-sans leading-relaxed">
                 {openClause?.content}
