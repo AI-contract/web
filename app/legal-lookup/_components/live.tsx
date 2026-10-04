@@ -38,7 +38,7 @@ import {
 // ---------------------------------------------------------------
 // Hằng số & tiện ích
 // ---------------------------------------------------------------
-export const GROUP_ORDER: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia"];
+export const GROUP_ORDER: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia", "luat_su"];
 
 export const GROUP_META: Record<
   LiveGroup,
@@ -61,6 +61,12 @@ export const GROUP_META: Record<
     hint: "Bản án, quyết định đã được công bố trên Cổng công bố bản án",
     excerptLabel: "Thông tin về vụ/việc",
     badge: "bg-amber-50 text-amber-800 border-amber-200",
+  },
+  luat_su: {
+    label: "Phân tích của văn phòng/công ty luật",
+    hint: "Bài viết do văn phòng luật sư, công ty luật công bố trên website của họ — ý kiến của đơn vị đăng bài, không phải của Legal AI",
+    excerptLabel: "Trích nguyên văn từ bài viết",
+    badge: "bg-teal-50 text-teal-700 border-teal-200",
   },
   danh_gia: {
     label: "Kết quả tổng hợp",
@@ -91,7 +97,22 @@ export const DISPLAY_SECTIONS: DisplaySection[] = [
     hint: `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`,
   },
   { key: "danh_gia", groups: ["danh_gia"], label: GROUP_META.danh_gia.label, hint: GROUP_META.danh_gia.hint },
+  { key: "luat_su", groups: ["luat_su"], label: GROUP_META.luat_su.label, hint: GROUP_META.luat_su.hint },
 ];
+
+// Nhãn hạng nguồn hiển thị trên từng kết quả và trong cột "Nguồn".
+export const TIER_META: Record<"chinh_thong" | "tham_khao", { label: string; tone: string; note: string }> = {
+  chinh_thong: {
+    label: "Nguồn chính thống",
+    tone: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    note: "Trang của cơ quan nhà nước",
+  },
+  tham_khao: {
+    label: "Nguồn tham khảo",
+    tone: "bg-slate-100 text-slate-600 border-slate-300",
+    note: "Không phải trang chính thức của cơ quan nhà nước; hãy đối chiếu với văn bản gốc",
+  },
+};
 
 const RISK_META: Record<"cao" | "trung_binh" | "thap", { label: string; tone: string }> = {
   cao: { label: "Rủi ro cao", tone: "bg-red-50 text-red-700 border-red-200" },
@@ -351,7 +372,7 @@ export function LiveResultCard({
   const info = [
     item.number && `Số ${item.number}`,
     item.issuer,
-    item.issued_on && `Ban hành ${item.issued_on}`,
+    item.issued_on && (group === "luat_su" ? `Đăng ${item.issued_on}` : `Ban hành ${item.issued_on}`),
     item.effective_on && `Hiệu lực từ ${item.effective_on}`,
   ]
     .filter(Boolean)
@@ -363,6 +384,14 @@ export function LiveResultCard({
         <span className={`text-xs px-2 py-0.5 rounded-full border ${meta.badge}`}>
           {meta.label}
         </span>
+        {item.source_tier && (
+          <span
+            title={TIER_META[item.source_tier].note}
+            className={`text-xs px-2 py-0.5 rounded-full border ${TIER_META[item.source_tier].tone}`}
+          >
+            {TIER_META[item.source_tier].label}
+          </span>
+        )}
         {item.status_text ? (
           <span
             className={`text-xs px-2 py-0.5 rounded-full border ${statusTone(item.status_text)}`}
@@ -411,7 +440,11 @@ export function LiveResultCard({
       {item.issue && (
         <div className="mt-4">
           <p className="text-sm font-semibold text-red-700 mb-1">
-            {group === "danh_gia" ? "Phân tích quy định liên quan" : "Vấn đề pháp lý"}
+            {group === "danh_gia"
+              ? "Phân tích quy định liên quan"
+              : group === "luat_su"
+                ? "Vấn đề/quy định được phân tích trong bài viết"
+                : "Vấn đề pháp lý"}
           </p>
           <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{item.issue}</p>
         </div>
@@ -419,7 +452,11 @@ export function LiveResultCard({
       {item.resolution && (
         <div className="mt-4">
           <p className="text-sm font-semibold text-[#9C7A3C] mb-1">
-            {group === "danh_gia" ? "Khuyến nghị / biện pháp giảm rủi ro" : "Giải quyết / Phán quyết"}
+            {group === "danh_gia"
+              ? "Khuyến nghị / biện pháp giảm rủi ro"
+              : group === "luat_su"
+                ? "Kết luận/khuyến nghị của đơn vị đăng bài"
+                : "Giải quyết / Phán quyết"}
           </p>
           <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap border-l-4 border-[#C6A15C] bg-[#FAF8F3] px-3 py-2">
             {item.resolution}
