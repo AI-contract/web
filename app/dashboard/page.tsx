@@ -2257,13 +2257,13 @@ export default function Home() {
         </div>
 
         {/* Bộ chọn ngôn ngữ giao diện */}
-        <div className="flex items-center gap-1 mb-6">
+        <div className="flex flex-wrap items-center gap-1 mb-6">
           <Languages size={14} className="text-slate-400 mr-1" />
           {LANG_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setLang(opt.value)}
-              className={`text-xs px-2 py-1 rounded-md border transition ${
+              className={`text-xs px-2 py-1 rounded-md border whitespace-nowrap transition ${
                 lang === opt.value
                   ? "bg-[#9C7A3C] border-[#9C7A3C] text-white"
                   : "border-white/20 text-slate-300 hover:text-white hover:border-white/40"
