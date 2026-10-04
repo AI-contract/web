@@ -103,6 +103,9 @@ export interface UserMe {
   requests_limit: number;
   review_used: number;
   review_limit: number;
+  // true = gói FREE không giới hạn lượt (chế độ demo). Optional để tương thích
+  // với backend cũ chưa trả trường này.
+  usage_unlimited?: boolean;
 }
 
 export interface Token {
