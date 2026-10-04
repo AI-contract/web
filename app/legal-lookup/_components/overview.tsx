@@ -10,12 +10,13 @@
  *   3. Cột "Nguồn" (bên phải trên màn hình rộng, bên dưới trên điện thoại): tất cả
  *      trang nguồn của cả 4 nhóm, kèm trạng thái đối chiếu.
  *
- * Vẫn gọi 4 API song song (mỗi nhóm tải/lỗi/thử lại độc lập) nên không đổi hạn mức
- * lượt tra cứu. Nội dung là text thuần, React tự escape.
+ * Chỉ gọi 2 API song song theo mặc định (Tổng quan/Phân tích + Căn cứ pháp lý) để tiết
+ * kiệm chi phí; Án lệ/Bản án (2 lượt) và Văn phòng luật (1 lượt) chỉ chạy khi người
+ * dùng bấm. Mỗi nhóm tải/lỗi/thử lại độc lập. Nội dung là text thuần, React tự escape.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ExternalLink, HelpCircle, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, CheckCircle2, ExternalLink, HelpCircle, Loader2, RefreshCw, Search, Sparkles } from "lucide-react";
 import {
   ApiError,
   LiveGroup,
@@ -35,6 +36,8 @@ type GroupState = {
 };
 
 const ALL_GROUPS: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia", "luat_su"];
+// Nhóm chạy ngay khi tra cứu (2 lượt). Các nhóm còn lại chỉ chạy khi người dùng bấm.
+const DEFAULT_GROUPS: LiveGroup[] = ["danh_gia", "van_ban"];
 
 function hostOf(url: string): string {
   try {
@@ -83,18 +86,26 @@ export default function LiveOverview({
 }) {
   const [nonce, setNonce] = useState(0);
   const [state, setState] = useState<Partial<Record<LiveGroup, GroupState>>>({});
+  // Các nhóm đã được yêu cầu tải (mặc định 2 nhóm; bấm nút để thêm). Component được tạo
+  // lại cho mỗi lần tra cứu mới (key ở page.tsx) nên tự về mặc định.
+  const [requested, setRequested] = useState<Set<LiveGroup>>(() => new Set(DEFAULT_GROUPS));
+  const nonceRef = useRef(nonce);
+  nonceRef.current = nonce;
+  const startedRef = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
-    let cancelled = false;
-    ALL_GROUPS.forEach((g) => {
+  const load = useCallback(
+    (g: LiveGroup) => {
+      const key = `${nonce}:${g}`;
+      if (startedRef.current.has(key)) return;
+      startedRef.current.add(key);
       searchLegalLive(g, query, mode, requestText)
         .then((data) => {
-          if (cancelled) return;
+          if (nonceRef.current !== nonce) return;
           setState((prev) => ({ ...prev, [g]: { nonce, data, error: null, status: null } }));
           onRemaining(data.remaining_calls);
         })
         .catch((err) => {
-          if (cancelled) return;
+          if (nonceRef.current !== nonce) return;
           if (err instanceof ApiError && err.status === 401) {
             onUnauthorized();
             return;
@@ -109,17 +120,22 @@ export default function LiveOverview({
             },
           }));
         });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [query, mode, requestText, nonce, onRemaining, onUnauthorized]);
+    },
+    [query, mode, requestText, nonce, onRemaining, onUnauthorized]
+  );
+
+  useEffect(() => {
+    requested.forEach((g) => load(g));
+  }, [requested, load]);
+
+  const requestGroups = (groups: LiveGroup[]) =>
+    setRequested((prev) => new Set([...prev, ...groups]));
 
   const current = (g: LiveGroup): GroupState | null => {
     const s = state[g];
     return s && s.nonce === nonce ? s : null;
   };
-  const loadingOf = (g: LiveGroup) => current(g) === null;
+  const loadingOf = (g: LiveGroup) => requested.has(g) && current(g) === null;
   const itemsOf = (g: LiveGroup): LiveItem[] => current(g)?.data?.items ?? [];
   const errorOf = (g: LiveGroup) => current(g)?.error ?? null;
 
@@ -169,12 +185,13 @@ export default function LiveOverview({
     return out;
   }, [state, nonce]);
 
-  const anyError = ALL_GROUPS.map(errorOf).filter(Boolean) as string[];
-  const canRetry = ALL_GROUPS.some((g) => {
+  const activeGroups = ALL_GROUPS.filter((g) => requested.has(g));
+  const anyError = activeGroups.map(errorOf).filter(Boolean) as string[];
+  const canRetry = activeGroups.some((g) => {
     const s = current(g);
     return !!s?.error && s.status !== 429;
   });
-  const allLoaded = ALL_GROUPS.every((g) => !loadingOf(g));
+  const allLoaded = activeGroups.every((g) => !loadingOf(g));
 
   function renderLoading(label: string) {
     return (
@@ -185,8 +202,27 @@ export default function LiveOverview({
     );
   }
 
-  function renderSection(group: LiveGroup | LiveGroup[], title: string, hint?: string) {
+  function renderSection(group: LiveGroup | LiveGroup[], title: string, hint?: string, cta?: string) {
     const groups = Array.isArray(group) ? group : [group];
+    if (groups.every((g) => !requested.has(g))) {
+      // Nhóm chưa tải: chỉ hiện nút, bấm mới gọi (tốn thêm lượt tra cứu).
+      return (
+        <section aria-label={title} className="mb-8">
+          <h2 className="text-base font-semibold text-[#1C2333] mb-1">{title}</h2>
+          {hint && <p className="text-xs text-[#8A919C] mb-3">{hint}</p>}
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => requestGroups(groups)}
+            className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-[#DCD7C9] bg-white text-[#1C2333] hover:border-[#9C7A3C] disabled:opacity-60"
+          >
+            <Search size={14} className="text-[#9C7A3C]" />
+            {cta ?? `Tìm ${title.toLowerCase()}`}
+            <span className="text-xs text-[#8A919C]">(tốn thêm {groups.length} lượt tra cứu)</span>
+          </button>
+        </section>
+      );
+    }
     const loading = groups.some(loadingOf);
     const entries = groups.flatMap((g) => itemsOf(g).map((item) => ({ item, g })));
     return (
@@ -267,7 +303,7 @@ export default function LiveOverview({
 
         {allLoaded && anyError.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg px-5 py-4 text-sm text-red-700 mb-6">
-            {ALL_GROUPS.filter((g) => errorOf(g)).map((g) => (
+            {activeGroups.filter((g) => errorOf(g)).map((g) => (
               <p key={g}>
                 {GROUP_META[g].label}: {errorOf(g)}
               </p>
@@ -288,9 +324,15 @@ export default function LiveOverview({
         {renderSection(
           ["an_le", "ban_an"],
           "Án lệ/Bản án",
-          `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`
+          `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`,
+          "Tìm án lệ và bản án liên quan"
         )}
-        {renderSection("luat_su", GROUP_META.luat_su.label, GROUP_META.luat_su.hint)}
+        {renderSection(
+          "luat_su",
+          GROUP_META.luat_su.label,
+          GROUP_META.luat_su.hint,
+          "Tìm phân tích của văn phòng/công ty luật"
+        )}
       </div>
 
       {/* Cột nguồn */}

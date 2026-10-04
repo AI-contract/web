@@ -864,7 +864,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review hợp đồng",
     reviewSectionDesc:
-      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Gói FREE được review không giới hạn lượt.",
+      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Gói FREE được review miễn phí trong bản demo (có giới hạn lượt mỗi ngày).",
     reviewSteps: [
       {
         title: "Tải lên hợp đồng",
@@ -1016,7 +1016,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review contract",
     reviewSectionDesc:
-      "Upload an existing contract for the AI to review legal risks and propose a revised version. The FREE plan includes unlimited reviews.",
+      "Upload an existing contract for the AI to review legal risks and propose a revised version. The FREE plan includes free reviews during the demo (daily limit applies).",
     reviewSteps: [
       {
         title: "Upload the contract",
@@ -1162,7 +1162,7 @@ const UI_TEXT: Record<Lang, {
       },
     ],
     reviewSectionTitle: "审查合同",
-    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。FREE 套餐不限审查次数。",
+    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。演示版中 FREE 套餐可免费审查（每日限次）。",
     reviewSteps: [
       {
         title: "上传合同",
@@ -1311,7 +1311,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "계약서 검토",
     reviewSectionDesc:
-      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. FREE 요금제는 검토 횟수 제한이 없습니다.",
+      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. 데모 버전에서 FREE 요금제는 무료로 검토할 수 있습니다(일일 횟수 제한).",
     reviewSteps: [
       {
         title: "계약서 업로드",
@@ -1462,7 +1462,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "契約書をレビュー",
     reviewSectionDesc:
-      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。FREEプランではレビュー回数に制限はありません。",
+      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。デモ版ではFREEプランで無料レビューできます（日次制限あり）。",
     reviewSteps: [
       {
         title: "契約書をアップロード",
@@ -1579,15 +1579,15 @@ type Tab = "generate" | "review" | "intro";
 const UNLIMITED_TEXT: Record<Lang, { contracts: string; reviews: string }> = {
   vi: {
     contracts: "Tạo hợp đồng: không giới hạn",
-    reviews: "Review hợp đồng: không giới hạn",
+    reviews: "Review hợp đồng: miễn phí (giới hạn lượt mỗi ngày)",
   },
   en: {
     contracts: "Contract generation: unlimited",
-    reviews: "Contract review: unlimited",
+    reviews: "Contract review: free (daily limit applies)",
   },
-  zh: { contracts: "生成合同：不限次数", reviews: "审查合同：不限次数" },
-  ko: { contracts: "계약서 생성: 무제한", reviews: "계약서 검토: 무제한" },
-  ja: { contracts: "契約書作成：無制限", reviews: "契約書レビュー：無制限" },
+  zh: { contracts: "生成合同：不限次数", reviews: "审查合同：免费（每日限次）" },
+  ko: { contracts: "계약서 생성: 무제한", reviews: "계약서 검토: 무료(일일 횟수 제한)" },
+  ja: { contracts: "契約書作成：無制限", reviews: "契約書レビュー：無料（日次制限あり）" },
 };
 
 export default function Home() {

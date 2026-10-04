@@ -145,7 +145,7 @@ export default function LegalLookupPage() {
   const domainsOf = (g: LiveGroup) => info?.groups.find((x) => x.value === g)?.domains ?? [];
   const sectionDomainsOf = (section: (typeof DISPLAY_SECTIONS)[number]) =>
     section.groups.flatMap((g) => domainsOf(g));
-  const lowQuota = typeof remaining === "number" && remaining < 5;
+  const lowQuota = typeof remaining === "number" && remaining < 4;
   const hasResults = submitted !== null;
 
   return (
@@ -247,7 +247,7 @@ export default function LegalLookupPage() {
 
         <p className="text-xs text-[#8A919C] mb-6">
           {typeof remaining === "number"
-            ? `Còn ${remaining} lượt tra cứu hôm nay (mỗi lần tra cứu dùng 5 lượt). `
+            ? `Còn ${remaining} lượt tra cứu hôm nay (mỗi lần tra cứu dùng 2 lượt; mở thêm Án lệ/Bản án tốn thêm 2 lượt, Văn phòng luật tốn thêm 1 lượt; kết quả trùng câu hỏi đã có sẵn thì không tốn lượt). `
             : ""}
           {lowQuota && "Số lượt còn ít: một số phần kết quả có thể không tra cứu được."}
         </p>
