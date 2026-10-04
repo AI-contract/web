@@ -42,11 +42,15 @@ import {
 } from "@/lib/api";
 import DiffView from "@/app/components/DiffView";
 import ReviewChat from "@/app/components/ReviewChat";
+import { useLang, type Lang } from "@/lib/lang";
 
 // ---- ngôn ngữ giao diện (menu/nhãn chính) - KHÔNG áp dụng cho
 // FIELD_LABELS/FIELD_LABEL_OVERRIDES_BY_TYPE, vì văn bản hợp đồng
 // luôn được soạn bằng tiếng Việt theo quy định pháp luật. ----
-export type Lang = "vi" | "en" | "zh" | "ko" | "ja";
+// Kiểu Lang và hook useLang dùng chung nằm ở lib/lang.ts (lưu lựa chọn
+// vào localStorage để các trang khác cùng đọc); re-export để các file
+// đang import Lang từ trang này vẫn chạy bình thường.
+export type { Lang };
 
 const LANG_OPTIONS: { value: Lang; label: string }[] = [
   { value: "vi", label: "VI" },
@@ -598,6 +602,49 @@ function iconForField(key: string) {
   return FileText;
 }
 
+// ---- nhãn menu sidebar cho 4 mục mở trang riêng (Tra cứu pháp lý,
+// Thư viện điều khoản, Nhắc hạn hợp đồng, Workspace) - dịch đủ 5 ngôn ngữ ----
+const NAV_EXTRA: Record<
+  Lang,
+  {
+    legalLookup: string;
+    clauseLibrary: string;
+    deadlines: string;
+    workspace: string;
+  }
+> = {
+  vi: {
+    legalLookup: "Tra cứu pháp lý",
+    clauseLibrary: "Thư viện điều khoản",
+    deadlines: "Nhắc hạn hợp đồng",
+    workspace: "Workspace (Enterprise)",
+  },
+  en: {
+    legalLookup: "Legal Research",
+    clauseLibrary: "Clause Library",
+    deadlines: "Contract Deadline Reminders",
+    workspace: "Workspace (Enterprise)",
+  },
+  zh: {
+    legalLookup: "法律检索",
+    clauseLibrary: "条款库",
+    deadlines: "合同到期提醒",
+    workspace: "工作区（企业版）",
+  },
+  ko: {
+    legalLookup: "법률 검색",
+    clauseLibrary: "조항 라이브러리",
+    deadlines: "계약 기한 알림",
+    workspace: "워크스페이스 (엔터프라이즈)",
+  },
+  ja: {
+    legalLookup: "法令・判例検索",
+    clauseLibrary: "条項ライブラリ",
+    deadlines: "契約期限リマインダー",
+    workspace: "ワークスペース（エンタープライズ）",
+  },
+};
+
 // ---- văn bản tĩnh của giao diện (menu/nhãn chính, tiêu đề, nút
 // bấm, trợ lý AI...), dịch đủ VI/EN/中文. KHÔNG bao gồm nhãn field
 // hợp đồng (xem FIELD_LABELS / FIELD_LABEL_OVERRIDES_BY_TYPE ở trên)
@@ -808,7 +855,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review hợp đồng",
     reviewSectionDesc:
-      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Gói FREE được review 3 lượt/tháng.",
+      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Gói FREE được review không giới hạn lượt.",
     reviewSteps: [
       {
         title: "Tải lên hợp đồng",
@@ -960,7 +1007,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review contract",
     reviewSectionDesc:
-      "Upload an existing contract for the AI to review legal risks and propose a revised version. The FREE plan includes 3 reviews per month.",
+      "Upload an existing contract for the AI to review legal risks and propose a revised version. The FREE plan includes unlimited reviews.",
     reviewSteps: [
       {
         title: "Upload the contract",
@@ -1106,7 +1153,7 @@ const UI_TEXT: Record<Lang, {
       },
     ],
     reviewSectionTitle: "审查合同",
-    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。FREE 套餐每月可审查 3 次。",
+    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。FREE 套餐不限审查次数。",
     reviewSteps: [
       {
         title: "上传合同",
@@ -1255,7 +1302,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "계약서 검토",
     reviewSectionDesc:
-      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. FREE 요금제는 매월 3회 검토할 수 있습니다.",
+      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. FREE 요금제는 검토 횟수 제한이 없습니다.",
     reviewSteps: [
       {
         title: "계약서 업로드",
@@ -1406,7 +1453,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "契約書をレビュー",
     reviewSectionDesc:
-      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。FREEプランでは毎月3回までレビューできます。",
+      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。FREEプランではレビュー回数に制限はありません。",
     reviewSteps: [
       {
         title: "契約書をアップロード",
@@ -1517,6 +1564,23 @@ const TEMPLATE_TEXT: Record<Lang, {
 
 type Tab = "generate" | "review" | "intro";
 
+// Nhãn hiển thị ở sidebar khi gói FREE không giới hạn lượt (chế độ demo —
+// user.usage_unlimited từ /auth/me). Tách riêng khỏi UI_TEXT để không phải
+// sửa 5 khối ngôn ngữ dài.
+const UNLIMITED_TEXT: Record<Lang, { contracts: string; reviews: string }> = {
+  vi: {
+    contracts: "Tạo hợp đồng: không giới hạn",
+    reviews: "Review hợp đồng: không giới hạn",
+  },
+  en: {
+    contracts: "Contract generation: unlimited",
+    reviews: "Contract review: unlimited",
+  },
+  zh: { contracts: "生成合同：不限次数", reviews: "审查合同：不限次数" },
+  ko: { contracts: "계약서 생성: 무제한", reviews: "계약서 검토: 무제한" },
+  ja: { contracts: "契約書作成：無制限", reviews: "契約書レビュー：無制限" },
+};
+
 export default function Home() {
   const router = useRouter();
 
@@ -1524,7 +1588,7 @@ export default function Home() {
   const [authChecked, setAuthChecked] = useState(false);
 
   const [tab, setTab] = useState<Tab>("generate");
-  const [lang, setLang] = useState<Lang>("vi");
+  const [lang, setLang] = useLang();
   const ui = UI_TEXT[lang];
 
   const [contractType, setContractType] = useState<string>("service");
@@ -2159,7 +2223,7 @@ export default function Home() {
   }
 
   const reviewLimitReached =
-    !!user && user.review_used >= user.review_limit;
+    !!user && !user.usage_unlimited && user.review_used >= user.review_limit;
   // Gói FREE nay cũng được review (xem FREE_REVIEW_LIMIT ở backend), nên
   // không còn khóa cứng theo gói nữa.
   const reviewBlockedForFree = false;
@@ -2213,7 +2277,7 @@ export default function Home() {
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >
             <Scale size={18} />
-            <span className="text-sm font-bold">Tra cứu pháp lý</span>
+            <span className="text-sm font-bold">{NAV_EXTRA[lang].legalLookup}</span>
           </Link>
           <button
             onClick={() => setTab("generate")}
@@ -2246,21 +2310,21 @@ export default function Home() {
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >
             <BookOpen size={18} />
-            <span className="text-sm">Thư viện điều khoản</span>
+            <span className="text-sm">{NAV_EXTRA[lang].clauseLibrary}</span>
           </Link>
           <Link
             href="/deadlines"
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >
             <Calendar size={18} />
-            <span className="text-sm">Nhắc hạn hợp đồng</span>
+            <span className="text-sm">{NAV_EXTRA[lang].deadlines}</span>
           </Link>
           <Link
             href="/workspace"
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >
             <Building2 size={18} />
-            <span className="text-sm">Workspace (Enterprise)</span>
+            <span className="text-sm">{NAV_EXTRA[lang].workspace}</span>
           </Link>
         </nav>
 
@@ -2294,10 +2358,14 @@ export default function Home() {
               </span>
             </div>
             <div>
-              {ui.contractsUsed(user.requests_used, user.requests_limit)}
+              {user.usage_unlimited
+                ? UNLIMITED_TEXT[lang].contracts
+                : ui.contractsUsed(user.requests_used, user.requests_limit)}
             </div>
             <div>
-              {ui.reviewUsed(user.review_used, user.review_limit)}
+              {user.usage_unlimited
+                ? UNLIMITED_TEXT[lang].reviews
+                : ui.reviewUsed(user.review_used, user.review_limit)}
             </div>
             {upgradeError && (
               <p className="text-red-400 text-xs mt-1">{upgradeError}</p>
