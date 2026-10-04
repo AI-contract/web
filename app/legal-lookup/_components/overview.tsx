@@ -35,8 +35,8 @@ type GroupState = {
   status: number | null;
 };
 
-const ALL_GROUPS: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia", "luat_su"];
-// Nhóm chạy ngay khi tra cứu (2 lượt). Các nhóm còn lại chỉ chạy khi người dùng bấm.
+const ALL_GROUPS: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia"];
+// Nhóm chạy ngay khi tra cứu (2 lượt). Án lệ/Bản án chỉ chạy khi người dùng bấm.
 const DEFAULT_GROUPS: LiveGroup[] = ["danh_gia", "van_ban"];
 
 function hostOf(url: string): string {
@@ -168,7 +168,7 @@ export default function LiveOverview({
       seen.add(url);
       out.push({ url, title, group, note, tier: tier ?? null });
     };
-    (["van_ban", "an_le", "ban_an", "luat_su"] as LiveGroup[]).forEach((g) => {
+    (["van_ban", "an_le", "ban_an"] as LiveGroup[]).forEach((g) => {
       const s = state[g];
       if (!s || s.nonce !== nonce) return;
       (s.data?.items ?? []).forEach((it) => push(it.url, it.title, g, sourceNote(it, g), it.source_tier));
@@ -192,6 +192,15 @@ export default function LiveOverview({
     return !!s?.error && s.status !== 429;
   });
   const allLoaded = activeGroups.every((g) => !loadingOf(g));
+  // Ẩn mục "Tổng quan" khi đã tải xong mà chưa có kết luận nhanh.
+  const showOverview = loadingOf("danh_gia") || !!overview;
+  // Không mục nào có kết quả (và không có lỗi để báo) thì hiện một thông báo chung.
+  const hasAnyContent = !!overview || ALL_GROUPS.some((g) => itemsOf(g).length > 0);
+  const emptyNotice =
+    allLoaded && !hasAnyContent && anyError.length === 0
+      ? (activeGroups.map((g) => current(g)?.data?.notice).find(Boolean) ??
+        "Không tìm thấy nội dung phù hợp trên các nguồn chính thống.")
+      : null;
 
   function renderLoading(label: string) {
     return (
@@ -205,7 +214,7 @@ export default function LiveOverview({
   function renderSection(group: LiveGroup | LiveGroup[], title: string, hint?: string, cta?: string) {
     const groups = Array.isArray(group) ? group : [group];
     if (groups.every((g) => !requested.has(g))) {
-      // Nhóm chưa tải: chỉ hiện nút, bấm mới gọi (tốn thêm lượt tra cứu).
+      // Nhóm chưa tải: chỉ hiện nút, bấm mới gọi.
       return (
         <section aria-label={title} className="mb-8">
           <h2 className="text-base font-semibold text-[#1C2333] mb-1">{title}</h2>
@@ -218,13 +227,25 @@ export default function LiveOverview({
           >
             <Search size={14} className="text-[#9C7A3C]" />
             {cta ?? `Tìm ${title.toLowerCase()}`}
-            <span className="text-xs text-[#8A919C]">(tốn thêm {groups.length} lượt tra cứu)</span>
           </button>
         </section>
       );
     }
     const loading = groups.some(loadingOf);
     const entries = groups.flatMap((g) => itemsOf(g).map((item) => ({ item, g })));
+    if (!loading && entries.length === 0) {
+      // Mục không có kết quả thì ẩn. Riêng mục do người dùng tự bấm tải (có cta) thì
+      // báo ngắn gọn để họ biết đã tìm mà không có (trừ khi đã có lỗi — lỗi hiện ở khối báo lỗi).
+      if (cta && !groups.some((g) => errorOf(g))) {
+        return (
+          <p className="mb-8 text-sm text-[#5B6472]">
+            {groups.map((g) => current(g)?.data?.notice).find(Boolean) ??
+              `Không tìm thấy ${title.toLowerCase()} phù hợp.`}
+          </p>
+        );
+      }
+      return null;
+    }
     return (
       <section aria-label={title} className="mb-8">
         <h2 className="text-base font-semibold text-[#1C2333] mb-1">
@@ -255,7 +276,8 @@ export default function LiveOverview({
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
       <div>
-        {/* Tổng quan */}
+        {/* Tổng quan: chỉ hiện khi đang tải hoặc đã có kết luận nhanh */}
+        {showOverview && (
         <section aria-label="Tổng quan" className="mb-8">
           <div className="bg-white border border-[#DCD7C9] border-l-4 border-l-[#9C7A3C] rounded-lg px-5 py-4">
             <p className="text-sm font-semibold text-[#9C7A3C] flex items-center gap-1.5 mb-2">
@@ -300,6 +322,13 @@ export default function LiveOverview({
             )}
           </div>
         </section>
+        )}
+
+        {emptyNotice && (
+          <div className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 text-sm text-[#5B6472] mb-6">
+            {emptyNotice}
+          </div>
+        )}
 
         {allLoaded && anyError.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg px-5 py-4 text-sm text-red-700 mb-6">
@@ -325,13 +354,7 @@ export default function LiveOverview({
           ["an_le", "ban_an"],
           "Án lệ/Bản án",
           `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`,
-          "Tìm án lệ và bản án liên quan"
-        )}
-        {renderSection(
-          "luat_su",
-          GROUP_META.luat_su.label,
-          GROUP_META.luat_su.hint,
-          "Tìm phân tích của văn phòng/công ty luật"
+          "Tham khảo án lệ và bản án liên quan"
         )}
       </div>
 

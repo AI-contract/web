@@ -50,7 +50,7 @@ export default function LegalLookupPage() {
   const [text, setText] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
-  const [remaining, setRemaining] = useState<number | null | undefined>(undefined);
+  const [, setRemaining] = useState<number | null | undefined>(undefined);
   const [businessField, setBusinessField] = useState("");
   const [businessFieldSaved, setBusinessFieldSaved] = useState<string | null>(null);
   const [savingField, setSavingField] = useState(false);
@@ -145,7 +145,6 @@ export default function LegalLookupPage() {
   const domainsOf = (g: LiveGroup) => info?.groups.find((x) => x.value === g)?.domains ?? [];
   const sectionDomainsOf = (section: (typeof DISPLAY_SECTIONS)[number]) =>
     section.groups.flatMap((g) => domainsOf(g));
-  const lowQuota = typeof remaining === "number" && remaining < 4;
   const hasResults = submitted !== null;
 
   return (
@@ -244,13 +243,6 @@ export default function LegalLookupPage() {
             Tính năng tra cứu trực tiếp đang tạm tắt. Vui lòng quay lại sau.
           </p>
         )}
-
-        <p className="text-xs text-[#8A919C] mb-6">
-          {typeof remaining === "number"
-            ? `Còn ${remaining} lượt tra cứu hôm nay (mỗi lần tra cứu dùng 2 lượt; mở thêm Án lệ/Bản án tốn thêm 2 lượt, Văn phòng luật tốn thêm 1 lượt; kết quả trùng câu hỏi đã có sẵn thì không tốn lượt). `
-            : ""}
-          {lowQuota && "Số lượt còn ít: một số phần kết quả có thể không tra cứu được."}
-        </p>
 
         {/* Kết quả dạng Tổng quan + cột nguồn */}
         {submitted && (

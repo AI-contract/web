@@ -97,7 +97,6 @@ export const DISPLAY_SECTIONS: DisplaySection[] = [
     hint: `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`,
   },
   { key: "danh_gia", groups: ["danh_gia"], label: GROUP_META.danh_gia.label, hint: GROUP_META.danh_gia.hint },
-  { key: "luat_su", groups: ["luat_su"], label: GROUP_META.luat_su.label, hint: GROUP_META.luat_su.hint },
 ];
 
 // Nhãn hạng nguồn hiển thị trên từng kết quả và trong cột "Nguồn".
