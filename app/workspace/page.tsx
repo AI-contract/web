@@ -25,21 +25,178 @@ import {
   listOrganizationMembers,
   removeOrganizationMember,
 } from "@/lib/api";
+import { useLang, type Lang } from "@/lib/lang";
+import LangSwitcher from "@/app/components/LangSwitcher";
 
-const ROLE_LABELS: Record<string, string> = {
-  owner: "Chủ sở hữu",
-  admin: "Quản trị viên",
-  member: "Thành viên",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Đang chờ chấp nhận",
-  active: "Đang hoạt động",
-  removed: "Đã xoá",
+// ---- văn bản giao diện dịch đủ 5 ngôn ngữ. Các mã "owner/admin/member"
+// và "pending/active/removed" là giá trị của backend, KHÔNG đổi; chỉ nhãn
+// hiển thị được dịch. ----
+const TEXT: Record<
+  Lang,
+  {
+    back: string;
+    title: string;
+    errGeneric: string;
+    roles: Record<string, string>;
+    statuses: Record<string, string>;
+    inviteSent: string;
+    loading: string;
+    notEnterprise: string;
+    createTitle: string;
+    orgPlaceholder: string;
+    createBtn: string;
+    invitedTitle: string;
+    tokenPlaceholder: string;
+    joinBtn: string;
+    activeMembers: (n: number) => string;
+    leave: string;
+    inviteTitle: string;
+    emailPlaceholder: string;
+    inviteBtn: string;
+    removeBtn: string;
+  }
+> = {
+  vi: {
+    back: "Quay lại",
+    title: "Workspace nhiều người dùng",
+    errGeneric: "Có lỗi xảy ra",
+    roles: { owner: "Chủ sở hữu", admin: "Quản trị viên", member: "Thành viên" },
+    statuses: {
+      pending: "Đang chờ chấp nhận",
+      active: "Đang hoạt động",
+      removed: "Đã xoá",
+    },
+    inviteSent: "Đã gửi lời mời.",
+    loading: "Đang tải...",
+    notEnterprise:
+      "Tính năng Workspace nhiều người dùng chỉ dành cho gói ENTERPRISE. Nâng cấp gói ở trang chính để tạo workspace cho công ty/đội của bạn.",
+    createTitle: "Tạo workspace mới",
+    orgPlaceholder: "Tên workspace, vd: Công ty ABC",
+    createBtn: "Tạo",
+    invitedTitle: "Đã được mời vào workspace?",
+    tokenPlaceholder: "Dán mã lời mời (invite_token) vào đây",
+    joinBtn: "Tham gia",
+    activeMembers: (n) => `${n} thành viên đang hoạt động`,
+    leave: "Rời workspace",
+    inviteTitle: "Mời thành viên",
+    emailPlaceholder: "Email thành viên",
+    inviteBtn: "Mời",
+    removeBtn: "Xoá khỏi workspace",
+  },
+  en: {
+    back: "Back",
+    title: "Multi-user Workspace",
+    errGeneric: "Something went wrong",
+    roles: { owner: "Owner", admin: "Admin", member: "Member" },
+    statuses: {
+      pending: "Pending acceptance",
+      active: "Active",
+      removed: "Removed",
+    },
+    inviteSent: "Invitation sent.",
+    loading: "Loading...",
+    notEnterprise:
+      "The multi-user Workspace feature is available only on the ENTERPRISE plan. Upgrade your plan on the main page to create a workspace for your company/team.",
+    createTitle: "Create a new workspace",
+    orgPlaceholder: "Workspace name, e.g.: ABC Company",
+    createBtn: "Create",
+    invitedTitle: "Been invited to a workspace?",
+    tokenPlaceholder: "Paste your invitation code (invite_token) here",
+    joinBtn: "Join",
+    activeMembers: (n) => `${n} active member${n === 1 ? "" : "s"}`,
+    leave: "Leave workspace",
+    inviteTitle: "Invite a member",
+    emailPlaceholder: "Member's email",
+    inviteBtn: "Invite",
+    removeBtn: "Remove from workspace",
+  },
+  zh: {
+    back: "返回",
+    title: "多用户工作区",
+    errGeneric: "出错了",
+    roles: { owner: "所有者", admin: "管理员", member: "成员" },
+    statuses: {
+      pending: "等待接受",
+      active: "活跃",
+      removed: "已移除",
+    },
+    inviteSent: "邀请已发送。",
+    loading: "加载中...",
+    notEnterprise:
+      "多用户工作区功能仅适用于 ENTERPRISE 套餐。请在主页升级套餐，为您的公司/团队创建工作区。",
+    createTitle: "创建新工作区",
+    orgPlaceholder: "工作区名称，例如：ABC 公司",
+    createBtn: "创建",
+    invitedTitle: "已被邀请加入工作区？",
+    tokenPlaceholder: "在此粘贴邀请码（invite_token）",
+    joinBtn: "加入",
+    activeMembers: (n) => `${n} 名活跃成员`,
+    leave: "退出工作区",
+    inviteTitle: "邀请成员",
+    emailPlaceholder: "成员邮箱",
+    inviteBtn: "邀请",
+    removeBtn: "从工作区移除",
+  },
+  ko: {
+    back: "뒤로",
+    title: "다중 사용자 워크스페이스",
+    errGeneric: "오류가 발생했습니다",
+    roles: { owner: "소유자", admin: "관리자", member: "멤버" },
+    statuses: {
+      pending: "수락 대기 중",
+      active: "활성",
+      removed: "삭제됨",
+    },
+    inviteSent: "초대를 보냈습니다.",
+    loading: "불러오는 중...",
+    notEnterprise:
+      "다중 사용자 워크스페이스 기능은 ENTERPRISE 요금제에서만 사용할 수 있습니다. 메인 페이지에서 요금제를 업그레이드하여 회사/팀 워크스페이스를 만드세요.",
+    createTitle: "새 워크스페이스 만들기",
+    orgPlaceholder: "워크스페이스 이름 예: ABC 회사",
+    createBtn: "만들기",
+    invitedTitle: "워크스페이스에 초대받으셨나요?",
+    tokenPlaceholder: "초대 코드(invite_token)를 여기에 붙여넣으세요",
+    joinBtn: "참여",
+    activeMembers: (n) => `활성 멤버 ${n}명`,
+    leave: "워크스페이스 나가기",
+    inviteTitle: "멤버 초대",
+    emailPlaceholder: "멤버 이메일",
+    inviteBtn: "초대",
+    removeBtn: "워크스페이스에서 삭제",
+  },
+  ja: {
+    back: "戻る",
+    title: "マルチユーザーワークスペース",
+    errGeneric: "エラーが発生しました",
+    roles: { owner: "オーナー", admin: "管理者", member: "メンバー" },
+    statuses: {
+      pending: "承諾待ち",
+      active: "有効",
+      removed: "削除済み",
+    },
+    inviteSent: "招待を送信しました。",
+    loading: "読み込み中...",
+    notEnterprise:
+      "マルチユーザーワークスペース機能は ENTERPRISE プラン限定です。メインページでプランをアップグレードして、会社／チーム用のワークスペースを作成してください。",
+    createTitle: "新しいワークスペースを作成",
+    orgPlaceholder: "ワークスペース名（例：ABC社）",
+    createBtn: "作成",
+    invitedTitle: "ワークスペースに招待されましたか？",
+    tokenPlaceholder: "ここに招待コード（invite_token）を貼り付け",
+    joinBtn: "参加",
+    activeMembers: (n) => `有効なメンバー ${n} 名`,
+    leave: "ワークスペースを退出",
+    inviteTitle: "メンバーを招待",
+    emailPlaceholder: "メンバーのメールアドレス",
+    inviteBtn: "招待",
+    removeBtn: "ワークスペースから削除",
+  },
 };
 
 export default function WorkspacePage() {
   const router = useRouter();
+  const [lang] = useLang();
+  const t = TEXT[lang];
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState<UserMe | null>(null);
 
@@ -75,7 +232,7 @@ export default function WorkspacePage() {
         setMembers([]);
       })
       .catch((err) =>
-        setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra")
+        setError(err instanceof ApiError ? err.message : t.errGeneric)
       )
       .finally(() => setLoading(false));
   }
@@ -95,7 +252,7 @@ export default function WorkspacePage() {
       setNewOrgName("");
       reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+      setError(err instanceof ApiError ? err.message : t.errGeneric);
     } finally {
       setBusy(false);
     }
@@ -109,10 +266,10 @@ export default function WorkspacePage() {
     try {
       await inviteOrganizationMember(inviteEmail.trim(), inviteRole);
       setInviteEmail("");
-      setInfo("Đã gửi lời mời.");
+      setInfo(t.inviteSent);
       reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+      setError(err instanceof ApiError ? err.message : t.errGeneric);
     } finally {
       setBusy(false);
     }
@@ -127,7 +284,7 @@ export default function WorkspacePage() {
       setAcceptToken("");
       reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+      setError(err instanceof ApiError ? err.message : t.errGeneric);
     } finally {
       setBusy(false);
     }
@@ -140,7 +297,7 @@ export default function WorkspacePage() {
       await removeOrganizationMember(memberId);
       reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+      setError(err instanceof ApiError ? err.message : t.errGeneric);
     } finally {
       setBusy(false);
     }
@@ -153,7 +310,7 @@ export default function WorkspacePage() {
       await leaveOrganization();
       reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+      setError(err instanceof ApiError ? err.message : t.errGeneric);
     } finally {
       setBusy(false);
     }
@@ -177,12 +334,13 @@ export default function WorkspacePage() {
           className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"
         >
           <ArrowLeft size={16} />
-          Quay lại
+          {t.back}
         </Link>
         <div className="flex items-center gap-2">
           <Building2 size={20} className="text-[#C6A15C]" />
-          <h1 className="text-lg font-semibold">Workspace nhiều người dùng</h1>
+          <h1 className="text-lg font-semibold">{t.title}</h1>
         </div>
+        <LangSwitcher />
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8">
@@ -198,26 +356,24 @@ export default function WorkspacePage() {
         )}
 
         {loading ? (
-          <p className="text-[#5B6472]">Đang tải...</p>
+          <p className="text-[#5B6472]">{t.loading}</p>
         ) : !org ? (
           <>
             {!isEnterprise && (
               <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mb-6">
-                Tính năng Workspace nhiều người dùng chỉ dành cho gói
-                ENTERPRISE. Nâng cấp gói ở trang chính để tạo workspace
-                cho công ty/đội của bạn.
+                {t.notEnterprise}
               </p>
             )}
 
             {isEnterprise && (
               <div className="bg-white border border-[#DCD7C9] rounded-lg p-5 mb-6">
                 <h3 className="font-medium text-[#1C2333] mb-3">
-                  Tạo workspace mới
+                  {t.createTitle}
                 </h3>
                 <div className="flex gap-3">
                   <input
                     type="text"
-                    placeholder="Tên workspace, vd: Công ty ABC"
+                    placeholder={t.orgPlaceholder}
                     value={newOrgName}
                     onChange={(e) => setNewOrgName(e.target.value)}
                     className="flex-1 rounded-md border border-[#DCD7C9] px-3 py-2 text-sm"
@@ -227,7 +383,7 @@ export default function WorkspacePage() {
                     disabled={busy || !newOrgName.trim()}
                     className="bg-[#9C7A3C] text-white px-4 py-2 rounded-md text-sm hover:bg-[#8A6B34] disabled:opacity-50 transition"
                   >
-                    Tạo
+                    {t.createBtn}
                   </button>
                 </div>
               </div>
@@ -235,12 +391,12 @@ export default function WorkspacePage() {
 
             <div className="bg-white border border-[#DCD7C9] rounded-lg p-5">
               <h3 className="font-medium text-[#1C2333] mb-3">
-                Đã được mời vào workspace?
+                {t.invitedTitle}
               </h3>
               <div className="flex gap-3">
                 <input
                   type="text"
-                  placeholder="Dán mã lời mời (invite_token) vào đây"
+                  placeholder={t.tokenPlaceholder}
                   value={acceptToken}
                   onChange={(e) => setAcceptToken(e.target.value)}
                   className="flex-1 rounded-md border border-[#DCD7C9] px-3 py-2 text-sm"
@@ -250,7 +406,7 @@ export default function WorkspacePage() {
                   disabled={busy || !acceptToken.trim()}
                   className="bg-[#16213E] text-white px-4 py-2 rounded-md text-sm hover:bg-[#1C2333] disabled:opacity-50 transition"
                 >
-                  Tham gia
+                  {t.joinBtn}
                 </button>
               </div>
             </div>
@@ -263,8 +419,9 @@ export default function WorkspacePage() {
                   {org.name}
                 </h2>
                 <p className="text-sm text-[#5B6472]">
-                  {members.filter((m) => m.status === "active").length} thành
-                  viên đang hoạt động
+                  {t.activeMembers(
+                    members.filter((m) => m.status === "active").length
+                  )}
                 </p>
               </div>
               <button
@@ -273,19 +430,19 @@ export default function WorkspacePage() {
                 className="flex items-center gap-1.5 text-sm text-red-600 hover:underline"
               >
                 <LogOut size={14} />
-                Rời workspace
+                {t.leave}
               </button>
             </div>
 
             <div className="bg-white border border-[#DCD7C9] rounded-lg p-5 mb-6">
               <h3 className="font-medium text-[#1C2333] mb-3 flex items-center gap-1.5">
                 <UserPlus size={16} />
-                Mời thành viên
+                {t.inviteTitle}
               </h3>
               <div className="flex gap-3">
                 <input
                   type="email"
-                  placeholder="Email thành viên"
+                  placeholder={t.emailPlaceholder}
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   className="flex-1 rounded-md border border-[#DCD7C9] px-3 py-2 text-sm"
@@ -295,15 +452,15 @@ export default function WorkspacePage() {
                   onChange={(e) => setInviteRole(e.target.value)}
                   className="rounded-md border border-[#DCD7C9] px-3 py-2 text-sm"
                 >
-                  <option value="member">Thành viên</option>
-                  <option value="admin">Quản trị viên</option>
+                  <option value="member">{t.roles.member}</option>
+                  <option value="admin">{t.roles.admin}</option>
                 </select>
                 <button
                   onClick={handleInvite}
                   disabled={busy || !inviteEmail.trim()}
                   className="bg-[#9C7A3C] text-white px-4 py-2 rounded-md text-sm hover:bg-[#8A6B34] disabled:opacity-50 transition"
                 >
-                  Mời
+                  {t.inviteBtn}
                 </button>
               </div>
             </div>
@@ -317,8 +474,8 @@ export default function WorkspacePage() {
                   <div>
                     <p className="font-medium text-[#1C2333]">{m.email}</p>
                     <p className="text-sm text-[#5B6472]">
-                      {ROLE_LABELS[m.role] ?? m.role} ·{" "}
-                      {STATUS_LABELS[m.status] ?? m.status}
+                      {t.roles[m.role] ?? m.role} ·{" "}
+                      {t.statuses[m.status] ?? m.status}
                     </p>
                   </div>
                   {m.role !== "owner" && (
@@ -328,7 +485,7 @@ export default function WorkspacePage() {
                       className="flex items-center gap-1 text-xs text-red-600 hover:underline"
                     >
                       <Trash2 size={14} />
-                      Xoá khỏi workspace
+                      {t.removeBtn}
                     </button>
                   )}
                 </div>
