@@ -645,6 +645,15 @@ const NAV_EXTRA: Record<
   },
 };
 
+// ---- dòng gợi ý mặc định của ô chọn loại hợp đồng (trang Tạo hợp đồng) ----
+const PICK_CONTRACT_TYPE_TEXT: Record<Lang, string> = {
+  vi: "Chọn loại hợp đồng cần tạo",
+  en: "Select the contract type to create",
+  zh: "请选择要创建的合同类型",
+  ko: "작성할 계약서 유형을 선택하세요",
+  ja: "作成する契約書の種類を選択",
+};
+
 // ---- văn bản tĩnh của giao diện (menu/nhãn chính, tiêu đề, nút
 // bấm, trợ lý AI...), dịch đủ VI/EN/中文. KHÔNG bao gồm nhãn field
 // hợp đồng (xem FIELD_LABELS / FIELD_LABEL_OVERRIDES_BY_TYPE ở trên)
@@ -1592,6 +1601,9 @@ export default function Home() {
   const ui = UI_TEXT[lang];
 
   const [contractType, setContractType] = useState<string>("service");
+  // false = người dùng chưa chọn loại hợp đồng: ô chọn hiện dòng gợi ý và
+  // form bên dưới được ẩn cho tới khi chọn.
+  const [typeChosen, setTypeChosen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
@@ -2063,6 +2075,8 @@ export default function Home() {
   };
 
   const handleContractTypeChange = (value: string) => {
+    setTypeChosen(value !== "");
+    if (value === "") return;
     setContractType(value);
     setForm({}); // reset form data when switching contract type
     setGenError(null);
@@ -2459,13 +2473,8 @@ export default function Home() {
               <div className="mb-10">
                 <div className="flex items-center gap-3 mb-3">
                   <BookOpen size={28} className="text-[#9C7A3C]" strokeWidth={1.5} />
-                  <h2 className="text-4xl font-semibold text-[#1C2333] tracking-tight">
-                    {contractTitle
-                      ? `${ui.generateTitlePrefix} ${contractTypeLabel(
-                          contractType,
-                          lang
-                        ).toLowerCase()}`
-                      : ui.generateTitleDefault}
+                  <h2 className="text-4xl font-bold text-[#1C2333] tracking-tight">
+                    {ui.generateTitleDefault.toUpperCase()}
                   </h2>
                 </div>
                 <p className="text-[#5B6472] text-lg">{ui.generateSubtitle}</p>
@@ -2478,14 +2487,17 @@ export default function Home() {
               >
                 {/* Contract type selector */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-bold mb-1">
                     {ui.contractTypeLabel}
                   </label>
                   <select
-                    value={contractType}
+                    value={typeChosen ? contractType : ""}
                     onChange={(e) => handleContractTypeChange(e.target.value)}
                     className="w-full md:w-1/2 border border-[#DCD7C9] rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
                   >
+                    <option value="" disabled hidden>
+                      {PICK_CONTRACT_TYPE_TEXT[lang]}
+                    </option>
                     {CONTRACT_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
                         {t.label[lang]}
@@ -2493,6 +2505,9 @@ export default function Home() {
                     ))}
                   </select>
                 </div>
+
+                {typeChosen && (
+                <>
 
                 {/* Mẫu hợp đồng đã lưu (cá nhân hóa theo tài khoản) */}
                 <div className="mb-6 rounded-md border border-[#DCD7C9] bg-[#FAF8F3] p-4">
@@ -2748,6 +2763,8 @@ export default function Home() {
                   )}
                   {generating ? ui.generatingBtn : ui.createBtn}
                 </button>
+                </>
+                )}
               </form>
 
               {/* Just-generated result */}
