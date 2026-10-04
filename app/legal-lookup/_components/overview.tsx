@@ -22,9 +22,10 @@ import {
   LiveItem,
   LiveMode,
   LiveSearchResponse,
+  LiveSourceTier,
   searchLegalLive,
 } from "@/lib/api";
-import { GROUP_META, LiveResultCard, errorMessage, safeUrl } from "./live";
+import { GROUP_META, LiveResultCard, TIER_META, errorMessage, safeUrl } from "./live";
 
 type GroupState = {
   nonce: number;
@@ -33,7 +34,7 @@ type GroupState = {
   status: number | null;
 };
 
-const ALL_GROUPS: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia"];
+const ALL_GROUPS: LiveGroup[] = ["van_ban", "an_le", "ban_an", "danh_gia", "luat_su"];
 
 function hostOf(url: string): string {
   try {
@@ -47,11 +48,17 @@ interface SourceCard {
   url: string;
   title: string;
   group: LiveGroup;
+  tier: LiveSourceTier | null;
   note: { text: string; tone: "ok" | "warn" | "neutral" };
 }
 
 function sourceNote(item: LiveItem, group: LiveGroup): SourceCard["note"] {
   if (group === "danh_gia") return { text: "Nguồn tham khảo cho phần tổng hợp", tone: "neutral" };
+  if (group === "luat_su") {
+    return item.verification === "unverified"
+      ? { text: "Một phần trích dẫn đã bị ẩn", tone: "warn" }
+      : { text: "Ý kiến của đơn vị đăng bài", tone: "neutral" };
+  }
   if (item.verification === "verified") return { text: "Đã đối chiếu trích dẫn", tone: "ok" };
   if (item.verification === "unverified") return { text: "Một phần trích dẫn đã bị ẩn", tone: "warn" };
   return { text: "Chưa đối chiếu được", tone: "neutral" };
@@ -134,21 +141,29 @@ export default function LiveOverview({
   const sources = useMemo<SourceCard[]>(() => {
     const out: SourceCard[] = [];
     const seen = new Set<string>();
-    const push = (url: string, title: string, group: LiveGroup, note: SourceCard["note"]) => {
+    const push = (
+      url: string,
+      title: string,
+      group: LiveGroup,
+      note: SourceCard["note"],
+      tier: LiveSourceTier | null | undefined
+    ) => {
       if (!safeUrl(url) || seen.has(url)) return;
       seen.add(url);
-      out.push({ url, title, group, note });
+      out.push({ url, title, group, note, tier: tier ?? null });
     };
-    (["van_ban", "an_le", "ban_an"] as LiveGroup[]).forEach((g) => {
+    (["van_ban", "an_le", "ban_an", "luat_su"] as LiveGroup[]).forEach((g) => {
       const s = state[g];
       if (!s || s.nonce !== nonce) return;
-      (s.data?.items ?? []).forEach((it) => push(it.url, it.title, g, sourceNote(it, g)));
+      (s.data?.items ?? []).forEach((it) => push(it.url, it.title, g, sourceNote(it, g), it.source_tier));
     });
     const dg = state.danh_gia;
     if (dg && dg.nonce === nonce) {
       (dg.data?.items ?? []).forEach((it) => {
-        push(it.url, it.title, "danh_gia", sourceNote(it, "danh_gia"));
-        it.references.forEach((r) => push(r.url, r.title, "danh_gia", sourceNote(it, "danh_gia")));
+        push(it.url, it.title, "danh_gia", sourceNote(it, "danh_gia"), it.source_tier);
+        it.references.forEach((r) =>
+          push(r.url, r.title, "danh_gia", sourceNote(it, "danh_gia"), r.source_tier ?? it.source_tier)
+        );
       });
     }
     return out;
@@ -275,6 +290,7 @@ export default function LiveOverview({
           "Án lệ/Bản án",
           `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`
         )}
+        {renderSection("luat_su", GROUP_META.luat_su.label, GROUP_META.luat_su.hint)}
       </div>
 
       {/* Cột nguồn */}
@@ -302,6 +318,14 @@ export default function LiveOverview({
                       <ExternalLink size={11} className="ml-auto shrink-0" />
                     </p>
                     <p className="text-sm font-medium text-[#1C2333] leading-snug mt-0.5 line-clamp-2">{s.title}</p>
+                    {s.tier && (
+                      <span
+                        title={TIER_META[s.tier].note}
+                        className={`inline-block mt-1 text-[11px] px-1.5 py-0.5 rounded-full border ${TIER_META[s.tier].tone}`}
+                      >
+                        {TIER_META[s.tier].label}
+                      </span>
+                    )}
                     <p
                       className={`mt-1 text-xs flex items-center gap-1 ${
                         s.note.tone === "ok"

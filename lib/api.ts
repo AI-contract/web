@@ -854,12 +854,17 @@ export function listOrganizationContractReviews() {
 // ---------------------------------------------------------------
 // Tra cứu pháp lý TRỰC TIẾP trên nguồn chính thống (không lưu trữ)
 // ---------------------------------------------------------------
-export type LiveGroup = "van_ban" | "an_le" | "ban_an" | "danh_gia";
+export type LiveGroup = "van_ban" | "an_le" | "ban_an" | "danh_gia" | "luat_su";
+
+// Hạng nguồn: chinh_thong = trang của cơ quan nhà nước; tham_khao = nguồn không chính thức
+// (Thư viện pháp luật, LuatVietnam, website văn phòng/công ty luật...).
+export type LiveSourceTier = "chinh_thong" | "tham_khao";
 export type LiveMode = "keyword" | "clause";
 
 export interface LiveReference {
   title: string;
   url: string;
+  source_tier?: LiveSourceTier | null;
 }
 
 export interface LiveCitedDocument {
@@ -877,6 +882,7 @@ export interface LiveItem {
   title: string;
   number: string | null;
   number_key: string | null;
+  source_tier: LiveSourceTier | null;
   issuer: string | null;
   issued_on: string | null;
   effective_on: string | null;
