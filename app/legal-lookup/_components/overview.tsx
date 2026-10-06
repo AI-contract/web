@@ -26,7 +26,9 @@ import {
   LiveSourceTier,
   searchLegalLive,
 } from "@/lib/api";
-import { GROUP_META, LiveResultCard, TIER_META, errorMessage, safeUrl } from "./live";
+import { LiveResultCard, TIER_META, errorMessage, safeUrl } from "./live";
+import { detectQueryLang } from "@/lib/queryLang";
+import { LL, type LLText } from "./i18n";
 
 type GroupState = {
   nonce: number;
@@ -55,16 +57,16 @@ interface SourceCard {
   note: { text: string; tone: "ok" | "warn" | "neutral" };
 }
 
-function sourceNote(item: LiveItem, group: LiveGroup): SourceCard["note"] {
-  if (group === "danh_gia") return { text: "Nguồn tham khảo cho phần tổng hợp", tone: "neutral" };
+function sourceNote(item: LiveItem, group: LiveGroup, L: LLText): SourceCard["note"] {
+  if (group === "danh_gia") return { text: L.noteRefs, tone: "neutral" };
   if (group === "luat_su") {
     return item.verification === "unverified"
-      ? { text: "Một phần trích dẫn đã bị ẩn", tone: "warn" }
-      : { text: "Ý kiến của đơn vị đăng bài", tone: "neutral" };
+      ? { text: L.noteHidden, tone: "warn" }
+      : { text: L.notePoster, tone: "neutral" };
   }
-  if (item.verification === "verified") return { text: "Đã đối chiếu trích dẫn", tone: "ok" };
-  if (item.verification === "unverified") return { text: "Một phần trích dẫn đã bị ẩn", tone: "warn" };
-  return { text: "Chưa đối chiếu được", tone: "neutral" };
+  if (item.verification === "verified") return { text: L.noteVerified, tone: "ok" };
+  if (item.verification === "unverified") return { text: L.noteHidden, tone: "warn" };
+  return { text: L.noteUnchecked, tone: "neutral" };
 }
 
 export default function LiveOverview({
@@ -92,13 +94,16 @@ export default function LiveOverview({
   const nonceRef = useRef(nonce);
   nonceRef.current = nonce;
   const startedRef = useRef<Set<string>>(new Set());
+  // Ngôn ngữ câu hỏi → ngôn ngữ phần do AI viết + nhãn hiển thị (trích dẫn vẫn là tiếng Việt).
+  const lang = useMemo(() => detectQueryLang(query), [query]);
+  const L = LL[lang];
 
   const load = useCallback(
     (g: LiveGroup) => {
       const key = `${nonce}:${g}`;
       if (startedRef.current.has(key)) return;
       startedRef.current.add(key);
-      searchLegalLive(g, query, mode, requestText)
+      searchLegalLive(g, query, mode, requestText, lang)
         .then((data) => {
           if (nonceRef.current !== nonce) return;
           setState((prev) => ({ ...prev, [g]: { nonce, data, error: null, status: null } }));
@@ -121,7 +126,7 @@ export default function LiveOverview({
           }));
         });
     },
-    [query, mode, requestText, nonce, onRemaining, onUnauthorized]
+    [query, mode, requestText, lang, nonce, onRemaining, onUnauthorized]
   );
 
   useEffect(() => {
@@ -171,19 +176,19 @@ export default function LiveOverview({
     (["van_ban", "an_le", "ban_an"] as LiveGroup[]).forEach((g) => {
       const s = state[g];
       if (!s || s.nonce !== nonce) return;
-      (s.data?.items ?? []).forEach((it) => push(it.url, it.title, g, sourceNote(it, g), it.source_tier));
+      (s.data?.items ?? []).forEach((it) => push(it.url, it.title, g, sourceNote(it, g, L), it.source_tier));
     });
     const dg = state.danh_gia;
     if (dg && dg.nonce === nonce) {
       (dg.data?.items ?? []).forEach((it) => {
-        push(it.url, it.title, "danh_gia", sourceNote(it, "danh_gia"), it.source_tier);
+        push(it.url, it.title, "danh_gia", sourceNote(it, "danh_gia", L), it.source_tier);
         it.references.forEach((r) =>
-          push(r.url, r.title, "danh_gia", sourceNote(it, "danh_gia"), r.source_tier ?? it.source_tier)
+          push(r.url, r.title, "danh_gia", sourceNote(it, "danh_gia", L), r.source_tier ?? it.source_tier)
         );
       });
     }
     return out;
-  }, [state, nonce]);
+  }, [state, nonce, L]);
 
   const activeGroups = ALL_GROUPS.filter((g) => requested.has(g));
   const anyError = activeGroups.map(errorOf).filter(Boolean) as string[];
@@ -198,8 +203,7 @@ export default function LiveOverview({
   const hasAnyContent = !!overview || ALL_GROUPS.some((g) => itemsOf(g).length > 0);
   const emptyNotice =
     allLoaded && !hasAnyContent && anyError.length === 0
-      ? (activeGroups.map((g) => current(g)?.data?.notice).find(Boolean) ??
-        "Không tìm thấy nội dung phù hợp trên các nguồn chính thống.")
+      ? (activeGroups.map((g) => current(g)?.data?.notice).find(Boolean) ?? L.noResults)
       : null;
 
   function renderLoading(label: string) {
@@ -226,7 +230,7 @@ export default function LiveOverview({
             className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-[#DCD7C9] bg-white text-[#1C2333] hover:border-[#9C7A3C] disabled:opacity-60"
           >
             <Search size={14} className="text-[#9C7A3C]" />
-            {cta ?? `Tìm ${title.toLowerCase()}`}
+            {cta ?? (lang === "en" ? `Find ${title.toLowerCase()}` : `Tìm ${title.toLowerCase()}`)}
           </button>
         </section>
       );
@@ -240,7 +244,9 @@ export default function LiveOverview({
         return (
           <p className="mb-8 text-sm text-[#5B6472]">
             {groups.map((g) => current(g)?.data?.notice).find(Boolean) ??
-              `Không tìm thấy ${title.toLowerCase()} phù hợp.`}
+              (lang === "en"
+                ? `No matching ${title.toLowerCase()} found.`
+                : `Không tìm thấy ${title.toLowerCase()} phù hợp.`)}
           </p>
         );
       }
@@ -256,16 +262,15 @@ export default function LiveOverview({
         </h2>
         {hint && <p className="text-xs text-[#8A919C] mb-3">{hint}</p>}
         {loading ? (
-          renderLoading("Đang tìm trên các nguồn chính thống… (có thể mất 10–60 giây)")
+          renderLoading(L.searching)
         ) : entries.length === 0 ? (
           <div className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-4 text-sm text-[#5B6472]">
-            {groups.map((g) => current(g)?.data?.notice).find(Boolean) ??
-              "Không tìm thấy nội dung phù hợp trên các nguồn chính thống."}
+            {groups.map((g) => current(g)?.data?.notice).find(Boolean) ?? L.noResults}
           </div>
         ) : (
           <div className="space-y-3">
             {entries.map(({ item, g }) => (
-              <LiveResultCard key={`${g}-${item.url}`} item={item} group={g} resolveDoc={resolveDoc} />
+              <LiveResultCard key={`${g}-${item.url}`} item={item} group={g} resolveDoc={resolveDoc} lang={lang} />
             ))}
           </div>
         )}
@@ -278,33 +283,30 @@ export default function LiveOverview({
       <div>
         {/* Tổng quan: chỉ hiện khi đang tải hoặc đã có kết luận nhanh */}
         {showOverview && (
-        <section aria-label="Tổng quan" className="mb-8">
+        <section aria-label={L.overviewTitle} className="mb-8">
           <div className="bg-white border border-[#DCD7C9] border-l-4 border-l-[#9C7A3C] rounded-lg px-5 py-4">
             <p className="text-sm font-semibold text-[#9C7A3C] flex items-center gap-1.5 mb-2">
-              <Sparkles size={15} /> Tổng quan
+              <Sparkles size={15} /> {L.overviewTitle}
             </p>
             {loadingOf("danh_gia") ? (
               <p className="flex items-center gap-2 text-sm text-[#5B6472]">
                 <Loader2 size={16} className="animate-spin text-[#9C7A3C]" />
-                Đang tổng hợp kết luận nhanh…
+                {L.synthesizing}
               </p>
             ) : overview ? (
               <>
                 <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{overview}</p>
                 <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
                   <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-                  Do AI tổng hợp từ các nguồn bên dưới, chỉ mang tính tham khảo; hãy mở nguồn để đối chiếu
-                  nguyên văn và tình trạng hiệu lực.
+                  {L.aiOverviewNote}
                 </p>
               </>
             ) : (
-              <p className="text-sm text-[#5B6472]">
-                Chưa có kết luận nhanh cho câu hỏi này. Hãy xem các mục chi tiết bên dưới.
-              </p>
+              <p className="text-sm text-[#5B6472]">{L.noOverview}</p>
             )}
             {followups.length > 0 && (
               <div className="mt-3 pt-3 border-t border-[#EAE5D8]">
-                <p className="text-xs font-medium text-[#5B6472] mb-1.5">Câu hỏi gợi ý tiếp theo</p>
+                <p className="text-xs font-medium text-[#5B6472] mb-1.5">{L.followups}</p>
                 <div className="flex flex-wrap gap-2">
                   {followups.map((f) => (
                     <button
@@ -334,7 +336,7 @@ export default function LiveOverview({
           <div className="bg-red-50 border border-red-200 rounded-lg px-5 py-4 text-sm text-red-700 mb-6">
             {activeGroups.filter((g) => errorOf(g)).map((g) => (
               <p key={g}>
-                {GROUP_META[g].label}: {errorOf(g)}
+                {L.groups[g].label}: {errorOf(g)}
               </p>
             ))}
             {canRetry && (
@@ -342,32 +344,31 @@ export default function LiveOverview({
                 onClick={() => setNonce((n) => n + 1)}
                 className="mt-2 inline-flex items-center gap-1.5 text-red-700 underline"
               >
-                <RefreshCw size={13} /> Thử lại
+                <RefreshCw size={13} /> {L.retry}
               </button>
             )}
           </div>
         )}
 
-        {renderSection("danh_gia", "Phân tích chi tiết", GROUP_META.danh_gia.hint)}
-        {renderSection("van_ban", "Căn cứ pháp lý", GROUP_META.van_ban.hint)}
+        {renderSection("danh_gia", L.detailTitle, L.groups.danh_gia.hint)}
+        {renderSection("van_ban", L.legalBasisTitle, L.groups.van_ban.hint)}
         {renderSection(
           ["an_le", "ban_an"],
-          "Án lệ/Bản án",
-          `${GROUP_META.an_le.hint}; ${GROUP_META.ban_an.hint}`,
-          "Tham khảo án lệ và bản án liên quan"
+          L.sectionAnLeBanAn,
+          `${L.groups.an_le.hint}; ${L.groups.ban_an.hint}`,
+          lang === "en" ? "See related precedents and court judgments" : "Tham khảo án lệ và bản án liên quan"
         )}
       </div>
 
       {/* Cột nguồn */}
-      <aside aria-label="Nguồn" className="mb-8 lg:mb-0">
+      <aside aria-label={L.sourcesTitle} className="mb-8 lg:mb-0">
         <div className="lg:sticky lg:top-4">
           <h2 className="text-base font-semibold text-[#1C2333] mb-3">
-            Nguồn{sources.length > 0 && <span className="ml-2 text-sm font-normal text-[#5B6472]">({sources.length})</span>}
+            {L.sourcesTitle}
+            {sources.length > 0 && <span className="ml-2 text-sm font-normal text-[#5B6472]">({sources.length})</span>}
           </h2>
           {sources.length === 0 ? (
-            <p className="text-sm text-[#8A919C]">
-              {allLoaded ? "Chưa có nguồn nào được xác thực." : "Các nguồn sẽ hiện khi có kết quả…"}
-            </p>
+            <p className="text-sm text-[#8A919C]">{allLoaded ? L.sourcesNone : L.sourcesPending}</p>
           ) : (
             <ul className="space-y-2">
               {sources.map((s, i) => (
@@ -385,10 +386,10 @@ export default function LiveOverview({
                     <p className="text-sm font-medium text-[#1C2333] leading-snug mt-0.5 line-clamp-2">{s.title}</p>
                     {s.tier && (
                       <span
-                        title={TIER_META[s.tier].note}
+                        title={L.tiers[s.tier].note}
                         className={`inline-block mt-1 text-[11px] px-1.5 py-0.5 rounded-full border ${TIER_META[s.tier].tone}`}
                       >
-                        {TIER_META[s.tier].label}
+                        {L.tiers[s.tier].label}
                       </span>
                     )}
                     <p
@@ -407,7 +408,7 @@ export default function LiveOverview({
                       ) : (
                         <HelpCircle size={12} />
                       )}
-                      {GROUP_META[s.group].label} · {s.note.text}
+                      {L.groups[s.group].label} · {s.note.text}
                     </p>
                   </a>
                 </li>

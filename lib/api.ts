@@ -927,6 +927,9 @@ export interface LiveSearchResponse {
   from_cache: boolean;
   // true = nhóm này được trả từ kho tự lưu (không tốn lượt tra cứu).
   from_store?: boolean;
+  // Ngôn ngữ phần do AI viết (relevance, phân tích, tổng quan...): theo ngôn ngữ câu hỏi.
+  // Trích dẫn nguyên văn từ trang nguồn luôn là tiếng Việt.
+  lang?: "vi" | "en";
   searched_domains: string[];
   generated_at: string;
   // Số lượt còn lại hôm nay; null = không giới hạn (quản trị viên).
@@ -1017,15 +1020,18 @@ export function deleteLegalStoreDocument(id: number) {
 
 // Mỗi lần gọi tìm trong MỘT nhóm nguồn; giao diện gọi 4 nhóm song song
 // (van_ban, an_le, ban_an, danh_gia). `requestText` là nội dung ô "Yêu cầu
-// tra cứu" (tuỳ chọn) — vd trình tự thủ tục, biện pháp giảm rủi ro.
+// tra cứu" (tuỳ chọn) — vd trình tự thủ tục, biện pháp giảm rủi ro. `lang` = ngôn ngữ
+// người tìm kiếm ("en" thì phần do AI viết trả về bằng tiếng Anh; mặc định tiếng Việt).
 export function searchLegalLive(
   group: LiveGroup,
   q: string,
   mode: LiveMode,
-  requestText?: string
+  requestText?: string,
+  lang?: "vi" | "en"
 ) {
   const qs = new URLSearchParams({ group, q, mode });
   if (requestText && requestText.trim()) qs.set("request", requestText.trim());
+  if (lang === "en") qs.set("lang", "en");
   return request<LiveSearchResponse>(`/legal/live/search?${qs.toString()}`);
 }
 
