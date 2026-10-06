@@ -4,7 +4,8 @@
  * app/legal-lookup/_components/live.tsx
  *
  * Thành phần của trang "Tra cứu pháp lý" (tra cứu TRỰC TIẾP trên nguồn chính
- * thống, không lưu trữ dữ liệu). Thư mục bắt đầu bằng "_" là private folder
+ * thống; kết quả văn bản/án lệ/bản án đã đối chiếu được kho tự lưu ghi lại để tìm lại ở các lần sau).
+ * Thư mục bắt đầu bằng "_" là private folder
  * của Next.js: không tạo route.
  *
  * Nội dung trích dẫn là text thuần do backend đã đối chiếu với trang nguồn;
@@ -34,6 +35,8 @@ import {
   getMe,
   searchLegalLive,
 } from "@/lib/api";
+import type { QueryLang } from "@/lib/queryLang";
+import { LL, type LLText } from "./i18n";
 
 // ---------------------------------------------------------------
 // Hằng số & tiện ích
@@ -120,7 +123,7 @@ const RISK_META: Record<"cao" | "trung_binh" | "thap", { label: string; tone: st
 };
 
 export const DISCLAIMER_FALLBACK =
-  "Legal AI không lưu trữ văn bản pháp luật, án lệ, bản án; nội dung được tìm trực tiếp trên các trang chính thống và do AI trích lục, chỉ mang tính tham khảo. Hãy mở nguồn gốc để đối chiếu nguyên văn và tình trạng hiệu lực mới nhất.";
+  "Legal AI có lưu lại một phần kết quả tra cứu đã được đối chiếu với trang nguồn (văn bản, án lệ, bản án) để phục vụ các lần tìm kiếm sau; không lưu nội dung câu hỏi hay thông tin cá nhân của bạn trong kho này. Nội dung được AI trích lục, chỉ mang tính tham khảo. Hãy mở nguồn gốc để đối chiếu nguyên văn và tình trạng hiệu lực mới nhất.";
 
 // Chỉ cho phép link http(s) — chặn javascript: và các scheme lạ.
 export function safeUrl(url: string | null | undefined): string | null {
@@ -150,13 +153,25 @@ function statusTone(status: string): string {
   return "bg-slate-100 text-slate-600 border-slate-300";
 }
 
-export function buildCitation(item: LiveItem): string {
+// Nhãn tình trạng hiệu lực theo ngôn ngữ người tìm kiếm. Chỉ đổi nhãn có trong bảng quy định
+// (cùng cách hiểu với statusTone); cụm khác giữ nguyên tiếng Việt đúng như trang nguồn ghi.
+export function statusLabel(status: string, lang: QueryLang): string {
+  if (lang !== "en") return status;
+  const f = foldVi(status);
+  if (f.includes("het hieu luc")) return f.includes("mot phan") ? "Partly expired" : "Expired";
+  if (f.includes("chua co hieu luc") || f.includes("chua hieu luc")) return "Not yet in force";
+  if (f.includes("con hieu luc")) return f.includes("mot phan") ? "Partly expired" : "In force";
+  return status;
+}
+
+export function buildCitation(item: LiveItem, lang: QueryLang = "vi"): string {
+  const en = lang === "en";
   let text = item.title;
-  if (item.number) text += ` (số ${item.number})`;
+  if (item.number) text += en ? ` (No. ${item.number})` : ` (số ${item.number})`;
   if (item.issuer) text += `, ${item.issuer}`;
   if (item.issued_on) text += `, ${item.issued_on}`;
   const src = safeUrl(item.url);
-  return src ? `${text}. Nguồn: ${src}` : text;
+  return src ? `${text}. ${en ? "Source" : "Nguồn"}: ${src}` : text;
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -235,7 +250,7 @@ export function PageHeader({
 // ---------------------------------------------------------------
 // Thẻ kết quả
 // ---------------------------------------------------------------
-function CopyCitationButton({ text }: { text: string }) {
+function CopyCitationButton({ text, L }: { text: string; L: LLText }) {
   const [state, setState] = useState<"idle" | "done" | "failed">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -259,21 +274,17 @@ function CopyCitationButton({ text }: { text: string }) {
       className="inline-flex items-center gap-1.5 text-sm text-[#5B6472] hover:text-[#9C7A3C]"
     >
       <Copy size={14} />
-      {state === "done"
-        ? "Đã sao chép"
-        : state === "failed"
-          ? "Không sao chép được"
-          : "Sao chép trích dẫn"}
+      {state === "done" ? L.copied : state === "failed" ? L.copyFailed : L.copyBtn}
     </button>
   );
 }
 
-function VerificationNote({ item }: { item: LiveItem }) {
+function VerificationNote({ item, L }: { item: LiveItem; L: LLText }) {
   if (item.verification === "verified") {
     return (
       <p className="mt-3 flex items-start gap-1.5 text-xs text-emerald-700">
         <CheckCircle2 size={14} className="shrink-0 mt-0.5" />
-        Đã đối chiếu trích dẫn với trang nguồn.
+        {L.verifiedMsg}
       </p>
     );
   }
@@ -281,16 +292,14 @@ function VerificationNote({ item }: { item: LiveItem }) {
     return (
       <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-700">
         <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-        Một phần trích dẫn do AI đưa ra không khớp trang nguồn nên đã được ẩn. Hãy mở nguồn gốc để
-        xem nguyên văn.
+        {L.unverifiedMsg}
       </p>
     );
   }
   return (
     <p className="mt-3 flex items-start gap-1.5 text-xs text-[#5B6472]">
       <HelpCircle size={14} className="shrink-0 mt-0.5" />
-      Chưa đối chiếu được với trang nguồn (trang cần JavaScript, là file PDF hoặc không tải được).
-      Hãy mở nguồn gốc để kiểm tra nguyên văn.
+      {L.unknownMsg}
     </p>
   );
 }
@@ -301,14 +310,16 @@ function VerificationNote({ item }: { item: LiveItem }) {
 function CitedDocuments({
   docs,
   resolveDoc,
+  L,
 }: {
   docs: LiveItem["cited_documents"];
   resolveDoc?: (key: string) => string | null;
+  L: LLText;
 }) {
   if (!docs || docs.length === 0) return null;
   return (
     <div className="mt-4">
-      <p className="text-sm font-semibold text-[#5B6472] mb-1.5">Văn bản được dẫn chiếu</p>
+      <p className="text-sm font-semibold text-[#5B6472] mb-1.5">{L.citedDocs}</p>
       <ul className="flex flex-wrap gap-2">
         {docs.map((d) => {
           const link = safeUrl(resolveDoc?.(d.key) ?? d.url);
@@ -319,10 +330,10 @@ function CitedDocuments({
               ? "bg-amber-50 text-amber-800 border-amber-200"
               : "bg-slate-100 text-slate-600 border-slate-300";
           const note = verified
-            ? "Số hiệu đã đối chiếu với trang nguồn"
+            ? L.docVerified
             : d.status === "unverified"
-              ? "Không thấy số hiệu này trên trang nguồn — cần kiểm tra lại"
-              : "Chưa đối chiếu được số hiệu với trang nguồn";
+              ? L.docUnverified
+              : L.docUnknown;
           const body = (
             <>
               {verified ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
@@ -357,22 +368,57 @@ function CitedDocuments({
   );
 }
 
+// Nhắc kiểm tra lại khi kết quả lấy từ kho tự lưu (không phải vừa tra cứu trực tiếp):
+// văn bản có thể đã được sửa đổi/thay thế kể từ ngày lưu.
+function StoredNote({
+  storedAt,
+  verified,
+  lang,
+}: {
+  storedAt: string;
+  verified: boolean;
+  lang: QueryLang;
+}) {
+  const [y, m, d] = storedAt.split("-");
+  const shown = y && m && d ? `${d}/${m}/${y}` : storedAt;
+  const en = lang === "en";
+  return (
+    <p className="mt-3 flex items-start gap-1.5 text-xs text-[#5B6472]">
+      <HelpCircle size={14} className="shrink-0 mt-0.5" />
+      {verified
+        ? en
+          ? `Content stored in the Legal AI library on ${shown} (checked against the source page when stored). `
+          : `Nội dung đã lưu trong kho Legal AI ngày ${shown} (đã đối chiếu với trang nguồn lúc lưu). `
+        : en
+          ? `Content added to the Legal AI library by a user on ${shown}, not checked against the source page. `
+          : `Nội dung do người dùng cập nhật vào kho Legal AI ngày ${shown}, chưa đối chiếu với trang nguồn. `}
+      {en
+        ? "The document may have been amended since — open the original source to check the latest validity status."
+        : "Văn bản có thể đã được sửa đổi kể từ đó — hãy mở nguồn gốc để kiểm tra tình trạng hiệu lực mới nhất."}
+    </p>
+  );
+}
+
 export function LiveResultCard({
   item,
   group,
   resolveDoc,
+  lang = "vi",
 }: {
   item: LiveItem;
   group: LiveGroup;
   resolveDoc?: (key: string) => string | null;
+  // Ngôn ngữ nhãn hiển thị (theo ngôn ngữ câu hỏi). Nội dung trích dẫn luôn là tiếng Việt.
+  lang?: QueryLang;
 }) {
-  const meta = GROUP_META[group];
+  const L = LL[lang];
+  const meta = { ...GROUP_META[group], ...L.groups[group] };
   const src = safeUrl(item.url);
   const info = [
-    item.number && `Số ${item.number}`,
+    item.number && L.numberPrefix(item.number),
     item.issuer,
-    item.issued_on && (group === "luat_su" ? `Đăng ${item.issued_on}` : `Ban hành ${item.issued_on}`),
-    item.effective_on && `Hiệu lực từ ${item.effective_on}`,
+    item.issued_on && (group === "luat_su" ? L.postedOn(item.issued_on) : L.issuedOn(item.issued_on)),
+    item.effective_on && L.effectiveFrom(item.effective_on),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -385,25 +431,25 @@ export function LiveResultCard({
         </span>
         {item.source_tier && (
           <span
-            title={TIER_META[item.source_tier].note}
+            title={L.tiers[item.source_tier].note}
             className={`text-xs px-2 py-0.5 rounded-full border ${TIER_META[item.source_tier].tone}`}
           >
-            {TIER_META[item.source_tier].label}
+            {L.tiers[item.source_tier].label}
           </span>
         )}
         {item.status_text ? (
           <span
             className={`text-xs px-2 py-0.5 rounded-full border ${statusTone(item.status_text)}`}
           >
-            {item.status_text}
+            {statusLabel(item.status_text, lang)}
           </span>
         ) : (
           group === "van_ban" && (
             <span
               className="text-xs px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-300"
-              title="Trang nguồn không ghi rõ tình trạng hiệu lực; hãy kiểm tra tại nguồn."
+              title={L.statusUnverifiedTip}
             >
-              Chưa xác minh tình trạng hiệu lực
+              {L.statusUnverified}
             </span>
           )
         )}
@@ -417,7 +463,7 @@ export function LiveResultCard({
             className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${RISK_META[item.risk_level].tone}`}
           >
             <ShieldAlert size={12} />
-            {RISK_META[item.risk_level].label}
+            {L.risks[item.risk_level]}
           </span>
         )}
       </div>
@@ -440,10 +486,10 @@ export function LiveResultCard({
         <div className="mt-4">
           <p className="text-sm font-semibold text-red-700 mb-1">
             {group === "danh_gia"
-              ? "Phân tích quy định liên quan"
+              ? L.issueLabel.danh_gia
               : group === "luat_su"
-                ? "Vấn đề/quy định được phân tích trong bài viết"
-                : "Vấn đề pháp lý"}
+                ? L.issueLabel.luat_su
+                : L.issueLabel.other}
           </p>
           <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{item.issue}</p>
         </div>
@@ -452,10 +498,10 @@ export function LiveResultCard({
         <div className="mt-4">
           <p className="text-sm font-semibold text-[#9C7A3C] mb-1">
             {group === "danh_gia"
-              ? "Khuyến nghị / biện pháp giảm rủi ro"
+              ? L.resolutionLabel.danh_gia
               : group === "luat_su"
-                ? "Kết luận/khuyến nghị của đơn vị đăng bài"
-                : "Giải quyết / Phán quyết"}
+                ? L.resolutionLabel.luat_su
+                : L.resolutionLabel.other}
           </p>
           <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap border-l-4 border-[#C6A15C] bg-[#FAF8F3] px-3 py-2">
             {item.resolution}
@@ -473,7 +519,7 @@ export function LiveResultCard({
 
       {group === "danh_gia" && item.references.length > 0 && (
         <div className="mt-4">
-          <p className="text-sm font-semibold text-[#5B6472] mb-1.5">Nguồn tham khảo</p>
+          <p className="text-sm font-semibold text-[#5B6472] mb-1.5">{L.refsTitle}</p>
           <ul className="space-y-1">
             {item.references.map((ref) => {
               const refUrl = safeUrl(ref.url);
@@ -500,21 +546,24 @@ export function LiveResultCard({
       )}
 
       {group === "danh_gia" && (
-        <CitedDocuments docs={item.cited_documents} resolveDoc={resolveDoc} />
+        <CitedDocuments docs={item.cited_documents} resolveDoc={resolveDoc} L={L} />
       )}
 
       {group === "danh_gia" ? (
         <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-700">
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-          {item.disclaimer ||
-            "Nội dung do AI tổng hợp, chỉ mang tính tham khảo, không thay thế ý kiến tư vấn của luật sư/chuyên gia pháp lý."}
+          {item.disclaimer || L.aiDisclaimer}
         </p>
       ) : (
-        <VerificationNote item={item} />
+        item.stored_at ? (
+          <StoredNote storedAt={item.stored_at} verified={item.verification === "verified"} lang={lang} />
+        ) : (
+          <VerificationNote item={item} L={L} />
+        )
       )}
 
       {item.relevance && (
-        <p className="mt-2 text-xs italic text-[#8A919C]">Gợi ý của AI: {item.relevance}</p>
+        <p className="mt-2 text-xs italic text-[#8A919C]">{L.aiHint(item.relevance)}</p>
       )}
 
       <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-[#EAE5D8] text-sm">
@@ -526,10 +575,10 @@ export function LiveResultCard({
             className="inline-flex items-center gap-1 text-[#9C7A3C] hover:underline"
           >
             <ExternalLink size={13} />
-            Mở nguồn gốc
+            {L.openSource}
           </a>
         )}
-        <CopyCitationButton text={buildCitation(item)} />
+        <CopyCitationButton text={buildCitation(item, lang)} L={L} />
       </div>
     </article>
   );

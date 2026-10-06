@@ -33,6 +33,8 @@ import AppSidebar from "@/app/components/AppSidebar";
 import { DISCLAIMER_FALLBACK, DISPLAY_SECTIONS, PageHeader, useAuthGuard } from "./_components/live";
 import LiveOverview from "./_components/overview";
 import ContributeBox from "./_components/contribute";
+import { LL } from "./_components/i18n";
+import { detectQueryLang } from "@/lib/queryLang";
 
 // Backend: "keyword" nhận tối đa 500 ký tự; dài hơn (vd dán cả điều khoản) → "clause".
 const KEYWORD_MAX = 500;
@@ -278,7 +280,7 @@ export default function LegalLookupPage() {
         {submitted && (
           <div key={submitted.id}>
             <p className="text-sm text-[#5B6472] mb-4">
-              Kết quả cho:{" "}
+              {LL[detectQueryLang(submitted.q)].resultsFor}{" "}
               <span className="text-[#1C2333] font-medium">
                 “{submitted.q.length > 120 ? `${submitted.q.slice(0, 120)}…` : submitted.q}”
               </span>
