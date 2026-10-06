@@ -855,7 +855,7 @@ export function listOrganizationContractReviews() {
 }
 
 // ---------------------------------------------------------------
-// Tra cứu pháp lý TRỰC TIẾP trên nguồn chính thống (không lưu trữ)
+// Tra cứu pháp lý TRỰC TIẾP trên nguồn chính thống (kèm kho tự lưu kết quả đã đối chiếu)
 // ---------------------------------------------------------------
 export type LiveGroup = "van_ban" | "an_le" | "ban_an" | "danh_gia" | "luat_su";
 
@@ -905,6 +905,8 @@ export interface LiveItem {
   // và đã bị ẩn (quote_removed = true).
   verification: "verified" | "unknown" | "unverified";
   quote_removed: boolean;
+  // Ngày (YYYY-MM-DD) kết quả được lưu/làm mới trong kho tự lưu; null/thiếu = vừa tra cứu trực tiếp.
+  stored_at?: string | null;
   // Chỉ dùng cho nhóm "danh_gia" (Đánh giá pháp lý & rủi ro).
   risk_level: "cao" | "trung_binh" | "thap" | null;
   references: LiveReference[];
@@ -923,6 +925,8 @@ export interface LiveSearchResponse {
   overview: string | null;
   followups: string[];
   from_cache: boolean;
+  // true = nhóm này được trả từ kho tự lưu (không tốn lượt tra cứu).
+  from_store?: boolean;
   searched_domains: string[];
   generated_at: string;
   // Số lượt còn lại hôm nay; null = không giới hạn (quản trị viên).
@@ -955,6 +959,60 @@ export interface LiveInfo {
 
 export function getLegalLiveInfo() {
   return request<LiveInfo>("/legal/live/info");
+}
+
+// Số liệu kho tự lưu văn bản pháp luật/án lệ/bản án (chỉ đếm).
+export interface LegalStoreStats {
+  enabled: boolean;
+  van_ban: number;
+  an_le: number;
+  ban_an: number;
+  total: number;
+  capacity: number;
+  last_updated: string | null;
+}
+
+export function getLegalStoreStats() {
+  return request<LegalStoreStats>("/legal/live/store-stats");
+}
+
+// Quản lý kho tự lưu — CHỈ ADMIN (người dùng thường nhận lỗi 403).
+export interface LegalStoreDocument {
+  id: number;
+  doc_type: "van_ban" | "an_le" | "ban_an";
+  title: string;
+  number: string | null;
+  issuer: string | null;
+  status: string | null;
+  source_url: string | null;
+  stored_at: string | null;
+  chunk_count: number;
+}
+
+export interface LegalStoreDocumentList {
+  total: number;
+  page: number;
+  page_size: number;
+  items: LegalStoreDocument[];
+}
+
+export function listLegalStoreDocuments(params: {
+  q?: string;
+  docType?: "van_ban" | "an_le" | "ban_an" | "";
+  page?: number;
+  pageSize?: number;
+}) {
+  const qs = new URLSearchParams({
+    page: String(params.page ?? 1),
+    page_size: String(params.pageSize ?? 20),
+  });
+  if (params.q && params.q.trim()) qs.set("q", params.q.trim());
+  if (params.docType) qs.set("doc_type", params.docType);
+  return request<LegalStoreDocumentList>(`/legal/live/store/documents?${qs.toString()}`);
+}
+
+export function deleteLegalStoreDocument(id: number) {
+  return request<{ deleted: number }>(`/legal/live/store/documents/${id}`, { method: "DELETE" });
 }
 
 // Mỗi lần gọi tìm trong MỘT nhóm nguồn; giao diện gọi 4 nhóm song song
