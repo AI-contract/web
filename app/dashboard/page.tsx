@@ -1596,7 +1596,14 @@ export default function Home() {
   const [user, setUser] = useState<UserMe | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
-  const [tab, setTab] = useState<Tab>("generate");
+  // Cột menu ở các trang khác (vd Tra cứu pháp lý) link về /dashboard?tab=intro|generate|review.
+  // Đọc ngay lúc khởi tạo state (không dùng effect). An toàn với hydration vì lần render đầu
+  // luôn là màn hình chờ xác thực (authChecked = false), chưa hiển thị nội dung theo tab.
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "generate";
+    const t = new URLSearchParams(window.location.search).get("tab");
+    return t === "intro" || t === "generate" || t === "review" ? t : "generate";
+  });
   const [lang, setLang] = useLang();
   const ui = UI_TEXT[lang];
 

@@ -9,11 +9,13 @@
  * từ câu hỏi ở backend; lĩnh vực đã lưu của tài khoản (nếu có) vẫn được dùng làm bối
  * cảnh và chỉnh trong mục "Cá nhân hoá" thu gọn bên dưới.
  *
- * Giữ nguyên mục "Cập nhật VBPL/Án lệ/Bản án". Legal AI không lưu trữ văn bản pháp
- * luật: mỗi lượt tra cứu tìm trực tiếp trên nguồn chính thống.
+ * Giữ nguyên mục "Cập nhật VBPL/Án lệ/Bản án". Mỗi lượt tra cứu tìm trong kho tự lưu
+ * trước, chưa đủ thì tìm trực tiếp trên nguồn chính thống rồi lưu lại kết quả đã đối chiếu.
+ * Trang luôn hiện cột menu bên trái (AppSidebar) như ở dashboard.
  */
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import type { FormEvent, KeyboardEvent } from "react";
 import { Briefcase, History, Info, Loader2, Search, X } from "lucide-react";
 import {
@@ -21,10 +23,13 @@ import {
   LiveGroup,
   LiveInfo,
   LiveMode,
+  LegalStoreStats,
   clearLegalLiveHistory,
   getLegalLiveInfo,
+  getLegalStoreStats,
   saveLegalBusinessField,
 } from "@/lib/api";
+import AppSidebar from "@/app/components/AppSidebar";
 import { DISCLAIMER_FALLBACK, DISPLAY_SECTIONS, PageHeader, useAuthGuard } from "./_components/live";
 import LiveOverview from "./_components/overview";
 import ContributeBox from "./_components/contribute";
@@ -47,6 +52,7 @@ export default function LegalLookupPage() {
   const { ok, onUnauthorized } = useAuthGuard();
 
   const [info, setInfo] = useState<LiveInfo | null>(null);
+  const [storeStats, setStoreStats] = useState<LegalStoreStats | null>(null);
   const [text, setText] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
@@ -74,6 +80,28 @@ export default function LegalLookupPage() {
       cancelled = true;
     };
   }, [ok, onUnauthorized]);
+
+  // Số liệu kho tự lưu — CHỈ ADMIN: backend trả 403 với người dùng thường nên storeStats chỉ có ở admin.
+  // Lấy lại sau mỗi lượt tra cứu vì kết quả mới được lưu vào kho. Lỗi thì bỏ qua.
+  const searchId = submitted?.id ?? 0;
+  useEffect(() => {
+    if (!ok) return;
+    let cancelled = false;
+    const timer = setTimeout(
+      () => {
+        getLegalStoreStats()
+          .then((s) => {
+            if (!cancelled) setStoreStats(s);
+          })
+          .catch(() => {});
+      },
+      searchId === 0 ? 0 : 20000
+    );
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [ok, searchId]);
 
   async function onSaveBusinessField() {
     setSavingField(true);
@@ -148,14 +176,16 @@ export default function LegalLookupPage() {
   const hasResults = submitted !== null;
 
   return (
-    <div className="min-h-screen bg-[#FAF8F3]">
+    <div className="min-h-screen bg-[#FAF8F3] flex">
+      <AppSidebar active="legalLookup" />
+      <div className="flex-1 min-w-0">
       <PageHeader title="Tra cứu pháp lý" backHref="/dashboard" backLabel="Quay lại" />
 
       <main className={`${hasResults ? "max-w-6xl" : "max-w-3xl"} mx-auto px-6 py-8`}>
         {/* Ô tìm kiếm duy nhất */}
         <form onSubmit={onSubmit} className={hasResults ? "mb-3" : "mt-6 mb-3"}>
           {!hasResults && (
-            <p className="text-center text-sm text-[#5B6472] mb-4">
+            <p className="text-center text-[28px] font-bold leading-snug text-[#5B6472] mb-6">
               Nhập từ khóa hoặc mô tả tình huống pháp lý của bạn — Legal AI tìm trực tiếp trên nguồn chính thống.
             </p>
           )}
@@ -305,10 +335,24 @@ export default function LegalLookupPage() {
               <Info size={16} /> Tra cứu trực tiếp trên nguồn chính thống
             </summary>
             <p className="text-[#5B6472] mt-2">
-              Legal AI <strong>không lưu trữ</strong> văn bản pháp luật, án lệ và bản án. Mỗi lần tra cứu, hệ
-              thống tìm trực tiếp trên các trang chính thống rồi trích lục nội dung liên quan, kèm link nguồn để
-              đối chiếu.
+              Legal AI <strong>tự lưu trữ</strong> những văn bản pháp luật, án lệ và bản án đã được đối chiếu
+              đúng với trang nguồn để phục vụ các lần tìm kiếm sau (nhanh hơn, không tốn thêm lượt tra cứu).
+              Nếu kho chưa đủ kết quả, hệ thống tìm trực tiếp trên các trang chính thống rồi trích lục nội dung
+              liên quan và lưu lại. Dữ liệu tự lưu có thời hạn và được làm mới từ nguồn; không lưu nội dung câu
+              hỏi hay thông tin cá nhân của bạn. Mỗi kết quả đều kèm link nguồn để đối chiếu.
             </p>
+            {storeStats?.enabled && (
+              <p className="mt-2 text-[#1C2333]">
+                <strong>Kho tự lưu hiện có:</strong> {storeStats.van_ban} văn bản · {storeStats.an_le} án lệ ·{" "}
+                {storeStats.ban_an} bản án
+                {storeStats.last_updated &&
+                  ` (cập nhật gần nhất ${storeStats.last_updated.split("-").reverse().join("/")})`}
+                .{" "}
+                <Link href="/legal-lookup/store" className="text-[#9C7A3C] underline">
+                  Xem/xóa tài liệu (Admin)
+                </Link>
+              </p>
+            )}
             <ul className="list-disc pl-5 mt-2 space-y-0.5 text-[#5B6472]">
               {DISPLAY_SECTIONS.map((section) => (
                 <li key={section.key}>
@@ -325,6 +369,7 @@ export default function LegalLookupPage() {
           {info?.disclaimer || DISCLAIMER_FALLBACK}
         </p>
       </main>
+      </div>
     </div>
   );
 }
