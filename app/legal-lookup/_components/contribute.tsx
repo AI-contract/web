@@ -6,15 +6,18 @@
  * Ô "Cập nhật VBPL/Án lệ/Bản án": Admin và khách hàng dán toàn văn văn bản
  * pháp luật/án lệ/bản án kèm nguồn. Legal AI tự phân loại (loại/lĩnh vực/
  * chuyên đề) rồi lưu vào cơ sở dữ liệu tra cứu để dùng cho các lượt tra cứu
- * sau — khác với phần tra cứu trực tiếp ở trên (không lưu trữ gì).
+ * sau — khác với phần tra cứu trực tiếp ở trên (kết quả tra cứu trực tiếp chỉ được lưu vào kho
+ * tự lưu sau khi đã đối chiếu với trang nguồn). Chữ hiển thị dịch đủ 5 ngôn ngữ (useLL).
  */
 
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { ChevronDown, ChevronUp, FilePlus2, Loader2 } from "lucide-react";
 import { ApiError, LegalContributeResult, contributeLegalDocument } from "@/lib/api";
+import { useLL } from "./i18n";
 
 export default function ContributeBox() {
+  const L = useLL();
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const [sourceName, setSourceName] = useState("");
@@ -27,7 +30,7 @@ export default function ContributeBox() {
     e.preventDefault();
     const text = content.trim();
     if (text.length < 20) {
-      setError("Vui lòng dán nội dung đầy đủ hơn (tối thiểu 20 ký tự).");
+      setError(L.contribErrShort);
       return;
     }
     setError(null);
@@ -40,7 +43,7 @@ export default function ContributeBox() {
       setSourceName("");
       setSourceUrl("");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra, vui lòng thử lại.");
+      setError(err instanceof ApiError ? err.message : L.genericError);
     } finally {
       setSubmitting(false);
     }
@@ -55,7 +58,7 @@ export default function ContributeBox() {
         aria-expanded={open}
       >
         <span className="text-sm font-semibold text-[#1C2333] flex items-center gap-1.5">
-          <FilePlus2 size={16} className="text-[#9C7A3C]" /> Cập nhật VBPL/Án lệ/Bản án
+          <FilePlus2 size={16} className="text-[#9C7A3C]" /> {L.contribTitle}
         </span>
         {open ? (
           <ChevronUp size={16} className="text-[#8A919C]" />
@@ -66,16 +69,11 @@ export default function ContributeBox() {
 
       {open && (
         <form onSubmit={onSubmit} className="px-5 pb-5 space-y-3 border-t border-[#DCD7C9] pt-4">
-          <p className="text-xs text-[#8A919C]">
-            Dán toàn văn văn bản pháp luật, án lệ hoặc bản án (kèm nguồn nếu có). Legal AI sẽ tự
-            phân loại (loại tài liệu, lĩnh vực, chuyên đề) rồi lưu lại để dùng cho các lượt tra cứu
-            sau. Nội dung do bạn cung cấp chưa qua kiểm tra đối chiếu nên ban đầu ở trạng thái
-            &quot;Chưa xác minh&quot;.
-          </p>
+          <p className="text-xs text-[#8A919C]">{L.contribDesc}</p>
 
           <div>
             <label htmlFor="legal-contribute-content" className="block text-xs font-medium text-[#5B6472] mb-1">
-              Văn bản
+              {L.contribDocLabel}
             </label>
             <textarea
               id="legal-contribute-content"
@@ -83,8 +81,8 @@ export default function ContributeBox() {
               onChange={(e) => setContent(e.target.value)}
               maxLength={200_000}
               rows={8}
-              placeholder="Dán toàn văn văn bản/án lệ/bản án vào đây…"
-              aria-label="Văn bản"
+              placeholder={L.contribDocPh}
+              aria-label={L.contribDocLabel}
               className="w-full rounded-md border border-[#DCD7C9] px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
             />
           </div>
@@ -92,7 +90,7 @@ export default function ContributeBox() {
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label htmlFor="legal-contribute-source-name" className="block text-xs font-medium text-[#5B6472] mb-1">
-                Tên nguồn <span className="font-normal text-[#8A919C]">(tuỳ chọn)</span>
+                {L.contribSourceName} <span className="font-normal text-[#8A919C]">{L.contribOptional}</span>
               </label>
               <input
                 id="legal-contribute-source-name"
@@ -100,14 +98,14 @@ export default function ContributeBox() {
                 value={sourceName}
                 onChange={(e) => setSourceName(e.target.value)}
                 maxLength={255}
-                placeholder="Ví dụ: Thư viện pháp luật"
-                aria-label="Tên nguồn"
+                placeholder={L.contribSourceNamePh}
+                aria-label={L.contribSourceName}
                 className="w-full rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
               />
             </div>
             <div>
               <label htmlFor="legal-contribute-source-url" className="block text-xs font-medium text-[#5B6472] mb-1">
-                Đường dẫn nguồn <span className="font-normal text-[#8A919C]">(tuỳ chọn)</span>
+                {L.contribSourceUrl} <span className="font-normal text-[#8A919C]">{L.contribOptional}</span>
               </label>
               <input
                 id="legal-contribute-source-url"
@@ -116,7 +114,7 @@ export default function ContributeBox() {
                 onChange={(e) => setSourceUrl(e.target.value)}
                 maxLength={2000}
                 placeholder="https://…"
-                aria-label="Đường dẫn nguồn"
+                aria-label={L.contribSourceUrl}
                 className="w-full rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
               />
             </div>
@@ -141,7 +139,7 @@ export default function ContributeBox() {
             className="inline-flex items-center gap-2 rounded-md bg-[#16213E] text-white px-5 py-2 text-sm hover:bg-[#1C2333] disabled:opacity-60 transition"
           >
             {submitting && <Loader2 size={14} className="animate-spin" />}
-            {submitting ? "Đang phân loại…" : "Cập nhật"}
+            {submitting ? L.contribClassifying : L.contribSubmit}
           </button>
         </form>
       )}

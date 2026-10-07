@@ -11,7 +11,15 @@
 //     "luat lao dong"...). Chỉ khi từ tiếng Anh NHIỀU HƠN thì mới là "en".
 // Không chắc thì chọn "vi" (hành vi cũ).
 
+import type { Lang } from "@/lib/lang";
+
 export type QueryLang = "vi" | "en";
+
+// Ngôn ngữ nhãn hiển thị của khu vực kết quả: câu hỏi tiếng Anh → tiếng Anh (kết quả do AI viết
+// cũng bằng tiếng Anh); còn lại theo ngôn ngữ giao diện đang chọn ở cột menu bên trái.
+export function resultLabelLang(query: string, ui: Lang): Lang {
+  return detectQueryLang(query) === "en" ? "en" : ui;
+}
 
 const VI_DIACRITICS =
   /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/;

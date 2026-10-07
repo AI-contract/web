@@ -7,6 +7,7 @@
 // bản pháp luật Việt Nam và giữ nguyên tiếng Việt.
 
 import { useLang, type Lang } from "@/lib/lang";
+import { EXTRA, type LLExtra } from "./i18n-extra";
 
 const vi = {
   // ---- trang chính ----
@@ -765,10 +766,18 @@ const ja: LLText = {
   contribSubmit: "更新",
 };
 
-export const LL: Record<Lang, LLText> = { vi, en, zh, ko, ja };
+export type LLFull = LLText & LLExtra;
+
+export const LL: Record<Lang, LLFull> = {
+  vi: { ...vi, ...EXTRA.vi },
+  en: { ...en, ...EXTRA.en },
+  zh: { ...zh, ...EXTRA.zh },
+  ko: { ...ko, ...EXTRA.ko },
+  ja: { ...ja, ...EXTRA.ja },
+};
 
 // Hook: lấy bộ văn bản theo ngôn ngữ giao diện đang chọn.
-export function useLL(): LLText {
+export function useLL(): LLFull {
   const [lang] = useLang();
   return LL[lang];
 }

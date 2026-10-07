@@ -25,9 +25,11 @@ import {
   LogOut,
   Scale,
   ScanSearch,
+  ShieldCheck,
 } from "lucide-react";
 import { clearToken, getMe, type UserMe } from "@/lib/api";
 import { useLang, type Lang } from "@/lib/lang";
+import { PRIVACY } from "@/lib/privacy";
 
 export type SidebarActive =
   | "intro"
@@ -129,7 +131,7 @@ const LABELS: Record<Lang, Labels> = {
   },
 };
 
-const ITEM_BASE = "w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition";
+const ITEM_BASE = "w-full flex items-center gap-3 border-l-2 px-3 py-3 text-left transition";
 const ITEM_ACTIVE = "border-[#9C7A3C] bg-white/5 text-white";
 const ITEM_IDLE = "border-transparent text-slate-300 hover:bg-white/5 hover:text-white";
 
@@ -164,17 +166,17 @@ export default function AppSidebar({ active }: { active: SidebarActive }) {
     icon: React.ReactNode;
     bold?: boolean;
   }[] = [
-    { key: "intro", href: "/dashboard?tab=intro", label: t.intro, icon: <Info size={18} /> },
-    { key: "legalLookup", href: "/legal-lookup", label: t.legalLookup, icon: <Scale size={18} />, bold: true },
-    { key: "generate", href: "/dashboard?tab=generate", label: t.generate, icon: <FileText size={18} />, bold: true },
-    { key: "review", href: "/dashboard?tab=review", label: t.review, icon: <ScanSearch size={18} />, bold: true },
-    { key: "clauseLibrary", href: "/clause-library", label: t.clauseLibrary, icon: <BookOpen size={18} /> },
-    { key: "deadlines", href: "/deadlines", label: t.deadlines, icon: <Calendar size={18} /> },
-    { key: "workspace", href: "/workspace", label: t.workspace, icon: <Building2 size={18} /> },
+    { key: "intro", href: "/dashboard?tab=intro", label: t.intro, icon: <Info size={20} /> },
+    { key: "legalLookup", href: "/legal-lookup", label: t.legalLookup, icon: <Scale size={20} />, bold: true },
+    { key: "generate", href: "/dashboard?tab=generate", label: t.generate, icon: <FileText size={20} />, bold: true },
+    { key: "review", href: "/dashboard?tab=review", label: t.review, icon: <ScanSearch size={20} />, bold: true },
+    { key: "clauseLibrary", href: "/clause-library", label: t.clauseLibrary, icon: <BookOpen size={20} /> },
+    { key: "deadlines", href: "/deadlines", label: t.deadlines, icon: <Calendar size={20} /> },
+    { key: "workspace", href: "/workspace", label: t.workspace, icon: <Building2 size={20} /> },
   ];
 
   return (
-    <aside className="w-64 shrink-0 bg-[#16213E] text-white p-6 hidden md:flex md:flex-col border-r border-black/20 sticky top-0 h-screen overflow-y-auto">
+    <aside className="w-72 shrink-0 bg-[#16213E] text-white p-6 hidden md:flex md:flex-col border-r border-black/20 sticky top-0 h-screen overflow-y-auto">
       <div className="mb-10">
         <div className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#9C7A3C]/15 border border-[#9C7A3C]/40">
@@ -211,7 +213,7 @@ export default function AppSidebar({ active }: { active: SidebarActive }) {
             className={`${ITEM_BASE} ${active === it.key ? ITEM_ACTIVE : ITEM_IDLE}`}
           >
             {it.icon}
-            <span className={`text-sm ${it.bold ? "font-bold" : ""}`}>{it.label}</span>
+            <span className={`text-base ${it.bold ? "font-bold" : ""}`}>{it.label}</span>
           </Link>
         ))}
       </nav>
@@ -226,6 +228,13 @@ export default function AppSidebar({ active }: { active: SidebarActive }) {
           <img src="/images/law-book.svg" alt={t.lawBookAlt} className="w-full h-28 object-cover" />
         </div>
       </div>
+
+      <Link
+        href="/privacy"
+        className="flex items-center gap-2 text-sm text-slate-300 hover:text-white mb-4"
+      >
+        <ShieldCheck size={16} /> {PRIVACY[lang].linkLabel}
+      </Link>
 
       {user && (
         <div className="border-t border-white/10 pt-4 text-sm text-slate-300 space-y-2">

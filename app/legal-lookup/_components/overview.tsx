@@ -27,7 +27,8 @@ import {
   searchLegalLive,
 } from "@/lib/api";
 import { LiveResultCard, TIER_META, errorMessage, safeUrl } from "./live";
-import { detectQueryLang } from "@/lib/queryLang";
+import { detectQueryLang, resultLabelLang } from "@/lib/queryLang";
+import { useLang } from "@/lib/lang";
 import { LL, type LLText } from "./i18n";
 
 type GroupState = {
@@ -94,8 +95,12 @@ export default function LiveOverview({
   const nonceRef = useRef(nonce);
   nonceRef.current = nonce;
   const startedRef = useRef<Set<string>>(new Set());
-  // Ngôn ngữ câu hỏi → ngôn ngữ phần do AI viết + nhãn hiển thị (trích dẫn vẫn là tiếng Việt).
-  const lang = useMemo(() => detectQueryLang(query), [query]);
+  // queryLang (vi/en): gửi backend để phần do AI viết cùng ngôn ngữ câu hỏi.
+  // lang: ngôn ngữ nhãn hiển thị — câu hỏi tiếng Anh thì tiếng Anh, còn lại theo ngôn ngữ giao diện
+  // đang chọn ở cột menu bên trái (trích dẫn nguyên văn vẫn là tiếng Việt).
+  const [uiLang] = useLang();
+  const queryLang = useMemo(() => detectQueryLang(query), [query]);
+  const lang = resultLabelLang(query, uiLang);
   const L = LL[lang];
 
   const load = useCallback(
@@ -103,7 +108,7 @@ export default function LiveOverview({
       const key = `${nonce}:${g}`;
       if (startedRef.current.has(key)) return;
       startedRef.current.add(key);
-      searchLegalLive(g, query, mode, requestText, lang)
+      searchLegalLive(g, query, mode, requestText, queryLang)
         .then((data) => {
           if (nonceRef.current !== nonce) return;
           setState((prev) => ({ ...prev, [g]: { nonce, data, error: null, status: null } }));
@@ -126,7 +131,7 @@ export default function LiveOverview({
           }));
         });
     },
-    [query, mode, requestText, lang, nonce, onRemaining, onUnauthorized]
+    [query, mode, requestText, queryLang, nonce, onRemaining, onUnauthorized]
   );
 
   useEffect(() => {
@@ -230,7 +235,7 @@ export default function LiveOverview({
             className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-[#DCD7C9] bg-white text-[#1C2333] hover:border-[#9C7A3C] disabled:opacity-60"
           >
             <Search size={14} className="text-[#9C7A3C]" />
-            {cta ?? (lang === "en" ? `Find ${title.toLowerCase()}` : `Tìm ${title.toLowerCase()}`)}
+            {cta ?? L.findLabel(title)}
           </button>
         </section>
       );
@@ -243,10 +248,7 @@ export default function LiveOverview({
       if (cta && !groups.some((g) => errorOf(g))) {
         return (
           <p className="mb-8 text-sm text-[#5B6472]">
-            {groups.map((g) => current(g)?.data?.notice).find(Boolean) ??
-              (lang === "en"
-                ? `No matching ${title.toLowerCase()} found.`
-                : `Không tìm thấy ${title.toLowerCase()} phù hợp.`)}
+            {groups.map((g) => current(g)?.data?.notice).find(Boolean) ?? L.noneFound(title)}
           </p>
         );
       }
@@ -356,7 +358,7 @@ export default function LiveOverview({
           ["an_le", "ban_an"],
           L.sectionAnLeBanAn,
           `${L.groups.an_le.hint}; ${L.groups.ban_an.hint}`,
-          lang === "en" ? "See related precedents and court judgments" : "Tham khảo án lệ và bản án liên quan"
+          L.ctaPrecedents
         )}
       </div>
 

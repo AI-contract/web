@@ -12,12 +12,15 @@
  * Giữ nguyên mục "Cập nhật VBPL/Án lệ/Bản án". Mỗi lượt tra cứu tìm trong kho tự lưu
  * trước, chưa đủ thì tìm trực tiếp trên nguồn chính thống rồi lưu lại kết quả đã đối chiếu.
  * Trang luôn hiện cột menu bên trái (AppSidebar) như ở dashboard.
+ *
+ * Giao diện dịch đủ 5 ngôn ngữ (vi/en/zh/ko/ja) theo ngôn ngữ đang chọn ở cột menu bên trái:
+ * toàn bộ chữ lấy từ ./_components/i18n.ts (useLL).
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { FormEvent, KeyboardEvent } from "react";
-import { Briefcase, History, Info, Loader2, Search, X } from "lucide-react";
+import { Briefcase, History, Info, Loader2, Search, ShieldCheck, X } from "lucide-react";
 import {
   ApiError,
   LiveGroup,
@@ -30,11 +33,12 @@ import {
   saveLegalBusinessField,
 } from "@/lib/api";
 import AppSidebar from "@/app/components/AppSidebar";
-import { DISCLAIMER_FALLBACK, DISPLAY_SECTIONS, PageHeader, useAuthGuard } from "./_components/live";
+import { DISPLAY_SECTIONS, PageHeader, useAuthGuard } from "./_components/live";
 import LiveOverview from "./_components/overview";
 import ContributeBox from "./_components/contribute";
-import { LL } from "./_components/i18n";
-import { detectQueryLang } from "@/lib/queryLang";
+import { LL, useLL } from "./_components/i18n";
+import { useLang } from "@/lib/lang";
+import { resultLabelLang } from "@/lib/queryLang";
 
 // Backend: "keyword" nhận tối đa 500 ký tự; dài hơn (vd dán cả điều khoản) → "clause".
 const KEYWORD_MAX = 500;
@@ -50,13 +54,22 @@ function modeFor(text: string): LiveMode {
   return text.length > KEYWORD_MAX ? "clause" : "keyword";
 }
 
+// Chuỗi có đánh dấu **...** → in đậm phần được đánh dấu (dùng cho đoạn giới thiệu kho tự lưu).
+function renderBold(text: string) {
+  return text.split("**").map((part, i) =>
+    i % 2 === 1 ? <strong key={i}>{part}</strong> : <Fragment key={i}>{part}</Fragment>
+  );
+}
+
 export default function LegalLookupPage() {
   const { ok, onUnauthorized } = useAuthGuard();
+  const L = useLL();
+  const [uiLang] = useLang();
 
   const [info, setInfo] = useState<LiveInfo | null>(null);
   const [storeStats, setStoreStats] = useState<LegalStoreStats | null>(null);
   const [text, setText] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<"short" | "clause" | null>(null);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
   const [, setRemaining] = useState<number | null | undefined>(undefined);
   const [businessField, setBusinessField] = useState("");
@@ -137,12 +150,12 @@ export default function LegalLookupPage() {
   function run(raw: string, forcedMode?: LiveMode) {
     const q = raw.replace(/\s+/g, " ").trim();
     if (q.length < 2) {
-      setFormError("Vui lòng nhập câu hỏi hoặc từ khóa (ít nhất 2 ký tự).");
+      setFormError("short");
       return;
     }
     const mode = forcedMode ?? modeFor(q);
     if (mode === "clause" && q.length < 10) {
-      setFormError("Đoạn điều khoản cần tối thiểu 10 ký tự.");
+      setFormError("clause");
       return;
     }
     setFormError(null);
@@ -175,21 +188,24 @@ export default function LegalLookupPage() {
   const domainsOf = (g: LiveGroup) => info?.groups.find((x) => x.value === g)?.domains ?? [];
   const sectionDomainsOf = (section: (typeof DISPLAY_SECTIONS)[number]) =>
     section.groups.flatMap((g) => domainsOf(g));
+  // Tên/mô tả mục theo ngôn ngữ giao diện (ghép từ nhãn của các nhóm trong mục).
+  const sectionLabel = (section: (typeof DISPLAY_SECTIONS)[number]) =>
+    section.groups.map((g) => L.groups[g].label).join(" / ");
+  const sectionHint = (section: (typeof DISPLAY_SECTIONS)[number]) => L.groups[section.groups[0]].hint;
   const hasResults = submitted !== null;
+  const privacy = L.privacy;
 
   return (
     <div className="min-h-screen bg-[#FAF8F3] flex">
       <AppSidebar active="legalLookup" />
       <div className="flex-1 min-w-0">
-      <PageHeader title="Tra cứu pháp lý" backHref="/dashboard" backLabel="Quay lại" />
+      <PageHeader title={L.pageTitle} backHref="/dashboard" backLabel={L.back} />
 
       <main className={`${hasResults ? "max-w-6xl" : "max-w-3xl"} mx-auto px-6 py-8`}>
         {/* Ô tìm kiếm duy nhất */}
         <form onSubmit={onSubmit} className={hasResults ? "mb-3" : "mt-6 mb-3"}>
           {!hasResults && (
-            <p className="text-center text-[28px] font-bold leading-snug text-[#5B6472] mb-6">
-              Nhập từ khóa hoặc mô tả tình huống pháp lý của bạn — Legal AI tìm trực tiếp trên nguồn chính thống.
-            </p>
+            <p className="text-center text-[28px] font-bold leading-snug text-[#5B6472] mb-6">{L.intro}</p>
           )}
           <div className="flex items-start gap-2 bg-white border border-[#DCD7C9] rounded-3xl pl-4 pr-2 py-2 shadow-sm focus-within:ring-1 focus-within:ring-[#9C7A3C]">
             <Search size={18} className="text-[#9C7A3C] mt-2.5 shrink-0" />
@@ -199,15 +215,15 @@ export default function LegalLookupPage() {
               onKeyDown={onKeyDown}
               maxLength={QUERY_MAX}
               rows={text.length > 90 || text.includes("\n") ? 3 : 1}
-              placeholder="Từ khóa/tình huống pháp lý cần tìm kiếm"
-              aria-label="Tra cứu pháp lý"
+              placeholder={L.placeholder}
+              aria-label={L.pageTitle}
               className="flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-relaxed focus:outline-none"
             />
             {text && (
               <button
                 type="button"
                 onClick={() => setText("")}
-                aria-label="Xóa nội dung"
+                aria-label={L.clearText}
                 className="mt-1.5 p-1.5 rounded-full text-[#8A919C] hover:text-[#1C2333]"
               >
                 <X size={16} />
@@ -218,10 +234,12 @@ export default function LegalLookupPage() {
               disabled={!enabled}
               className="mt-0.5 rounded-full bg-[#16213E] text-white px-5 py-2 text-sm hover:bg-[#1C2333] disabled:opacity-60 transition"
             >
-              Tra cứu
+              {L.searchBtn}
             </button>
           </div>
-          {formError && <p className="mt-2 text-sm text-red-600">{formError}</p>}
+          {formError && (
+            <p className="mt-2 text-sm text-red-600">{formError === "short" ? L.errShort : L.errClause}</p>
+          )}
         </form>
 
         {/* Tra cứu gần đây */}
@@ -229,13 +247,13 @@ export default function LegalLookupPage() {
           {!!info?.recent_searches.length && (
             <div>
               <p className="text-xs font-medium text-[#5B6472] flex items-center gap-1 mb-1.5">
-                <History size={12} /> Tra cứu gần đây
+                <History size={12} /> {L.recent}
                 <button
                   type="button"
                   onClick={() => onDeleteHistory()}
                   className="ml-2 font-normal text-[#8A919C] underline hover:text-[#9C7A3C]"
                 >
-                  Xóa lịch sử
+                  {L.clearHistory}
                 </button>
               </p>
               <div className="flex flex-wrap gap-2">
@@ -255,7 +273,7 @@ export default function LegalLookupPage() {
                     <button
                       type="button"
                       onClick={() => onDeleteHistory(h.query)}
-                      aria-label="Xóa khỏi lịch sử"
+                      aria-label={L.removeFromHistory}
                       className="pr-2 py-1 text-[#8A919C] hover:text-red-600"
                     >
                       <X size={12} />
@@ -272,7 +290,7 @@ export default function LegalLookupPage() {
 
         {!enabled && (
           <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-            Tính năng tra cứu trực tiếp đang tạm tắt. Vui lòng quay lại sau.
+            {L.disabledNote}
           </p>
         )}
 
@@ -280,7 +298,7 @@ export default function LegalLookupPage() {
         {submitted && (
           <div key={submitted.id}>
             <p className="text-sm text-[#5B6472] mb-4">
-              {LL[detectQueryLang(submitted.q)].resultsFor}{" "}
+              {LL[resultLabelLang(submitted.q, uiLang)].resultsFor}{" "}
               <span className="text-[#1C2333] font-medium">
                 “{submitted.q.length > 120 ? `${submitted.q.slice(0, 120)}…` : submitted.q}”
               </span>
@@ -300,7 +318,7 @@ export default function LegalLookupPage() {
         <div className="mt-6 space-y-3">
           <details className="bg-white border border-[#DCD7C9] rounded-lg px-5 py-3">
             <summary className="cursor-pointer text-sm font-semibold text-[#1C2333] flex items-center gap-1.5 list-none">
-              <Briefcase size={16} className="text-[#9C7A3C]" /> Cá nhân hoá: lĩnh vực hoạt động của tôi
+              <Briefcase size={16} className="text-[#9C7A3C]" /> {L.personalize}
               {businessFieldSaved && (
                 <span className="font-normal text-[#5B6472]">— {businessFieldSaved}</span>
               )}
@@ -312,8 +330,8 @@ export default function LegalLookupPage() {
                   value={businessField}
                   onChange={(e) => setBusinessField(e.target.value)}
                   maxLength={200}
-                  placeholder="Ví dụ: Bất động sản, Thương mại điện tử, Xây dựng…"
-                  aria-label="Lĩnh vực hoạt động"
+                  placeholder={L.fieldPlaceholder}
+                  aria-label={L.fieldAria}
                   className="flex-1 rounded-md border border-[#DCD7C9] px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#9C7A3C]"
                 />
                 <button
@@ -322,53 +340,57 @@ export default function LegalLookupPage() {
                   disabled={savingField || businessField.trim() === (businessFieldSaved ?? "")}
                   className="rounded-md border border-[#DCD7C9] px-4 py-2 text-sm text-[#5B6472] hover:border-[#9C7A3C] disabled:opacity-50"
                 >
-                  {savingField ? "Đang lưu…" : "Lưu"}
+                  {savingField ? L.saving : L.save}
                 </button>
               </div>
-              <p className="mt-1.5 text-xs text-[#8A919C]">
-                Không bắt buộc. Hệ thống tự nhận biết lĩnh vực từ câu hỏi; lĩnh vực đã lưu chỉ dùng làm bối
-                cảnh để ưu tiên kết quả phù hợp.
-              </p>
+              <p className="mt-1.5 text-xs text-[#8A919C]">{L.fieldHint}</p>
             </div>
           </details>
 
           <details className="bg-white border border-[#DCD7C9] border-l-4 border-l-[#9C7A3C] rounded-lg px-5 py-3 text-sm">
             <summary className="cursor-pointer font-semibold text-[#9C7A3C] flex items-center gap-1.5 list-none">
-              <Info size={16} /> Tra cứu trực tiếp trên nguồn chính thống
+              <Info size={16} /> {L.liveTitle}
             </summary>
-            <p className="text-[#5B6472] mt-2">
-              Legal AI <strong>tự lưu trữ</strong> những văn bản pháp luật, án lệ và bản án đã được đối chiếu
-              đúng với trang nguồn để phục vụ các lần tìm kiếm sau (nhanh hơn, không tốn thêm lượt tra cứu).
-              Nếu kho chưa đủ kết quả, hệ thống tìm trực tiếp trên các trang chính thống rồi trích lục nội dung
-              liên quan và lưu lại. Dữ liệu tự lưu có thời hạn và được làm mới từ nguồn; không lưu nội dung câu
-              hỏi hay thông tin cá nhân của bạn. Mỗi kết quả đều kèm link nguồn để đối chiếu.
-            </p>
+            <p className="text-[#5B6472] mt-2">{renderBold(L.liveIntro)}</p>
             {storeStats?.enabled && (
               <p className="mt-2 text-[#1C2333]">
-                <strong>Kho tự lưu hiện có:</strong> {storeStats.van_ban} văn bản · {storeStats.an_le} án lệ ·{" "}
-                {storeStats.ban_an} bản án
+                <strong>{L.storeLabel}</strong> {L.storeCounts(storeStats.van_ban, storeStats.an_le, storeStats.ban_an)}
                 {storeStats.last_updated &&
-                  ` (cập nhật gần nhất ${storeStats.last_updated.split("-").reverse().join("/")})`}
+                  ` ${L.storeLatest(storeStats.last_updated.split("-").reverse().join("/"))}`}
                 .{" "}
                 <Link href="/legal-lookup/store" className="text-[#9C7A3C] underline">
-                  Xem/xóa tài liệu (Admin)
+                  {L.storeManage}
                 </Link>
               </p>
             )}
             <ul className="list-disc pl-5 mt-2 space-y-0.5 text-[#5B6472]">
               {DISPLAY_SECTIONS.map((section) => (
                 <li key={section.key}>
-                  <strong>{section.label}:</strong>{" "}
-                  {sectionDomainsOf(section).length ? sectionDomainsOf(section).join(", ") : section.hint}
+                  <strong>{sectionLabel(section)}:</strong>{" "}
+                  {sectionDomainsOf(section).length ? sectionDomainsOf(section).join(", ") : sectionHint(section)}
                 </li>
               ))}
             </ul>
           </details>
         </div>
 
+        {/* Cam kết bảo mật dữ liệu cá nhân (Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15) */}
+        <section
+          aria-label={privacy.boxTitle}
+          className="mt-4 bg-white border border-[#DCD7C9] border-l-4 border-l-[#9C7A3C] rounded-lg px-5 py-3 text-sm"
+        >
+          <p className="font-semibold text-[#9C7A3C] flex items-center gap-1.5">
+            <ShieldCheck size={16} /> {privacy.boxTitle}
+          </p>
+          <p className="mt-1.5 text-[#5B6472]">{privacy.boxBody}</p>
+          <Link href="/privacy" className="mt-1.5 inline-block text-[#9C7A3C] underline">
+            {privacy.boxLink}
+          </Link>
+        </section>
+
         <p className="mt-4 text-xs text-[#5B6472] flex gap-1.5">
           <Info size={14} className="shrink-0 mt-0.5" />
-          {info?.disclaimer || DISCLAIMER_FALLBACK}
+          {L.disclaimerText}
         </p>
       </main>
       </div>
