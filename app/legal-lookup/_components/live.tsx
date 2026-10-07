@@ -35,8 +35,8 @@ import {
   getMe,
   searchLegalLive,
 } from "@/lib/api";
-import type { QueryLang } from "@/lib/queryLang";
-import { LL, type LLText } from "./i18n";
+import type { Lang } from "@/lib/lang";
+import { LL, type LLFull, type LLText } from "./i18n";
 
 // ---------------------------------------------------------------
 // Hằng số & tiện ích
@@ -153,25 +153,24 @@ function statusTone(status: string): string {
   return "bg-slate-100 text-slate-600 border-slate-300";
 }
 
-// Nhãn tình trạng hiệu lực theo ngôn ngữ người tìm kiếm. Chỉ đổi nhãn có trong bảng quy định
-// (cùng cách hiểu với statusTone); cụm khác giữ nguyên tiếng Việt đúng như trang nguồn ghi.
-export function statusLabel(status: string, lang: QueryLang): string {
-  if (lang !== "en") return status;
+// Nhãn tình trạng hiệu lực theo ngôn ngữ hiển thị. Tiếng Việt: giữ nguyên đúng cụm trang nguồn ghi.
+// Ngôn ngữ khác: chỉ đổi nhãn có trong bảng quy định (cùng cách hiểu với statusTone); cụm khác giữ nguyên.
+export function statusLabel(status: string, L: LLFull, lang: Lang): string {
+  if (lang === "vi") return status;
   const f = foldVi(status);
-  if (f.includes("het hieu luc")) return f.includes("mot phan") ? "Partly expired" : "Expired";
-  if (f.includes("chua co hieu luc") || f.includes("chua hieu luc")) return "Not yet in force";
-  if (f.includes("con hieu luc")) return f.includes("mot phan") ? "Partly expired" : "In force";
+  if (f.includes("het hieu luc")) return f.includes("mot phan") ? L.statusPartlyExpired : L.statusExpired;
+  if (f.includes("chua co hieu luc") || f.includes("chua hieu luc")) return L.statusNotYetInForce;
+  if (f.includes("con hieu luc")) return f.includes("mot phan") ? L.statusPartlyExpired : L.statusInForce;
   return status;
 }
 
-export function buildCitation(item: LiveItem, lang: QueryLang = "vi"): string {
-  const en = lang === "en";
+export function buildCitation(item: LiveItem, L: LLText = LL.vi): string {
   let text = item.title;
-  if (item.number) text += en ? ` (No. ${item.number})` : ` (số ${item.number})`;
+  if (item.number) text += ` (${L.citeNo} ${item.number})`;
   if (item.issuer) text += `, ${item.issuer}`;
   if (item.issued_on) text += `, ${item.issued_on}`;
   const src = safeUrl(item.url);
-  return src ? `${text}. ${en ? "Source" : "Nguồn"}: ${src}` : text;
+  return src ? `${text}. ${L.citeSource}: ${src}` : text;
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -373,28 +372,19 @@ function CitedDocuments({
 function StoredNote({
   storedAt,
   verified,
-  lang,
+  L,
 }: {
   storedAt: string;
   verified: boolean;
-  lang: QueryLang;
+  L: LLFull;
 }) {
   const [y, m, d] = storedAt.split("-");
   const shown = y && m && d ? `${d}/${m}/${y}` : storedAt;
-  const en = lang === "en";
   return (
     <p className="mt-3 flex items-start gap-1.5 text-xs text-[#5B6472]">
       <HelpCircle size={14} className="shrink-0 mt-0.5" />
-      {verified
-        ? en
-          ? `Content stored in the Legal AI library on ${shown} (checked against the source page when stored). `
-          : `Nội dung đã lưu trong kho Legal AI ngày ${shown} (đã đối chiếu với trang nguồn lúc lưu). `
-        : en
-          ? `Content added to the Legal AI library by a user on ${shown}, not checked against the source page. `
-          : `Nội dung do người dùng cập nhật vào kho Legal AI ngày ${shown}, chưa đối chiếu với trang nguồn. `}
-      {en
-        ? "The document may have been amended since — open the original source to check the latest validity status."
-        : "Văn bản có thể đã được sửa đổi kể từ đó — hãy mở nguồn gốc để kiểm tra tình trạng hiệu lực mới nhất."}
+      {verified ? L.storedVerified(shown) : L.storedUser(shown)}
+      {L.storedAmend}
     </p>
   );
 }
@@ -408,8 +398,8 @@ export function LiveResultCard({
   item: LiveItem;
   group: LiveGroup;
   resolveDoc?: (key: string) => string | null;
-  // Ngôn ngữ nhãn hiển thị (theo ngôn ngữ câu hỏi). Nội dung trích dẫn luôn là tiếng Việt.
-  lang?: QueryLang;
+  // Ngôn ngữ nhãn hiển thị (theo ngôn ngữ câu hỏi/giao diện). Nội dung trích dẫn luôn là tiếng Việt.
+  lang?: Lang;
 }) {
   const L = LL[lang];
   const meta = { ...GROUP_META[group], ...L.groups[group] };
@@ -441,7 +431,7 @@ export function LiveResultCard({
           <span
             className={`text-xs px-2 py-0.5 rounded-full border ${statusTone(item.status_text)}`}
           >
-            {statusLabel(item.status_text, lang)}
+            {statusLabel(item.status_text, L, lang)}
           </span>
         ) : (
           group === "van_ban" && (
@@ -556,7 +546,7 @@ export function LiveResultCard({
         </p>
       ) : (
         item.stored_at ? (
-          <StoredNote storedAt={item.stored_at} verified={item.verification === "verified"} lang={lang} />
+          <StoredNote storedAt={item.stored_at} verified={item.verification === "verified"} L={L} />
         ) : (
           <VerificationNote item={item} L={L} />
         )
@@ -578,7 +568,7 @@ export function LiveResultCard({
             {L.openSource}
           </a>
         )}
-        <CopyCitationButton text={buildCitation(item, lang)} L={L} />
+        <CopyCitationButton text={buildCitation(item, L)} L={L} />
       </div>
     </article>
   );

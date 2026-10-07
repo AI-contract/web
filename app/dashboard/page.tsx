@@ -43,6 +43,7 @@ import {
 import DiffView from "@/app/components/DiffView";
 import ReviewChat from "@/app/components/ReviewChat";
 import { useLang, type Lang } from "@/lib/lang";
+import { PRIVACY } from "@/lib/privacy";
 
 // ---- ngôn ngữ giao diện (menu/nhãn chính) - KHÔNG áp dụng cho
 // FIELD_LABELS/FIELD_LABEL_OVERRIDES_BY_TYPE, vì văn bản hợp đồng
@@ -2252,7 +2253,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#FAF8F3] flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#16213E] text-white p-6 hidden md:flex md:flex-col border-r border-black/20">
+      <aside className="w-72 bg-[#16213E] text-white p-6 hidden md:flex md:flex-col border-r border-black/20">
         <div className="mb-10">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#9C7A3C]/15 border border-[#9C7A3C]/40">
@@ -2290,15 +2291,15 @@ export default function Home() {
                 : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
             }`}
           >
-            <Info size={18} />
-            <span className="text-sm">{ui.navIntro}</span>
+            <Info size={20} />
+            <span className="text-base">{ui.navIntro}</span>
           </button>
           <Link
             href="/legal-lookup"
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >
-            <Scale size={18} />
-            <span className="text-sm font-bold">{NAV_EXTRA[lang].legalLookup}</span>
+            <Scale size={20} />
+            <span className="text-base font-bold">{NAV_EXTRA[lang].legalLookup}</span>
           </Link>
           <button
             onClick={() => setTab("generate")}
@@ -2308,8 +2309,8 @@ export default function Home() {
                 : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
             }`}
           >
-            <FileText size={18} />
-            <span className="text-sm font-bold">{ui.navGenerate}</span>
+            <FileText size={20} />
+            <span className="text-base font-bold">{ui.navGenerate}</span>
           </button>
           <button
             onClick={() => setTab("review")}
@@ -2319,8 +2320,8 @@ export default function Home() {
                 : "border-transparent text-slate-300 hover:bg-white/5 hover:text-white"
             }`}
           >
-            <ScanSearch size={18} />
-            <span className="text-sm font-bold">{ui.navReview}</span>
+            <ScanSearch size={20} />
+            <span className="text-base font-bold">{ui.navReview}</span>
           </button>
 
           {/* Các tính năng mới: mở trang riêng (không dùng chung state
@@ -2330,22 +2331,22 @@ export default function Home() {
             href="/clause-library"
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >
-            <BookOpen size={18} />
-            <span className="text-sm">{NAV_EXTRA[lang].clauseLibrary}</span>
+            <BookOpen size={20} />
+            <span className="text-base">{NAV_EXTRA[lang].clauseLibrary}</span>
           </Link>
           <Link
             href="/deadlines"
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >
-            <Calendar size={18} />
-            <span className="text-sm">{NAV_EXTRA[lang].deadlines}</span>
+            <Calendar size={20} />
+            <span className="text-base">{NAV_EXTRA[lang].deadlines}</span>
           </Link>
           <Link
             href="/workspace"
             className="w-full flex items-center gap-3 border-l-2 border-transparent px-3 py-2.5 text-left transition text-slate-300 hover:bg-white/5 hover:text-white"
           >
-            <Building2 size={18} />
-            <span className="text-sm">{NAV_EXTRA[lang].workspace}</span>
+            <Building2 size={20} />
+            <span className="text-base">{NAV_EXTRA[lang].workspace}</span>
           </Link>
         </nav>
 
@@ -2368,6 +2369,13 @@ export default function Home() {
             />
           </div>
         </div>
+
+        <Link
+          href="/privacy"
+          className="flex items-center gap-2 text-sm text-slate-300 hover:text-white mb-4"
+        >
+          <ShieldCheck size={16} /> {PRIVACY[lang].linkLabel}
+        </Link>
 
         {user && (
           <div className="border-t border-white/10 pt-4 text-sm text-slate-300 space-y-2">
