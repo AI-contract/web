@@ -19,6 +19,7 @@ import {
   downloadContractPdf,
   downloadRevisedContractDocx,
   downloadRevisedContractDocxTrackChanges,
+  downloadRevisedContractDocxCompare,
   downloadRevisedContractPdf,
   createSavedTemplate,
   deleteSavedTemplate,
@@ -3141,6 +3142,20 @@ export default function Home() {
                             className="border border-[#DCD7C9] rounded-md px-4 py-2 text-sm hover:bg-[#FAF8F3] transition"
                           >
                             Tải DOCX kèm Track Changes
+                          </button>
+                          <button
+                            onClick={() =>
+                              downloadRevisedContractDocxCompare(
+                                lastReview.id
+                              ).catch(() =>
+                                alert(
+                                  "Bản so sánh màu chỉ có với hợp đồng review từ file Word (.docx)."
+                                )
+                              )
+                            }
+                            className="border border-[#DCD7C9] rounded-md px-4 py-2 text-sm hover:bg-[#FAF8F3] transition"
+                          >
+                            Tải DOCX so sánh (màu)
                           </button>
                         </div>
                       )}

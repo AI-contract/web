@@ -428,6 +428,16 @@ export function downloadRevisedContractDocxTrackChanges(id: number) {
   );
 }
 
+// Bản so sánh MÀU trên chính file Word gốc (chỉ có với review từ file .docx):
+// giữ nguyên font/cỡ chữ/canh lề; phần không đổi giữ màu gốc, đỏ = đề xuất
+// chỉnh sửa (chữ bị bỏ gạch ngang), xanh đậm = nội dung bổ sung.
+export function downloadRevisedContractDocxCompare(id: number) {
+  return downloadFile(
+    `/contract-reviews/${id}/download-docx-compare`,
+    `hop-dong-so-sanh-mau-${id}.docx`
+  );
+}
+
 // Yêu cầu review đã lưu mặc định cho tài khoản (mục tiêu + văn bản
 // pháp luật/yêu cầu riêng). Áp dụng sẵn (pre-fill) mỗi khi vào tab
 // Review; người dùng vẫn sửa được cho từng lần review cụ thể mà
