@@ -103,7 +103,7 @@ export interface UserMe {
   requests_limit: number;
   review_used: number;
   review_limit: number;
-  // true = gói FREE không giới hạn lượt (chế độ demo). Optional để tương thích
+  // true = gói FREE không giới hạn lượt SOẠN THẢO hợp đồng (chế độ demo; review và tra cứu vẫn giới hạn). Optional để tương thích
   // với backend cũ chưa trả trường này.
   usage_unlimited?: boolean;
 }
@@ -135,6 +135,15 @@ export interface ContractReviewOut {
   created_at: string;
 }
 
+// Một bên trong hợp đồng, nhận diện từ phần mở đầu (vd { role: "Party A", name: "Công ty X" }).
+export interface ContractParty {
+  role: string;
+  name: string;
+}
+
+// Ưu tiên luật áp dụng / nơi giải quyết tranh chấp khi review.
+export type LawPreference = "keep" | "vn" | "counterparty" | "neutral";
+
 // Kết quả bước phân loại loại hợp đồng, chạy TRƯỚC khi review đầy đủ
 // (xem POST /review-contract/classify) — dùng để hiển thị bước xác nhận
 // "Hệ thống nhận diện đây là: <loại>, bạn có xác nhận không?" trước khi
@@ -149,6 +158,9 @@ export interface ContractClassifyOut {
   // key (contract_type) -> nhãn hiển thị tiếng Việt, dùng để dựng dropdown
   // cho người dùng tự chọn lại nếu AI đoán sai.
   valid_types: Record<string, string>;
+  // Các bên nhận diện được từ phần mở đầu hợp đồng (rỗng nếu không nhận diện được).
+  // Optional để tương thích backend cũ chưa trả trường này.
+  parties?: ContractParty[];
 }
 
 export interface ContractTypeFields {
@@ -353,6 +365,14 @@ export async function reviewContract(
     // hiệu để đo lường độ chính xác phân loại — đây là lỗi đã từng xảy ra,
     // xem CHANGELOG.
     ai_detected_contract_type?: string;
+    // Bên mà người dùng đại diện (vd "Party A – Công ty X"); "neutral" = không chỉ
+    // định, review trung lập. Mọi đánh giá và đề xuất đứng trên lập trường bên này.
+    represented_party?: string;
+    // Ưu tiên luật áp dụng / nơi giải quyết tranh chấp (hợp đồng có yếu tố nước ngoài).
+    law_preference?: LawPreference;
+    // "deep" chỉ có hiệu lực khi backend bật REVIEW_DEEP_ENABLED và tài khoản ở gói trả phí;
+    // ngược lại backend tự dùng "standard".
+    review_depth?: "standard" | "deep";
   }
 ): Promise<ContractReviewOut> {
   const token = getToken();
@@ -373,6 +393,15 @@ export async function reviewContract(
       "ai_detected_contract_type",
       options.ai_detected_contract_type
     );
+  }
+  if (options?.represented_party) {
+    formData.append("represented_party", options.represented_party);
+  }
+  if (options?.law_preference) {
+    formData.append("law_preference", options.law_preference);
+  }
+  if (options?.review_depth) {
+    formData.append("review_depth", options.review_depth);
   }
 
   const res = await fetch(`${API_URL}/review-contract`, {
@@ -942,7 +971,7 @@ export interface LiveSearchResponse {
   lang?: "vi" | "en";
   searched_domains: string[];
   generated_at: string;
-  // Số lượt còn lại hôm nay; null = không giới hạn (quản trị viên).
+  // Số lượt còn lại trong tháng này; null = không giới hạn (quản trị viên).
   remaining_calls: number | null;
   disclaimer: string;
 }
@@ -962,7 +991,8 @@ export interface LiveHistoryItem {
 export interface LiveInfo {
   enabled: boolean;
   groups: LiveGroupInfo[];
-  daily_limit: number | null;
+  // Giới hạn lời gọi mỗi THÁNG của người dùng; null = không giới hạn (quản trị viên).
+  monthly_limit: number | null;
   remaining_calls: number | null;
   disclaimer: string;
   // ---- Cá nhân hoá theo tài khoản ----
