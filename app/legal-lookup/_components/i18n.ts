@@ -25,7 +25,7 @@ const vi = {
   removeFromHistory: "Xóa khỏi lịch sử",
   disabledNote: "Tính năng tra cứu trực tiếp đang tạm tắt. Vui lòng quay lại sau.",
   remaining: (n: number) =>
-    `Còn ${n} lượt tra cứu hôm nay (mỗi lần tra cứu dùng 5 lượt). `,
+    `Còn ${n} lượt tra cứu trong tháng này (mỗi lần tra cứu dùng 5 lượt). `,
   lowQuota: "Số lượt còn ít: một số phần kết quả có thể không tra cứu được.",
   resultsFor: "Kết quả cho:",
   personalize: "Cá nhân hoá: lĩnh vực hoạt động của tôi",
@@ -181,7 +181,7 @@ const en: LLText = {
   removeFromHistory: "Remove from history",
   disabledNote: "Live search is temporarily turned off. Please come back later.",
   remaining: (n: number) =>
-    `${n} search${n === 1 ? "" : "es"} left today (each search uses 5). `,
+    `${n} call${n === 1 ? "" : "s"} left this month (each search uses 5). `,
   lowQuota: "Few searches left: some parts of the results may not be searchable.",
   resultsFor: "Results for:",
   personalize: "Personalize: my business field",
@@ -331,7 +331,7 @@ const zh: LLText = {
   clearHistory: "清除历史",
   removeFromHistory: "从历史中删除",
   disabledNote: "实时检索功能暂时关闭，请稍后再来。",
-  remaining: (n: number) => `今天还剩 ${n} 次检索额度（每次检索消耗 5 次）。 `,
+  remaining: (n: number) => `本月还剩 ${n} 次检索额度（每次检索消耗 5 次）。 `,
   lowQuota: "剩余额度不多：部分结果可能无法检索。",
   resultsFor: "检索结果：",
   personalize: "个性化：我的业务领域",
@@ -480,7 +480,7 @@ const ko: LLText = {
   disabledNote:
     "실시간 검색 기능이 일시적으로 꺼져 있습니다. 나중에 다시 이용해 주세요.",
   remaining: (n: number) =>
-    `오늘 남은 검색 횟수 ${n}회 (검색 1회당 5회 차감). `,
+    `이번 달 남은 검색 횟수 ${n}회 (검색 1회당 5회 차감). `,
   lowQuota: "남은 횟수가 적습니다. 일부 결과는 검색되지 않을 수 있습니다.",
   resultsFor: "검색 결과:",
   personalize: "맞춤 설정: 내 사업 분야",
@@ -630,7 +630,7 @@ const ja: LLText = {
   removeFromHistory: "履歴から削除",
   disabledNote: "リアルタイム検索は一時的に停止中です。後ほどお試しください。",
   remaining: (n: number) =>
-    `本日の残り検索回数：${n} 回（1回の検索で5回分を消費）。 `,
+    `今月の残り検索回数：${n} 回（1回の検索で5回分を消費）。 `,
   lowQuota: "残り回数が少ないため、一部の結果は検索できない場合があります。",
   resultsFor: "検索結果：",
   personalize: "パーソナライズ：私の事業分野",
