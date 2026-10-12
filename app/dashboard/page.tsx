@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, Bot, X, Send, Phone, Mail, MapPin, Calendar, Clock, Percent, Wallet, Landmark, Hash, Briefcase, Building2, User, UserCheck, CreditCard, Package, Truck, ShieldCheck, FileSignature, CheckCircle2, Languages } from "lucide-react";
+import { FileText, ScanSearch, LogOut, Loader2, Upload, Scale, BookOpen, Info, Bot, X, Send, Phone, Mail, MapPin, Calendar, Clock, Percent, Wallet, Landmark, Hash, Briefcase, Building2, User, UserCheck, CreditCard, Package, Truck, ShieldCheck, FileSignature, CheckCircle2, Languages, Menu } from "lucide-react";
 import {
   ApiError,
   askAssistant,
@@ -1664,6 +1664,8 @@ export default function Home() {
 
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  // Menu dạng ngăn kéo trên điện thoại (cột menu trái được ẩn dưới màn hình md).
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   // Chu kỳ thanh toán đang chọn ở sidebar nâng cấp gói — quyết định
   // plan_key gửi lên /billing/sepay/checkout là "..._MONTHLY" hay
   // "..._YEARLY" (xem sepay_service.PLANS ở backend).
@@ -2284,7 +2286,35 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#FAF8F3] flex">
       {/* Sidebar */}
-      <aside className="w-72 bg-[#16213E] text-white p-6 hidden md:flex md:flex-col border-r border-black/20">
+      {/* Trên điện thoại: nút Menu nổi + lớp nền mờ; cột menu trượt ra như ngăn kéo. Trên máy tính giữ nguyên. */}
+      <button
+        type="button"
+        aria-label="Menu"
+        onClick={() => setMobileNavOpen(true)}
+        className="md:hidden fixed bottom-4 left-4 z-30 flex items-center gap-2 rounded-full bg-[#16213E] text-white px-4 py-3 shadow-lg border border-white/10"
+      >
+        <Menu size={20} />
+        <span className="text-sm font-medium">Menu</span>
+      </button>
+      {mobileNavOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-30 bg-black/50"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+      <aside
+        className={`w-72 shrink-0 bg-[#16213E] text-white p-6 flex flex-col border-r border-black/20 fixed inset-y-0 left-0 z-40 overflow-y-auto transition-transform duration-200 ${
+          mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 md:static md:z-auto md:overflow-visible`}
+      >
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={() => setMobileNavOpen(false)}
+          className="md:hidden absolute top-3 right-3 text-slate-300 hover:text-white"
+        >
+          <X size={20} />
+        </button>
         <div className="mb-10">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#9C7A3C]/15 border border-[#9C7A3C]/40">
@@ -2313,7 +2343,7 @@ export default function Home() {
           ))}
         </div>
 
-        <nav className="space-y-1">
+        <nav className="space-y-1" onClick={() => setMobileNavOpen(false)}>
           <button
             onClick={() => setTab("intro")}
             className={`w-full flex items-center gap-3 border-l-2 px-3 py-2.5 text-left transition ${
@@ -2510,7 +2540,7 @@ export default function Home() {
       </aside>
 
       {/* Main */}
-      <section className="flex-1 p-10">
+      <section className="flex-1 min-w-0 p-4 sm:p-6 md:p-10">
         <div className="max-w-5xl mx-auto">
           {tab === "generate" ? (
             <>

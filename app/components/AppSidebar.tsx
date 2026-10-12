@@ -26,6 +26,8 @@ import {
   Scale,
   ScanSearch,
   ShieldCheck,
+  Menu,
+  X,
 } from "lucide-react";
 import { clearToken, getMe, type UserMe } from "@/lib/api";
 import { useLang, type Lang } from "@/lib/lang";
@@ -140,6 +142,8 @@ export default function AppSidebar({ active }: { active: SidebarActive }) {
   const [lang, setLang] = useLang();
   const t = LABELS[lang];
   const [user, setUser] = useState<UserMe | null>(null);
+  // Menu dạng ngăn kéo trên điện thoại (cột menu trái được ẩn dưới màn hình md).
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Thông tin tài khoản chỉ để hiển thị; lỗi thì bỏ qua (trang chính tự xử lý đăng nhập).
   useEffect(() => {
@@ -176,7 +180,35 @@ export default function AppSidebar({ active }: { active: SidebarActive }) {
   ];
 
   return (
-    <aside className="w-72 shrink-0 bg-[#16213E] text-white p-6 hidden md:flex md:flex-col border-r border-black/20 sticky top-0 h-screen overflow-y-auto">
+    <>
+      <button
+        type="button"
+        aria-label="Menu"
+        onClick={() => setMobileOpen(true)}
+        className="md:hidden fixed bottom-4 left-4 z-30 flex items-center gap-2 rounded-full bg-[#16213E] text-white px-4 py-3 shadow-lg border border-white/10"
+      >
+        <Menu size={20} />
+        <span className="text-sm font-medium">Menu</span>
+      </button>
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-30 bg-black/50"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+    <aside
+      className={`w-72 shrink-0 bg-[#16213E] text-white p-6 flex flex-col border-r border-black/20 fixed inset-y-0 left-0 z-40 overflow-y-auto transition-transform duration-200 ${
+        mobileOpen ? "translate-x-0" : "-translate-x-full"
+      } md:translate-x-0 md:sticky md:top-0 md:bottom-auto md:h-screen md:z-auto`}
+    >
+      <button
+        type="button"
+        aria-label="Close menu"
+        onClick={() => setMobileOpen(false)}
+        className="md:hidden absolute top-3 right-3 text-slate-300 hover:text-white"
+      >
+        <X size={20} />
+      </button>
       <div className="mb-10">
         <div className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#9C7A3C]/15 border border-[#9C7A3C]/40">
@@ -204,7 +236,7 @@ export default function AppSidebar({ active }: { active: SidebarActive }) {
         ))}
       </div>
 
-      <nav className="space-y-1">
+      <nav className="space-y-1" onClick={() => setMobileOpen(false)}>
         {items.map((it) => (
           <Link
             key={it.key}
@@ -251,5 +283,6 @@ export default function AppSidebar({ active }: { active: SidebarActive }) {
         </div>
       )}
     </aside>
+    </>
   );
 }
