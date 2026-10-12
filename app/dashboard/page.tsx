@@ -11,6 +11,7 @@ import {
   ContractOut,
   ContractClassifyOut,
   ContractReviewOut,
+  LawPreference,
   SavedContractTemplate,
   UserMe,
   classifyContract,
@@ -866,7 +867,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review hợp đồng",
     reviewSectionDesc:
-      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Gói FREE được review miễn phí trong bản demo (có giới hạn lượt mỗi ngày).",
+      "Tải lên hợp đồng có sẵn để AI rà soát rủi ro pháp lý và đề xuất bản chỉnh sửa. Gói FREE được review miễn phí trong bản demo (số lượt có giới hạn theo tháng — xem ở thanh bên).",
     reviewSteps: [
       {
         title: "Tải lên hợp đồng",
@@ -1018,7 +1019,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "Review contract",
     reviewSectionDesc:
-      "Upload an existing contract for the AI to review legal risks and propose a revised version. The FREE plan includes free reviews during the demo (daily limit applies).",
+      "Upload an existing contract for the AI to review legal risks and propose a revised version. The FREE plan includes free reviews during the demo (monthly limit applies — see the sidebar for your usage).",
     reviewSteps: [
       {
         title: "Upload the contract",
@@ -1164,7 +1165,7 @@ const UI_TEXT: Record<Lang, {
       },
     ],
     reviewSectionTitle: "审查合同",
-    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。演示版中 FREE 套餐可免费审查（每日限次）。",
+    reviewSectionDesc: "上传现有合同，由 AI 审查法律风险并提出修订建议。演示版中 FREE 套餐可免费审查（每月次数有限，用量见侧边栏）。",
     reviewSteps: [
       {
         title: "上传合同",
@@ -1313,7 +1314,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "계약서 검토",
     reviewSectionDesc:
-      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. 데모 버전에서 FREE 요금제는 무료로 검토할 수 있습니다(일일 횟수 제한).",
+      "기존 계약서를 업로드하면 AI가 법적 리스크를 검토하고 수정안을 제안합니다. 데모 버전에서 FREE 요금제는 무료로 검토할 수 있습니다(월별 횟수 제한, 사용량은 사이드바에서 확인).",
     reviewSteps: [
       {
         title: "계약서 업로드",
@@ -1464,7 +1465,7 @@ const UI_TEXT: Record<Lang, {
     ],
     reviewSectionTitle: "契約書をレビュー",
     reviewSectionDesc:
-      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。デモ版ではFREEプランで無料レビューできます（日次制限あり）。",
+      "既存の契約書をアップロードすると、AIが法的リスクをレビューし修正案を提案します。デモ版ではFREEプランで無料レビューできます（月ごとに回数制限あり。使用状況はサイドバーで確認）。",
     reviewSteps: [
       {
         title: "契約書をアップロード",
@@ -1581,15 +1582,15 @@ type Tab = "generate" | "review" | "intro";
 const UNLIMITED_TEXT: Record<Lang, { contracts: string; reviews: string }> = {
   vi: {
     contracts: "Tạo hợp đồng: không giới hạn",
-    reviews: "Review hợp đồng: miễn phí (giới hạn lượt mỗi ngày)",
+    reviews: "Review hợp đồng: giới hạn theo tháng",
   },
   en: {
     contracts: "Contract generation: unlimited",
-    reviews: "Contract review: free (daily limit applies)",
+    reviews: "Contract review: monthly limit",
   },
-  zh: { contracts: "生成合同：不限次数", reviews: "审查合同：免费（每日限次）" },
-  ko: { contracts: "계약서 생성: 무제한", reviews: "계약서 검토: 무료(일일 횟수 제한)" },
-  ja: { contracts: "契約書作成：無制限", reviews: "契約書レビュー：無料（日次制限あり）" },
+  zh: { contracts: "生成合同：不限次数", reviews: "审查合同：每月有限次" },
+  ko: { contracts: "계약서 생성: 무제한", reviews: "계약서 검토: 월별 제한" },
+  ja: { contracts: "契約書作成：無制限", reviews: "契約書レビュー：月ごとに制限" },
 };
 
 export default function Home() {
@@ -1709,16 +1710,36 @@ export default function Home() {
     string | null
   >(null);
 
+  // ---- bên mà người dùng đại diện (BẮT BUỘC chọn trước khi phân tích) và
+  // ưu tiên luật áp dụng / nơi giải quyết tranh chấp ----
+  // partyChoice: "" = chưa chọn; "neutral" = không chỉ định bên nào;
+  // "__custom__" = tự nhập tên bên (customParty); còn lại = "Party A – Tên" lấy
+  // từ kết quả nhận diện của bước phân loại.
+  const [partyChoice, setPartyChoice] = useState<string>("");
+  const [customParty, setCustomParty] = useState<string>("");
+  const [lawPreference, setLawPreference] = useState<LawPreference>("keep");
+  // "deep" chỉ có hiệu lực khi backend bật REVIEW_DEEP_ENABLED và tài khoản không ở gói FREE.
+  const [reviewDepth, setReviewDepth] = useState<"standard" | "deep">("standard");
+  const representedPartyValue =
+    partyChoice === "__custom__" ? customParty.trim() : partyChoice;
+
   const runClassify = async (file: File) => {
     setClassifying(true);
     setClassifyError(null);
     setClassifyResult(null);
     setConfirmedContractType(null);
+    setPartyChoice("");
+    setCustomParty("");
     try {
       const result = await classifyContract(file);
       setClassifyResult(result);
       setConfirmedContractType(result.contract_type);
+      // Không nhận diện được bên nào từ phần mở đầu: chuyển sẵn sang ô tự nhập tên bên
+      // (người dùng vẫn có thể đổi sang "Trung lập"), thay vì để danh sách chỉ còn 2 lựa chọn chung chung.
+      if (!(result.parties ?? []).length) setPartyChoice("__custom__");
     } catch (err) {
+      // Phân loại lỗi => cũng không có danh sách bên: dùng ô tự nhập để không chặn người dùng.
+      setPartyChoice("__custom__");
       const message =
         err instanceof ApiError
           ? err.message
@@ -2159,6 +2180,8 @@ export default function Home() {
     setClassifyResult(null);
     setClassifyError(null);
     setConfirmedContractType(null);
+    setPartyChoice("");
+    setCustomParty("");
     if (file) {
       runClassify(file);
     }
@@ -2185,12 +2208,19 @@ export default function Home() {
         // bị người dùng sửa lại), để backend lưu đúng tín hiệu phục vụ đo
         // lường độ chính xác phân loại.
         ai_detected_contract_type: classifyResult?.contract_type ?? undefined,
+        // Bên đại diện (bắt buộc chọn; "neutral" = review trung lập) và ưu tiên
+        // luật / nơi giải quyết tranh chấp — xem khối chọn phía trên nút phân tích.
+        represented_party: representedPartyValue || undefined,
+        law_preference: lawPreference,
+        review_depth: user && user.plan !== "FREE" ? reviewDepth : "standard",
       });
       setLastReview(review);
       setReviewResultTab("analysis");
       setSelectedFile(null);
       setClassifyResult(null);
       setConfirmedContractType(null);
+      setPartyChoice("");
+      setCustomParty("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       refreshReviews();
       refreshUser();
@@ -2246,7 +2276,7 @@ export default function Home() {
   }
 
   const reviewLimitReached =
-    !!user && !user.usage_unlimited && user.review_used >= user.review_limit;
+    !!user && user.review_used >= user.review_limit;
   // Gói FREE nay cũng được review (xem FREE_REVIEW_LIMIT ở backend), nên
   // không còn khóa cứng theo gói nữa.
   const reviewBlockedForFree = false;
@@ -2393,9 +2423,7 @@ export default function Home() {
                 : ui.contractsUsed(user.requests_used, user.requests_limit)}
             </div>
             <div>
-              {user.usage_unlimited
-                ? UNLIMITED_TEXT[lang].reviews
-                : ui.reviewUsed(user.review_used, user.review_limit)}
+              {ui.reviewUsed(user.review_used, user.review_limit)}
             </div>
             {upgradeError && (
               <p className="text-red-400 text-xs mt-1">{upgradeError}</p>
@@ -2982,6 +3010,138 @@ export default function Home() {
                   </div>
                 )}
 
+                {/* Bên đại diện (BẮT BUỘC) + ưu tiên luật / nơi giải quyết
+                    tranh chấp: review đứng trên lập trường của bên được chọn. */}
+                {selectedFile && (
+                  <div className="mt-6 pt-6 border-t border-[#DCD7C9]">
+                    <label className="block text-sm font-medium mb-1 text-[#1C2333]">
+                      {lang === "en"
+                        ? "Which party do you represent? (required)"
+                        : "Bạn đại diện bên nào? (bắt buộc)"}
+                    </label>
+                    <p className="text-xs text-[#5B6472] mb-2">
+                      {lang === "en"
+                        ? "The review and every proposed change will be made from this party's point of view. Choose neutral if you do not represent either side."
+                        : "Đánh giá và mọi đề xuất chỉnh sửa sẽ đứng trên lập trường của bên bạn chọn. Chọn trung lập nếu bạn không đại diện bên nào."}
+                    </p>
+                    <select
+                      value={partyChoice}
+                      onChange={(e) => setPartyChoice(e.target.value)}
+                      className="w-full sm:w-auto border border-[#DCD7C9] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                    >
+                      <option value="" disabled>
+                        {lang === "en"
+                          ? "— Select a party —"
+                          : "— Chọn bên bạn đại diện —"}
+                      </option>
+                      {(classifyResult?.parties ?? []).map((p) => {
+                        const value = `${p.role} – ${p.name}`;
+                        return (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        );
+                      })}
+                      <option value="__custom__">
+                        {lang === "en"
+                          ? "Other (enter the party name)"
+                          : "Khác (tự nhập tên bên)"}
+                      </option>
+                      <option value="neutral">
+                        {lang === "en"
+                          ? "Neutral (no party)"
+                          : "Trung lập (không đại diện bên nào)"}
+                      </option>
+                    </select>
+                    {!classifying && (classifyResult?.parties ?? []).length === 0 && (
+                      <p className="text-xs text-[#5B6472] mt-2">
+                        {lang === "en"
+                          ? "The system could not detect the parties from the opening of this contract. Type the party you represent below (e.g. \"Party A – ABC Co., Ltd\"), or choose Neutral."
+                          : "Hệ thống chưa nhận diện được các bên từ phần mở đầu hợp đồng. Hãy nhập tên bên bạn đại diện ở ô bên dưới (vd: \"Bên A – Công ty TNHH ABC\"), hoặc chọn Trung lập."}
+                      </p>
+                    )}
+                    {partyChoice === "__custom__" && (
+                      <input
+                        type="text"
+                        value={customParty}
+                        onChange={(e) => setCustomParty(e.target.value)}
+                        maxLength={120}
+                        placeholder={
+                          lang === "en"
+                            ? "e.g. Party A – ABC Co., Ltd"
+                            : "vd: Bên A – Công ty TNHH ABC"
+                        }
+                        className="mt-2 w-full border border-[#DCD7C9] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                      />
+                    )}
+                    {!representedPartyValue && (
+                      <p className="text-xs text-amber-700 mt-2">
+                        {lang === "en"
+                          ? "Please select the party you represent before analysing."
+                          : "Vui lòng chọn bên bạn đại diện trước khi phân tích."}
+                      </p>
+                    )}
+
+                    <label className="block text-sm font-medium mt-5 mb-1 text-[#1C2333]">
+                      {lang === "en"
+                        ? "Governing law / dispute forum (cross-border contracts)"
+                        : "Ưu tiên luật áp dụng / nơi giải quyết tranh chấp (hợp đồng có yếu tố nước ngoài)"}
+                    </label>
+                    <select
+                      value={lawPreference}
+                      onChange={(e) =>
+                        setLawPreference(e.target.value as LawPreference)
+                      }
+                      className="w-full sm:w-auto border border-[#DCD7C9] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                    >
+                      <option value="keep">
+                        {lang === "en"
+                          ? "Keep what the parties chose"
+                          : "Giữ nguyên lựa chọn hiện có trong hợp đồng"}
+                      </option>
+                      <option value="vn">
+                        {lang === "en"
+                          ? "Vietnamese law"
+                          : "Ưu tiên luật Việt Nam"}
+                      </option>
+                      <option value="counterparty">
+                        {lang === "en"
+                          ? "Counterparty's law"
+                          : "Chấp nhận luật của bên kia"}
+                      </option>
+                      <option value="neutral">
+                        {lang === "en"
+                          ? "Neutral law and arbitration"
+                          : "Luật và trọng tài trung lập"}
+                      </option>
+                    </select>
+                  </div>
+                )}
+
+                {selectedFile && user && user.plan !== "FREE" && (
+                  <div className="mt-6 pt-6 border-t border-[#DCD7C9]">
+                    <label className="block text-sm font-medium mb-1 text-[#1C2333]">
+                      {lang === "en" ? "Review depth" : "Mức độ review"}
+                    </label>
+                    <select
+                      value={reviewDepth}
+                      onChange={(e) =>
+                        setReviewDepth(e.target.value as "standard" | "deep")
+                      }
+                      className="w-full sm:w-auto border border-[#DCD7C9] rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#9C7A3C]/30 focus:border-[#9C7A3C]"
+                    >
+                      <option value="standard">
+                        {lang === "en" ? "Standard" : "Tiêu chuẩn"}
+                      </option>
+                      <option value="deep">
+                        {lang === "en"
+                          ? "Deep (stronger model, slower)"
+                          : "Review sâu (mô hình mạnh hơn, chậm hơn)"}
+                      </option>
+                    </select>
+                  </div>
+                )}
+
                 <div className="mt-6 pt-6 border-t border-[#DCD7C9]">
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-sm font-medium text-[#1C2333]">
@@ -3045,6 +3205,7 @@ export default function Home() {
                     reviewing ||
                     !selectedFile ||
                     classifying ||
+                    !representedPartyValue ||
                     reviewBlockedForFree ||
                     reviewLimitReached
                   }
