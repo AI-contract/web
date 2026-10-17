@@ -3,12 +3,14 @@
 /**
  * app/legal-lookup/_components/overview.tsx
  *
- * Kết quả tra cứu dạng "Tổng quan" (giống AI Overview của Google):
- *   1. Tổng quan: kết luận nhanh + câu hỏi gợi ý (từ nhóm "danh_gia").
- *   2. Các mục chi tiết: Kết quả tổng hợp (theo tiêu đề vấn đề), Quy định pháp luật,
- *      Án lệ/Bản án.
- *   3. Cột "Nguồn" (bên phải trên màn hình rộng, bên dưới trên điện thoại): tất cả
- *      trang nguồn của cả 4 nhóm, kèm trạng thái đối chiếu.
+ * Kết quả tra cứu dạng "Tổng quan" (giống AI Overview của Google), trình bày theo lối diễn dịch:
+ *   1. Kết luận (mục Tổng quan): kết luận trực tiếp + điều kiện áp dụng + câu hỏi gợi ý (từ nhóm "danh_gia").
+ *   2. Định hướng giải quyết: conclusion.direction + khuyến nghị/biện pháp của từng mục phân tích.
+ *   3. Phân tích chi tiết: phần phân tích quy định của từng mục (không kèm khuyến nghị và nguồn).
+ *   4. Căn cứ pháp lý: căn cứ của kết luận, Điều luật/số hiệu/nguồn tham khảo của từng mục, rồi Quy định
+ *      pháp luật (nhóm "van_ban"); sau cùng là Án lệ/Bản án (chỉ tải khi người dùng bấm).
+ *   Cột "Nguồn" (bên phải trên màn hình rộng, bên dưới trên điện thoại): tất cả
+ *   trang nguồn của cả 4 nhóm, kèm trạng thái đối chiếu.
  *
  * Chỉ gọi 2 API song song theo mặc định (Tổng quan/Phân tích + Căn cứ pháp lý) để tiết
  * kiệm chi phí; Án lệ/Bản án (2 lượt) và Văn phòng luật (1 lượt) chỉ chạy khi người
@@ -19,17 +21,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, ExternalLink, HelpCircle, Loader2, RefreshCw, Search, Sparkles } from "lucide-react";
 import {
   ApiError,
+  LiveBasis,
+  LiveConclusion,
   LiveGroup,
   LiveItem,
   LiveMode,
   LiveSearchResponse,
   LiveSourceTier,
+  LiveVerdict,
   searchLegalLive,
 } from "@/lib/api";
-import { LiveResultCard, TIER_META, errorMessage, safeUrl } from "./live";
+import { BasisRefs, DirectionCard, LiveResultCard, TIER_META, errorMessage, safeUrl } from "./live";
 import { detectQueryLang, resultLabelLang } from "@/lib/queryLang";
 import { useLang } from "@/lib/lang";
-import { LL, type LLText } from "./i18n";
+import { LL, type LLFull, type LLText } from "./i18n";
 
 type GroupState = {
   nonce: number;
@@ -68,6 +73,105 @@ function sourceNote(item: LiveItem, group: LiveGroup, L: LLText): SourceCard["no
   if (item.verification === "verified") return { text: L.noteVerified, tone: "ok" };
   if (item.verification === "unverified") return { text: L.noteHidden, tone: "warn" };
   return { text: L.noteUnchecked, tone: "neutral" };
+}
+
+// Màu theo kết luận: không hợp pháp = đỏ, hợp pháp một phần = cam, hợp pháp = xanh.
+const VERDICT_TONE: Record<LiveVerdict, string> = {
+  khong_hop_phap: "bg-red-50 text-red-700 border-red-200",
+  hop_phap_mot_phan: "bg-amber-50 text-amber-700 border-amber-200",
+  hop_phap: "bg-emerald-50 text-emerald-700 border-emerald-200",
+};
+
+// Kết luận trực tiếp (mở đầu mục Tổng quan) cho câu hỏi dạng "có đúng pháp luật không". Căn cứ số Điều của kết luận
+// KHÔNG hiện ở đây mà ở mục "Căn cứ pháp lý" cuối trang (ConclusionBasis), đúng lối diễn dịch.
+function ConclusionBlock({ conclusion, L }: { conclusion: LiveConclusion; L: LLFull }) {
+  return (
+    <div className="mb-3 pb-3 border-b border-[#EAE5D8]">
+      <p className="flex flex-wrap items-center gap-2 mb-1.5">
+        <span className="text-xs font-medium text-[#5B6472]">{L.conclusionTitle}:</span>
+        <span
+          className={`text-sm font-semibold px-2.5 py-0.5 rounded-full border ${VERDICT_TONE[conclusion.verdict]}`}
+        >
+          {L.verdictLabel[conclusion.verdict]}
+        </span>
+      </p>
+      <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{conclusion.summary}</p>
+      {conclusion.conditions && (
+        <p className="mt-2 text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">
+          <span className="text-xs font-medium text-[#5B6472] mr-1.5">{L.conditionsTitle}:</span>
+          {conclusion.conditions}
+        </p>
+      )}
+      {conclusion.conditions_missing && !conclusion.conditions && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          {L.conditionsMissing}
+        </p>
+      )}
+      {conclusion.adjusted && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          {L.conclusionAdjusted}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Căn cứ của kết luận (Điều + tên văn bản) kèm trạng thái đối chiếu với trang nguồn; hiển thị ở mục "Căn cứ pháp lý".
+function ConclusionBasis({ basis, L }: { basis: LiveBasis[]; L: LLFull }) {
+  return (
+    <article className="bg-white border border-[#DCD7C9] rounded-lg p-5">
+      <p className="text-sm font-semibold text-[#5B6472] mb-1.5">{L.basisTitle}</p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {basis.map((b) => {
+          const tone =
+            b.status === "verified"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : b.status === "unverified"
+                ? "border-amber-200 bg-amber-50 text-amber-700"
+                : "border-[#DCD7C9] bg-[#FAF8F3] text-[#5B6472]";
+          const title =
+            b.status === "verified"
+              ? L.articleVerified
+              : b.status === "unverified"
+                ? L.articleUnverified
+                : L.articleUnknown;
+          const href = b.url ? safeUrl(b.url) : null;
+          const cls = `inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${tone}`;
+          const icon =
+            b.status === "verified" ? (
+              <CheckCircle2 size={12} />
+            ) : b.status === "unverified" ? (
+              <AlertTriangle size={12} />
+            ) : (
+              <HelpCircle size={12} />
+            );
+          return href ? (
+            <a key={b.text} href={href} target="_blank" rel="noopener noreferrer" title={title} className={cls}>
+              {icon}
+              {b.text}
+            </a>
+          ) : (
+            <span key={b.text} title={title} className={cls}>
+              {icon}
+              {b.text}
+            </span>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
+// Mục phân tích có gì để hiện trong "Căn cứ pháp lý" (Điều luật, số hiệu văn bản, nguồn tham khảo, hoặc cảnh báo thiếu số Điều).
+function hasBasis(item: LiveItem): boolean {
+  return (
+    item.references.length > 0 ||
+    (item.cited_documents ?? []).length > 0 ||
+    (item.cited_articles ?? []).length > 0 ||
+    !!item.article_citation_missing
+  );
 }
 
 export default function LiveOverview({
@@ -162,7 +266,10 @@ export default function LiveOverview({
 
   const assessment = current("danh_gia")?.data ?? null;
   const overview = assessment?.overview ?? null;
+  const conclusion = assessment?.conclusion ?? null;
   const followups = assessment?.followups ?? [];
+  // Các mục phân tích (nhóm danh_gia), mục trả lời trực tiếp câu hỏi đã được backend xếp đầu.
+  const assessmentItems = itemsOf("danh_gia");
 
   const sources = useMemo<SourceCard[]>(() => {
     const out: SourceCard[] = [];
@@ -203,9 +310,9 @@ export default function LiveOverview({
   });
   const allLoaded = activeGroups.every((g) => !loadingOf(g));
   // Ẩn mục "Tổng quan" khi đã tải xong mà chưa có kết luận nhanh.
-  const showOverview = loadingOf("danh_gia") || !!overview;
+  const showOverview = loadingOf("danh_gia") || !!overview || !!conclusion;
   // Không mục nào có kết quả (và không có lỗi để báo) thì hiện một thông báo chung.
-  const hasAnyContent = !!overview || ALL_GROUPS.some((g) => itemsOf(g).length > 0);
+  const hasAnyContent = !!overview || !!conclusion || ALL_GROUPS.some((g) => itemsOf(g).length > 0);
   const emptyNotice =
     allLoaded && !hasAnyContent && anyError.length === 0
       ? (activeGroups.map((g) => current(g)?.data?.notice).find(Boolean) ?? L.noResults)
@@ -280,6 +387,101 @@ export default function LiveOverview({
     );
   }
 
+  // ---- Bố cục diễn dịch (nhóm danh_gia): Định hướng giải quyết -> Phân tích chi tiết -> Căn cứ pháp lý ----
+
+  // 2. Định hướng giải quyết: câu định hướng của kết luận (nếu có) rồi khuyến nghị/biện pháp của từng mục phân tích.
+  function renderDirectionSection() {
+    if (loadingOf("danh_gia")) return null; // đang tải: trạng thái chờ đã hiện ở mục Tổng quan và Phân tích chi tiết
+    const lead = conclusion?.direction?.trim() || null;
+    const steps = assessmentItems.filter((it) => !!it.resolution);
+    if (!lead && steps.length === 0) return null;
+    return (
+      <section aria-label={L.directionTitle} className="mb-8">
+        <h2 className="text-base font-semibold text-[#1C2333] mb-1">{L.directionTitle}</h2>
+        <p className="text-xs text-[#8A919C] mb-3">{L.directionHint}</p>
+        <div className="space-y-3">
+          {lead && (
+            <div className="bg-white border border-[#DCD7C9] border-l-4 border-l-[#C6A15C] rounded-lg px-5 py-4">
+              <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{lead}</p>
+            </div>
+          )}
+          {lead && steps.length > 0 && (
+            <p className="text-xs font-medium text-[#5B6472] pt-1">{L.resolutionLabel.danh_gia}</p>
+          )}
+          {steps.map((item, i) => (
+            <DirectionCard key={`${i}-${item.url}`} item={item} lang={lang} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  // 3. Phân tích chi tiết: chỉ phần phân tích quy định (khuyến nghị đã ở mục Định hướng, nguồn/Điều ở mục Căn cứ).
+  function renderAnalysisSection() {
+    const loading = loadingOf("danh_gia");
+    if (!loading && assessmentItems.length === 0) return null;
+    return (
+      <section aria-label={L.detailTitle} className="mb-8">
+        <h2 className="text-base font-semibold text-[#1C2333] mb-1">
+          {L.detailTitle}
+          {!loading && assessmentItems.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-[#5B6472]">({assessmentItems.length})</span>
+          )}
+        </h2>
+        <p className="text-xs text-[#8A919C] mb-3">{L.groups.danh_gia.hint}</p>
+        {loading ? (
+          renderLoading(L.searching)
+        ) : (
+          <div className="space-y-3">
+            {assessmentItems.map((item, i) => (
+              <LiveResultCard
+                key={`${i}-${item.url}`}
+                item={item}
+                group="danh_gia"
+                resolveDoc={resolveDoc}
+                lang={lang}
+                variant="analysis"
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  // 4. Căn cứ pháp lý: căn cứ của kết luận, Điều luật/số hiệu/nguồn tham khảo của từng mục phân tích, rồi các văn bản quy phạm tìm được.
+  function renderBasisSection() {
+    const vanBanLoading = loadingOf("van_ban");
+    const vanBan = itemsOf("van_ban");
+    const chips = conclusion?.basis ?? [];
+    const refs = assessmentItems.filter(hasBasis);
+    if (!vanBanLoading && vanBan.length === 0 && chips.length === 0 && refs.length === 0) return null;
+    return (
+      <section aria-label={L.legalBasisTitle} className="mb-8">
+        <h2 className="text-base font-semibold text-[#1C2333] mb-1">
+          {L.legalBasisTitle}
+          {!vanBanLoading && vanBan.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-[#5B6472]">({vanBan.length})</span>
+          )}
+        </h2>
+        <p className="text-xs text-[#8A919C] mb-1">{L.groups.van_ban.hint}</p>
+        <p className="text-xs text-[#8A919C] mb-3">{L.legalBasisNote}</p>
+        <div className="space-y-3">
+          {chips.length > 0 && <ConclusionBasis basis={chips} L={L} />}
+          {refs.map((item, i) => (
+            <BasisRefs key={`${i}-${item.url}`} item={item} resolveDoc={resolveDoc} lang={lang} />
+          ))}
+          {vanBanLoading
+            ? renderLoading(L.searching)
+            : vanBan.map((item) => (
+                <LiveResultCard key={`van_ban-${item.url}`} item={item} group="van_ban" resolveDoc={resolveDoc} lang={lang} />
+              ))}
+          {!vanBanLoading && vanBan.length === 0 && <p className="text-xs text-[#8A919C]">{L.basisMissingNote}</p>}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
       <div>
@@ -295,9 +497,12 @@ export default function LiveOverview({
                 <Loader2 size={16} className="animate-spin text-[#9C7A3C]" />
                 {L.synthesizing}
               </p>
-            ) : overview ? (
+            ) : overview || conclusion ? (
               <>
-                <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{overview}</p>
+                {conclusion && <ConclusionBlock conclusion={conclusion} L={L} />}
+                {overview && (
+                  <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{overview}</p>
+                )}
                 <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
                   <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                   {L.aiOverviewNote}
@@ -352,8 +557,9 @@ export default function LiveOverview({
           </div>
         )}
 
-        {renderSection("danh_gia", L.detailTitle, L.groups.danh_gia.hint)}
-        {renderSection("van_ban", L.legalBasisTitle, L.groups.van_ban.hint)}
+        {renderDirectionSection()}
+        {renderAnalysisSection()}
+        {renderBasisSection()}
         {renderSection(
           ["an_le", "ban_an"],
           L.sectionAnLeBanAn,

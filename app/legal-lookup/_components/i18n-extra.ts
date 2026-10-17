@@ -26,6 +26,25 @@ export interface LLExtra {
   ctaPrecedents: string;
   findLabel: (t: string) => string;
   noneFound: (t: string) => string;
+  // Kết luận trực tiếp + căn cứ + số Điều (nhóm Đánh giá pháp lý & rủi ro).
+  conclusionTitle: string;
+  verdictLabel: { hop_phap: string; hop_phap_mot_phan: string; khong_hop_phap: string };
+  basisTitle: string;
+  conditionsTitle: string;
+  conditionsMissing: string;
+  legitimizingNotice: string;
+  fixedBonusWarning: string;
+  articleVerified: string;
+  articleUnverified: string;
+  articleUnknown: string;
+  citedArticles: string;
+  articleMissing: string;
+  conclusionAdjusted: string;
+  // Bố cục kết quả theo lối diễn dịch: Kết luận -> Định hướng giải quyết -> Phân tích chi tiết -> Căn cứ pháp lý.
+  directionTitle: string;
+  directionHint: string;
+  legalBasisNote: string;
+  basisMissingNote: string;
   privacy: PrivacyText;
 }
 
@@ -51,6 +70,29 @@ const vi: Part = {
   ctaPrecedents: "Tham khảo án lệ và bản án liên quan",
   findLabel: (t) => `Tìm ${t.toLowerCase()}`,
   noneFound: (t) => `Không tìm thấy ${t.toLowerCase()} phù hợp.`,
+  conclusionTitle: "Kết luận",
+  verdictLabel: { hop_phap: "Hợp pháp", hop_phap_mot_phan: "Hợp pháp một phần", khong_hop_phap: "Không hợp pháp" },
+  basisTitle: "Căn cứ",
+  conditionsTitle: "Điều kiện áp dụng",
+  conditionsMissing:
+    "Lưu ý: 'hợp pháp một phần' nghĩa là kết luận phụ thuộc mục đích/hoàn cảnh cụ thể, nhưng hệ thống chưa nêu được điều kiện cụ thể có căn cứ trên nguồn đã đọc — hãy đọc phần phân tích chi tiết bên dưới và tham khảo ý kiến luật sư trước khi áp dụng.",
+  legitimizingNotice:
+    "Lưu ý: nội dung trái luật không trở thành hợp pháp chỉ vì được đưa vào nội quy hay ban hành đúng trình tự; hệ thống đã lược bỏ các bước khuyến nghị theo hướng đó.",
+  fixedBonusWarning:
+    "Cảnh báo: khoản thưởng cố định, trả đều hằng kỳ có thể bị coi là một phần tiền lương; khi đó việc cắt giảm vẫn chịu quy định về khấu trừ tiền lương.",
+  articleVerified: "Số Điều đã đối chiếu với trang nguồn",
+  articleUnverified: "Không thấy Điều này trên trang nguồn — cần kiểm tra lại",
+  articleUnknown: "Chưa đối chiếu được số Điều với trang nguồn",
+  citedArticles: "Điều luật được dẫn chiếu",
+  articleMissing: "Phân tích này chưa nêu số Điều cụ thể — hãy mở nguồn để xác định căn cứ.",
+  conclusionAdjusted:
+    "Kết luận đã được điều chỉnh sang mức thận trọng hơn cho thống nhất với mức rủi ro đánh giá — xem phân tích chi tiết.",
+  directionTitle: "Định hướng giải quyết",
+  directionHint: "Các hướng xử lý nên cân nhắc, rút ra từ phần phân tích bên dưới — chỉ mang tính tham khảo.",
+  legalBasisNote:
+    "Văn bản mà trang nguồn ghi rõ đã hết hiệu lực không được dùng làm căn cứ; văn bản không ghi rõ tình trạng được đánh dấu \"Chưa xác minh\". Hãy mở nguồn để kiểm tra hiệu lực trước khi áp dụng.",
+  basisMissingNote:
+    "Văn bản hoặc Điều luật chưa có trong hệ thống, hoặc chưa đối chiếu được, sẽ do quản trị viên bổ sung sau.",
 };
 
 const en: Part = {
@@ -73,6 +115,29 @@ const en: Part = {
   ctaPrecedents: "See related precedents and court judgments",
   findLabel: (t) => `Find ${t.toLowerCase()}`,
   noneFound: (t) => `No matching ${t.toLowerCase()} found.`,
+  conclusionTitle: "Conclusion",
+  verdictLabel: { hop_phap: "Lawful", hop_phap_mot_phan: "Partly lawful", khong_hop_phap: "Unlawful" },
+  basisTitle: "Basis",
+  conditionsTitle: "Conditions of application",
+  conditionsMissing:
+    "Note: 'partly lawful' means the conclusion depends on the specific purpose or circumstances, but the system could not state a specific, source-backed condition — read the detailed analysis below and consult a lawyer before relying on it.",
+  legitimizingNotice:
+    "Note: unlawful content does not become lawful just because it is put into internal regulations or promulgated through the proper procedure; steps recommending that have been removed.",
+  fixedBonusWarning:
+    "Warning: a fixed bonus paid regularly may be treated as part of wages; reducing it would then still be subject to the rules on wage deductions.",
+  articleVerified: "Article number checked against the source page",
+  articleUnverified: "This article was not found on the source page — please check again",
+  articleUnknown: "Article number could not be checked against the source page",
+  citedArticles: "Cited articles",
+  articleMissing: "This analysis does not cite a specific article — open the source to identify the legal basis.",
+  conclusionAdjusted:
+    "The conclusion was adjusted to a more cautious level to stay consistent with the assessed risk — see the detailed analysis.",
+  directionTitle: "Recommended course of action",
+  directionHint: "Approaches to consider, drawn from the analysis below — for reference only.",
+  legalBasisNote:
+    "A document that its source page clearly states is no longer in force is not used as a basis; a document whose status is not stated is marked \"Validity not verified\". Open the source to check validity before relying on it.",
+  basisMissingNote:
+    "Documents or articles that are not yet in the system, or could not be checked, will be added later by the administrator.",
 };
 
 const zh: Part = {
@@ -94,6 +159,27 @@ const zh: Part = {
   ctaPrecedents: "查看相关判例和判决书",
   findLabel: (t) => `查找${t}`,
   noneFound: (t) => `未找到相关${t}。`,
+  conclusionTitle: "结论",
+  verdictLabel: { hop_phap: "合法", hop_phap_mot_phan: "部分合法", khong_hop_phap: "不合法" },
+  basisTitle: "依据",
+  conditionsTitle: "适用条件",
+  conditionsMissing:
+    "提示：“部分合法”表示结论取决于具体目的或情形，但系统尚未给出有来源依据的具体条件——请查看下方详细分析，并在适用前咨询律师。",
+  legitimizingNotice:
+    "提示：违法内容不会因为写入内部规章或按程序颁布而变为合法；系统已删除此类建议步骤。",
+  fixedBonusWarning:
+    "警告：固定且定期发放的奖金可能被视为工资的一部分，届时扣减仍须遵守工资扣除的规定。",
+  articleVerified: "条文号已与来源页面核对",
+  articleUnverified: "来源页面上未找到该条文——请重新核查",
+  articleUnknown: "无法将条文号与来源页面核对",
+  citedArticles: "引用的条文",
+  articleMissing: "该分析未列明具体条文——请打开来源确定法律依据。",
+  conclusionAdjusted: "为与评估的风险等级保持一致，结论已调整为更谨慎的级别——请查看详细分析。",
+  directionTitle: "处理方向",
+  directionHint: "可考虑的处理思路，源自下方的分析——仅供参考。",
+  legalBasisNote:
+    "来源页面明确标注已失效的文件不会被用作依据；未标明效力状态的文件会标记为“效力状态未核实”。适用前请打开来源核查效力。",
+  basisMissingNote: "系统中尚未收录或无法核对的文件或条文，将由管理员日后补充。",
 };
 
 const ko: Part = {
@@ -115,6 +201,29 @@ const ko: Part = {
   ctaPrecedents: "관련 판례 및 판결문 보기",
   findLabel: (t) => `${t} 찾기`,
   noneFound: (t) => `일치하는 ${t}을(를) 찾지 못했습니다.`,
+  conclusionTitle: "결론",
+  verdictLabel: { hop_phap: "적법", hop_phap_mot_phan: "일부 적법", khong_hop_phap: "위법" },
+  basisTitle: "근거",
+  conditionsTitle: "적용 조건",
+  conditionsMissing:
+    "참고: '일부 적법'은 결론이 구체적인 목적이나 상황에 따라 달라진다는 뜻이지만, 시스템이 출처에 근거한 구체적인 조건을 제시하지 못했습니다 — 아래 상세 분석을 확인하고 적용하기 전에 변호사와 상담하세요.",
+  legitimizingNotice:
+    "참고: 위법한 내용은 사내 규정에 넣거나 절차에 따라 공포한다고 해서 적법해지지 않습니다. 그런 방향의 권고 단계는 제외했습니다.",
+  fixedBonusWarning:
+    "경고: 고정적으로 정기 지급되는 상여는 임금의 일부로 간주될 수 있으며, 이 경우 감액에도 임금 공제 규정이 적용됩니다.",
+  articleVerified: "조문 번호를 출처 페이지와 대조했습니다",
+  articleUnverified: "출처 페이지에서 이 조문을 찾을 수 없습니다 — 다시 확인하세요",
+  articleUnknown: "조문 번호를 출처 페이지와 대조하지 못했습니다",
+  citedArticles: "인용된 조문",
+  articleMissing: "이 분석에는 구체적인 조문 번호가 없습니다 — 출처를 열어 법적 근거를 확인하세요.",
+  conclusionAdjusted:
+    "평가된 위험 수준과 일관되도록 결론이 더 신중한 수준으로 조정되었습니다 — 상세 분석을 확인하세요.",
+  directionTitle: "해결 방향",
+  directionHint: "아래 분석에서 도출한, 고려할 만한 대응 방향 — 참고용입니다.",
+  legalBasisNote:
+    "출처 페이지에 효력 상실로 명시된 문서는 근거로 사용하지 않으며, 효력 상태가 명시되지 않은 문서는 “효력 상태 미확인”으로 표시합니다. 적용하기 전에 출처를 열어 효력을 확인하세요.",
+  basisMissingNote:
+    "시스템에 아직 없거나 대조하지 못한 문서·조문은 관리자가 추후 보완합니다.",
 };
 
 const ja: Part = {
@@ -136,6 +245,29 @@ const ja: Part = {
   ctaPrecedents: "関連する判例・判決を見る",
   findLabel: (t) => `${t}を検索`,
   noneFound: (t) => `該当する${t}は見つかりませんでした。`,
+  conclusionTitle: "結論",
+  verdictLabel: { hop_phap: "適法", hop_phap_mot_phan: "一部適法", khong_hop_phap: "違法" },
+  basisTitle: "根拠",
+  conditionsTitle: "適用条件",
+  conditionsMissing:
+    "注意：「一部適法」は結論が具体的な目的や状況によって変わることを意味しますが、システムは出典に基づく具体的な条件を示せませんでした — 下の詳細分析をご確認のうえ、適用前に弁護士にご相談ください。",
+  legitimizingNotice:
+    "注意：違法な内容は、社内規程に盛り込んだり手続きに従って公布したりしても適法にはなりません。そのような方向の推奨手順は除外しました。",
+  fixedBonusWarning:
+    "警告：固定額で定期的に支払う賞与は賃金の一部とみなされる可能性があり、その場合は減額にも賃金控除の規定が適用されます。",
+  articleVerified: "条文番号を出典ページと照合済み",
+  articleUnverified: "出典ページにこの条文が見当たりません — 再確認してください",
+  articleUnknown: "条文番号を出典ページと照合できませんでした",
+  citedArticles: "引用された条文",
+  articleMissing: "この分析には具体的な条文番号がありません — 出典元を開いて法的根拠をご確認ください。",
+  conclusionAdjusted:
+    "評価したリスクと整合するよう、結論をより慎重な水準に調整しました — 詳細分析をご覧ください。",
+  directionTitle: "解決の方向性",
+  directionHint: "下の分析から導いた、検討すべき対応の方向性 — 参考情報です。",
+  legalBasisNote:
+    "出典ページが失効と明記している文書は根拠として使用しません。効力状況が明記されていない文書は「効力状況は未確認」と表示します。適用前に出典元を開いて効力をご確認ください。",
+  basisMissingNote:
+    "システムにまだない、または照合できなかった文書・条文は、管理者が後日追加します。",
 };
 
 export const EXTRA: Record<Lang, LLExtra> = {

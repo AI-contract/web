@@ -903,10 +903,52 @@ export type LiveGroup = "van_ban" | "an_le" | "ban_an" | "danh_gia" | "luat_su";
 export type LiveSourceTier = "chinh_thong" | "tham_khao";
 export type LiveMode = "keyword" | "clause";
 
+// Tình trạng hiệu lực đã chuẩn hóa (CHỈ khi trang nguồn ghi rõ). Văn bản hết hiệu lực bị server loại nên
+// "het_hieu_luc" hiếm khi xuất hiện; chỉ để giao diện đủ kiểu.
+export type LiveValidity =
+  | "con_hieu_luc"
+  | "het_hieu_luc"
+  | "het_hieu_luc_mot_phan"
+  | "chua_co_hieu_luc"
+  | "chua_xac_minh";
+
 export interface LiveReference {
   title: string;
   url: string;
   source_tier?: LiveSourceTier | null;
+  // Có khi chính trang nguồn ghi rõ tình trạng hiệu lực ở phần đầu; thiếu/null = chưa xác minh.
+  validity?: LiveValidity | null;
+}
+
+// Số Điều AI nêu trong phân tích và kết quả đối chiếu với trang nguồn đã đọc.
+export interface LiveCitedArticle {
+  article: string; // vd "Điều 127"
+  status: "verified" | "unverified" | "unknown";
+}
+
+export interface LiveBasis {
+  text: string; // vd "Điều 127 Bộ luật Lao động 2019"
+  status: "verified" | "unverified" | "unknown";
+  url?: string | null;
+}
+
+export type LiveVerdict = "hop_phap" | "hop_phap_mot_phan" | "khong_hop_phap";
+
+// Kết luận trực tiếp cho câu hỏi dạng "có đúng pháp luật không" (nhóm danh_gia).
+export interface LiveConclusion {
+  verdict: LiveVerdict;
+  summary: string;
+  // Định hướng giải quyết (1–3 câu: việc cần làm trước tiên), hiển thị ngay sau kết luận; null/thiếu = không có.
+  direction?: string | null;
+  // Điều kiện áp dụng: kết luận thay đổi thế nào tùy mục đích/hoàn cảnh; null/thiếu = không có.
+  conditions?: string | null;
+  // true = kết luận "hợp pháp một phần" nhưng chưa nêu điều kiện áp dụng (giao diện hiện cảnh báo chuẩn).
+  conditions_missing?: boolean;
+  basis: LiveBasis[];
+  // Mức rủi ro của mục trọng tâm, đã đối chiếu nhất quán với kết luận.
+  overall_risk?: "cao" | "trung_binh" | "thap" | null;
+  // true = kết luận đã bị hạ xuống mức thận trọng hơn để thống nhất với mức rủi ro.
+  adjusted?: boolean;
 }
 
 export interface LiveCitedDocument {
@@ -946,11 +988,27 @@ export interface LiveItem {
   quote_removed: boolean;
   // Ngày (YYYY-MM-DD) kết quả được lưu/làm mới trong kho tự lưu; null/thiếu = vừa tra cứu trực tiếp.
   stored_at?: string | null;
+  // Tình trạng hiệu lực đã chuẩn hóa (nhóm van_ban).
+  validity?: LiveValidity | null;
   // Chỉ dùng cho nhóm "danh_gia" (Đánh giá pháp lý & rủi ro).
   risk_level: "cao" | "trung_binh" | "thap" | null;
   references: LiveReference[];
   cited_documents: LiveCitedDocument[];
   disclaimer: string | null;
+  // true = mục phân tích trực tiếp điểm mà kết luận dựa vào.
+  addresses_question?: boolean;
+  // Mã vấn đề pháp lý con khi câu hỏi được tách thành nhiều vấn đề.
+  sub_issue?: string | null;
+  // true = rủi ro đã được nâng lên để nhất quán với kết luận.
+  risk_adjusted?: boolean;
+  // Số Điều AI nêu + trạng thái đối chiếu với trang nguồn; article_citation_missing = phần phân tích không nêu số Điều nào.
+  cited_articles?: LiveCitedArticle[];
+  article_citation_missing?: boolean;
+  // AI đánh dấu mục là PHƯƠNG ÁN HỢP PHÁP thay thế; số câu "hợp thức hóa" đã bị bỏ khỏi resolution (> 0 thì hiện lưu ý);
+  // true = khuyến nghị có thưởng cố định/"đổi tên" mà AI chưa cảnh báo có thể bị coi là tiền lương (hiện cảnh báo chuẩn).
+  lawful_alternative?: boolean;
+  legitimizing_removed?: number;
+  fixed_bonus_warning?: boolean;
 }
 
 export interface LiveSearchResponse {
@@ -963,6 +1021,8 @@ export interface LiveSearchResponse {
   // Chỉ nhóm danh_gia: kết luận nhanh + câu hỏi gợi ý tiếp theo.
   overview: string | null;
   followups: string[];
+  // Chỉ nhóm danh_gia với câu hỏi dạng "có đúng pháp luật không": kết luận trực tiếp kèm căn cứ.
+  conclusion?: LiveConclusion | null;
   from_cache: boolean;
   // true = nhóm này được trả từ kho tự lưu (không tốn lượt tra cứu).
   from_store?: boolean;
