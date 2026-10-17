@@ -146,7 +146,7 @@ const vi = {
   noteRefs: "Nguồn tham khảo cho phần tổng hợp",
   noteHidden: "Một phần trích dẫn đã bị ẩn",
   notePoster: "Ý kiến của đơn vị đăng bài",
-  noteVerified: "Đã đối chiếu trích dẫn",
+  noteVerified: "Trích dẫn khớp trang nguồn",
   noteUnchecked: "Chưa đối chiếu được",
 
   // ---- ô đóng góp văn bản ----
@@ -301,7 +301,7 @@ const en: LLText = {
   noteRefs: "Reference source for the synthesis",
   noteHidden: "Part of the citation was hidden",
   notePoster: "Opinion of the publishing firm",
-  noteVerified: "Citation checked",
+  noteVerified: "Excerpt matches source page",
   noteUnchecked: "Not yet checked",
 
   contribTitle: "Update legal documents / precedents / judgments",
@@ -447,7 +447,7 @@ const zh: LLText = {
   noteRefs: "综合分析的参考来源",
   noteHidden: "部分引用已被隐藏",
   notePoster: "发布单位的观点",
-  noteVerified: "引用已核对",
+  noteVerified: "引用与来源页面一致",
   noteUnchecked: "尚未核对",
 
   contribTitle: "更新法律文件/判例/判决书",
@@ -598,7 +598,7 @@ const ko: LLText = {
   noteRefs: "종합 분석의 참고 출처",
   noteHidden: "인용문 일부가 숨겨졌습니다",
   notePoster: "게시 기관의 의견",
-  noteVerified: "인용문 대조 완료",
+  noteVerified: "인용문이 출처 페이지와 일치",
   noteUnchecked: "아직 대조하지 못함",
 
   contribTitle: "법령/판례/판결문 업데이트",
@@ -749,7 +749,7 @@ const ja: LLText = {
   noteRefs: "総合分析の参考ソース",
   noteHidden: "引用の一部を非表示にしました",
   notePoster: "掲載元の見解",
-  noteVerified: "引用を照合済み",
+  noteVerified: "引用は出典ページと一致",
   noteUnchecked: "未照合",
 
   contribTitle: "法令・判例・判決の更新",
