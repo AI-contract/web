@@ -306,7 +306,7 @@ function VerificationNote({ item, L }: { item: LiveItem; L: LLText }) {
 // Số hiệu văn bản AI nêu trong phân tích + trạng thái đối chiếu với trang nguồn.
 // `resolveDoc(key)` trả về link tới đúng văn bản (kết quả nhóm "Quy định pháp luật"
 // cùng lượt tra cứu có cùng số hiệu) nếu có.
-function CitedDocuments({
+export function CitedDocuments({
   docs,
   resolveDoc,
   L,
@@ -367,6 +367,60 @@ function CitedDocuments({
   );
 }
 
+// Số Điều AI nêu trong phân tích + trạng thái đối chiếu với trang nguồn đã đọc. Không nêu số Điều nào thì cảnh báo.
+export function CitedArticles({ item, L }: { item: LiveItem; L: LLFull }) {
+  const articles = item.cited_articles ?? [];
+  if (articles.length === 0) {
+    return item.article_citation_missing ? (
+      <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-700">
+        <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+        {L.articleMissing}
+      </p>
+    ) : null;
+  }
+  return (
+    <div className="mt-4">
+      <p className="text-sm font-semibold text-[#5B6472] mb-1.5">{L.citedArticles}</p>
+      <ul className="flex flex-wrap gap-2">
+        {articles.map((a) => {
+          const tone =
+            a.status === "verified"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+              : a.status === "unverified"
+                ? "bg-amber-50 text-amber-800 border-amber-200"
+                : "bg-slate-100 text-slate-600 border-slate-300";
+          const note =
+            a.status === "verified"
+              ? L.articleVerified
+              : a.status === "unverified"
+                ? L.articleUnverified
+                : L.articleUnknown;
+          return (
+            <li key={a.article}>
+              <span
+                title={note}
+                className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${tone}`}
+              >
+                {a.status === "verified" ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+                {a.article}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+// Nhãn tình trạng hiệu lực của nguồn tham khảo (chỉ có khi chính trang nguồn ghi rõ) — quy về cùng cách hiển thị
+// với nhãn "Còn hiệu lực / Hết hiệu lực một phần..." của nhóm Quy định pháp luật.
+const VALIDITY_TEXT_VI: Record<string, string> = {
+  con_hieu_luc: "Còn hiệu lực",
+  het_hieu_luc: "Hết hiệu lực",
+  het_hieu_luc_mot_phan: "Hết hiệu lực một phần",
+  chua_co_hieu_luc: "Chưa có hiệu lực",
+};
+
 // Nhắc kiểm tra lại khi kết quả lấy từ kho tự lưu (không phải vừa tra cứu trực tiếp):
 // văn bản có thể đã được sửa đổi/thay thế kể từ ngày lưu.
 function StoredNote({
@@ -394,14 +448,19 @@ export function LiveResultCard({
   group,
   resolveDoc,
   lang = "vi",
+  variant = "full",
 }: {
   item: LiveItem;
   group: LiveGroup;
   resolveDoc?: (key: string) => string | null;
   // Ngôn ngữ nhãn hiển thị (theo ngôn ngữ câu hỏi/giao diện). Nội dung trích dẫn luôn là tiếng Việt.
   lang?: Lang;
+  // "analysis": nhóm danh_gia chỉ hiển thị phần PHÂN TÍCH; khuyến nghị (Định hướng giải quyết) và
+  // nguồn/Điều/văn bản dẫn chiếu (Căn cứ pháp lý) được tách ra các khối riêng (DirectionCard, BasisRefs).
+  variant?: "full" | "analysis";
 }) {
   const L = LL[lang];
+  const analysisOnly = variant === "analysis" && group === "danh_gia";
   const meta = { ...GROUP_META[group], ...L.groups[group] };
   const src = safeUrl(item.url);
   const info = [
@@ -484,7 +543,7 @@ export function LiveResultCard({
           <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{item.issue}</p>
         </div>
       )}
-      {item.resolution && (
+      {item.resolution && !analysisOnly && (
         <div className="mt-4">
           <p className="text-sm font-semibold text-[#9C7A3C] mb-1">
             {group === "danh_gia"
@@ -498,6 +557,18 @@ export function LiveResultCard({
           </p>
         </div>
       )}
+      {group === "danh_gia" && !analysisOnly && (item.legitimizing_removed ?? 0) > 0 && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          {L.legitimizingNotice}
+        </p>
+      )}
+      {group === "danh_gia" && !analysisOnly && item.fixed_bonus_warning && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          {L.fixedBonusWarning}
+        </p>
+      )}
       {item.excerpt && (
         <div className="mt-4">
           <p className="text-sm font-semibold text-[#5B6472] mb-1">{meta.excerptLabel}</p>
@@ -507,7 +578,7 @@ export function LiveResultCard({
         </div>
       )}
 
-      {group === "danh_gia" && item.references.length > 0 && (
+      {group === "danh_gia" && !analysisOnly && item.references.length > 0 && (
         <div className="mt-4">
           <p className="text-sm font-semibold text-[#5B6472] mb-1.5">{L.refsTitle}</p>
           <ul className="space-y-1">
@@ -528,6 +599,13 @@ export function LiveResultCard({
                   ) : (
                     ref.title
                   )}
+                  {ref.validity && VALIDITY_TEXT_VI[ref.validity] && (
+                    <span
+                      className={`ml-2 text-[11px] px-1.5 py-0.5 rounded-full border ${statusTone(VALIDITY_TEXT_VI[ref.validity])}`}
+                    >
+                      {statusLabel(VALIDITY_TEXT_VI[ref.validity], L, lang)}
+                    </span>
+                  )}
                 </li>
               );
             })}
@@ -535,9 +613,10 @@ export function LiveResultCard({
         </div>
       )}
 
-      {group === "danh_gia" && (
+      {group === "danh_gia" && !analysisOnly && (
         <CitedDocuments docs={item.cited_documents} resolveDoc={resolveDoc} L={L} />
       )}
+      {group === "danh_gia" && !analysisOnly && <CitedArticles item={item} L={L} />}
 
       {group === "danh_gia" ? (
         <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-700">
@@ -570,6 +649,106 @@ export function LiveResultCard({
         )}
         <CopyCitationButton text={buildCitation(item, L)} L={L} />
       </div>
+    </article>
+  );
+}
+
+// ---------------------------------------------------------------
+// Bố cục kết quả theo lối diễn dịch (nhóm danh_gia):
+//   1. Kết luận  2. Định hướng giải quyết (DirectionCard)  3. Phân tích chi tiết (LiveResultCard variant="analysis")
+//   4. Căn cứ pháp lý (BasisRefs + nhóm van_ban)
+// ---------------------------------------------------------------
+
+// Định hướng giải quyết: khuyến nghị/biện pháp của một mục phân tích, hiển thị ngay sau Kết luận.
+export function DirectionCard({ item, lang = "vi" }: { item: LiveItem; lang?: Lang }) {
+  const L = LL[lang];
+  if (!item.resolution) return null;
+  return (
+    <article className="bg-white border border-[#DCD7C9] rounded-lg p-5">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        {item.risk_level && (
+          <span
+            className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${RISK_META[item.risk_level].tone}`}
+          >
+            <ShieldAlert size={12} />
+            {L.risks[item.risk_level]}
+          </span>
+        )}
+        <span className="font-semibold text-[#1C2333]">{item.title}</span>
+      </div>
+      <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap border-l-4 border-[#C6A15C] bg-[#FAF8F3] px-3 py-2">
+        {item.resolution}
+      </p>
+      {(item.legitimizing_removed ?? 0) > 0 && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          {L.legitimizingNotice}
+        </p>
+      )}
+      {item.fixed_bonus_warning && (
+        <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          {L.fixedBonusWarning}
+        </p>
+      )}
+    </article>
+  );
+}
+
+// Căn cứ pháp lý của một mục phân tích: Điều luật + số hiệu văn bản được dẫn + nguồn tham khảo (kèm trạng thái đối chiếu).
+export function BasisRefs({
+  item,
+  resolveDoc,
+  lang = "vi",
+}: {
+  item: LiveItem;
+  resolveDoc?: (key: string) => string | null;
+  lang?: Lang;
+}) {
+  const L = LL[lang];
+  const hasRefs = item.references.length > 0;
+  const hasDocs = (item.cited_documents ?? []).length > 0;
+  const hasArticles = (item.cited_articles ?? []).length > 0;
+  if (!hasRefs && !hasDocs && !hasArticles && !item.article_citation_missing) return null;
+  return (
+    <article className="bg-white border border-[#DCD7C9] rounded-lg p-5">
+      <p className="font-semibold text-[#1C2333]">{item.title}</p>
+      <CitedArticles item={item} L={L} />
+      <CitedDocuments docs={item.cited_documents} resolveDoc={resolveDoc} L={L} />
+      {hasRefs && (
+        <div className="mt-4">
+          <p className="text-sm font-semibold text-[#5B6472] mb-1.5">{L.refsTitle}</p>
+          <ul className="space-y-1">
+            {item.references.map((ref) => {
+              const refUrl = safeUrl(ref.url);
+              return (
+                <li key={ref.url} className="text-sm">
+                  {refUrl ? (
+                    <a
+                      href={refUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#9C7A3C] hover:underline inline-flex items-center gap-1"
+                    >
+                      <ExternalLink size={12} className="shrink-0" />
+                      {ref.title}
+                    </a>
+                  ) : (
+                    ref.title
+                  )}
+                  {ref.validity && VALIDITY_TEXT_VI[ref.validity] && (
+                    <span
+                      className={`ml-2 text-[11px] px-1.5 py-0.5 rounded-full border ${statusTone(VALIDITY_TEXT_VI[ref.validity])}`}
+                    >
+                      {statusLabel(VALIDITY_TEXT_VI[ref.validity], L, lang)}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </article>
   );
 }
