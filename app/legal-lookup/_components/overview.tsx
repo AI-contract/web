@@ -500,7 +500,7 @@ export default function LiveOverview({
             ) : overview || conclusion ? (
               <>
                 {conclusion && <ConclusionBlock conclusion={conclusion} L={L} />}
-                {overview && (
+                {overview && !conclusion && (
                   <p className="text-sm text-[#1C2333] leading-relaxed whitespace-pre-wrap">{overview}</p>
                 )}
                 <p className="mt-2 flex items-start gap-1.5 text-xs text-amber-700">
