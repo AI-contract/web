@@ -15,10 +15,12 @@ import type { Lang } from "@/lib/lang";
 
 export type QueryLang = "vi" | "en";
 
-// Ngôn ngữ nhãn hiển thị của khu vực kết quả: câu hỏi tiếng Anh → tiếng Anh (kết quả do AI viết
-// cũng bằng tiếng Anh); còn lại theo ngôn ngữ giao diện đang chọn ở cột menu bên trái.
+// Ngôn ngữ nhãn hiển thị của khu vực kết quả: CHỈ tiếng Việt hoặc tiếng Anh. Câu hỏi tiếng Anh → tiếng Anh (kết quả do AI
+// viết cũng bằng tiếng Anh); mọi trường hợp khác → tiếng Việt, kể cả khi giao diện đang để Trung/Hàn/Nhật.
+// Tham số `ui` giữ lại để không phải đổi nơi gọi, nhưng chủ ý KHÔNG dùng.
 export function resultLabelLang(query: string, ui: Lang): Lang {
-  return detectQueryLang(query) === "en" ? "en" : ui;
+  void ui;
+  return detectQueryLang(query) === "en" ? "en" : "vi";
 }
 
 const VI_DIACRITICS =

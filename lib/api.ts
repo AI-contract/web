@@ -1050,6 +1050,8 @@ export interface LiveHistoryItem {
 
 export interface LiveInfo {
   enabled: boolean;
+  // true = tài khoản quản trị viên: chỉ admin thấy ô "Cập nhật VBPL/Án lệ/Bản án". Thiếu = không phải admin.
+  is_admin?: boolean;
   groups: LiveGroupInfo[];
   // Giới hạn lời gọi mỗi THÁNG của người dùng; null = không giới hạn (quản trị viên).
   monthly_limit: number | null;
@@ -1183,6 +1185,88 @@ export function contributeLegalDocument(
       source_url: sourceUrl?.trim() || null,
     }),
   });
+}
+
+// ---------------------------------------------------------------
+// Danh mục văn bản pháp luật theo lĩnh vực — NGƯỜI DÙNG CHỈ XEM (GET /legal/meta, /legal/search, /legal/documents/{id}).
+// Admin cập nhật qua POST /legal/contribute; văn bản tự động được xếp vào lĩnh vực do Legal AI phân loại.
+// ---------------------------------------------------------------
+export interface LegalFieldStat {
+  value: string;
+  label: string;
+  total: number;
+  by_type: Record<string, number>;
+}
+
+export interface LegalMeta {
+  total_documents: number;
+  field_stats: LegalFieldStat[];
+  last_updated: string | null;
+}
+
+export interface LegalCatalogItem {
+  document_id: number;
+  doc_type: string;
+  doc_type_label: string;
+  field_labels: string[];
+  number: string | null;
+  title: string;
+  issuer: string | null;
+  issued_on: string | null;
+  status: string;
+  status_label: string;
+}
+
+export interface LegalCatalogPage {
+  total: number;
+  page: number;
+  page_size: number;
+  items: LegalCatalogItem[];
+}
+
+export interface LegalDocumentChunk {
+  id: number;
+  position: number;
+  locator: string | null;
+  role: string;
+  content: string;
+}
+
+export interface LegalDocumentDetail {
+  id: number;
+  doc_type_label: string;
+  field_labels: string[];
+  number: string | null;
+  title: string;
+  issuer: string | null;
+  issued_on: string | null;
+  effective_on: string | null;
+  status_label: string;
+  summary: string | null;
+  source_name: string | null;
+  source_url: string | null;
+  data_updated_at: string | null;
+  chunks: LegalDocumentChunk[];
+  disclaimer: string;
+}
+
+export function getLegalMeta() {
+  return request<LegalMeta>("/legal/meta");
+}
+
+// Liệt kê văn bản của một lĩnh vực (mới nhất trước). Không có từ khóa nên backend chỉ lọc + sắp xếp.
+export function listLegalCatalog(field: string, page = 1, pageSize = 10) {
+  const qs = new URLSearchParams({
+    field,
+    sort: "newest",
+    page: String(page),
+    page_size: String(pageSize),
+  });
+  return request<LegalCatalogPage>(`/legal/search?${qs.toString()}`);
+}
+
+export function getLegalDocument(id: number) {
+  return request<LegalDocumentDetail>(`/legal/documents/${id}`);
 }
 
 export { ApiError };
