@@ -9,7 +9,7 @@
  * từ câu hỏi ở backend; lĩnh vực đã lưu của tài khoản (nếu có) vẫn được dùng làm bối
  * cảnh và chỉnh trong mục "Cá nhân hoá" thu gọn bên dưới.
  *
- * Giữ nguyên mục "Cập nhật VBPL/Án lệ/Bản án". Mỗi lượt tra cứu tìm trong kho tự lưu
+ * Mục "Cập nhật VBPL/Án lệ/Bản án" CHỈ hiện với admin; mọi người dùng có "Danh mục văn bản theo lĩnh vực" (chỉ xem). Mỗi lượt tra cứu tìm trong kho tự lưu
  * trước, chưa đủ thì tìm trực tiếp trên nguồn chính thống rồi lưu lại kết quả đã đối chiếu.
  * Trang luôn hiện cột menu bên trái (AppSidebar) như ở dashboard.
  *
@@ -36,6 +36,7 @@ import AppSidebar from "@/app/components/AppSidebar";
 import { DISPLAY_SECTIONS, PageHeader, useAuthGuard } from "./_components/live";
 import LiveOverview from "./_components/overview";
 import ContributeBox from "./_components/contribute";
+import LegalCatalog from "./_components/catalog";
 import { LL, useLL } from "./_components/i18n";
 import { useLang } from "@/lib/lang";
 import { resultLabelLang } from "@/lib/queryLang";
@@ -285,8 +286,11 @@ export default function LegalLookupPage() {
           )}
         </div>
 
-        {/* Cập nhật VBPL/Án lệ/Bản án — Admin + khách hàng đóng góp nguồn (giữ nguyên) */}
-        <ContributeBox />
+        {/* Danh mục văn bản pháp luật theo lĩnh vực — mọi người dùng đều xem được, CHỈ XEM (không sửa được nội dung) */}
+        <LegalCatalog />
+
+        {/* Cập nhật VBPL/Án lệ/Bản án — CHỈ ADMIN thấy và dùng (backend cũng chặn: POST /legal/contribute trả 403 với người dùng thường) */}
+        {info?.is_admin && <ContributeBox />}
 
         {!enabled && (
           <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
