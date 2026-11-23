@@ -309,10 +309,14 @@ export default function LiveOverview({
     return !!s?.error && s.status !== 429;
   });
   const allLoaded = activeGroups.every((g) => !loadingOf(g));
-  // Ẩn mục "Tổng quan" khi đã tải xong mà chưa có kết luận nhanh.
-  const showOverview = loadingOf("danh_gia") || !!overview || !!conclusion;
   // Không mục nào có kết quả (và không có lỗi để báo) thì hiện một thông báo chung.
   const hasAnyContent = !!overview || !!conclusion || ALL_GROUPS.some((g) => itemsOf(g).length > 0);
+  // Nhóm danh_gia đã tải xong, không lỗi nhưng không có tổng quan/kết luận: trước đây mục Tổng quan bị ẩn im lặng (log 26/10/2026) nên người dùng
+  // chỉ thấy phần Căn cứ pháp lý mà không biết phần phân tích không được tạo. Nay hiện thẻ Tổng quan kèm thông báo (khi còn nội dung khác để xem;
+  // nếu không còn gì thì đã có thông báo chung bên dưới).
+  const assessmentEmpty = requested.has("danh_gia") && !loadingOf("danh_gia") && !overview && !conclusion && !errorOf("danh_gia");
+  // Ẩn mục "Tổng quan" khi đã tải xong mà chưa có kết luận nhanh (và không có lý do phải báo thiếu phân tích).
+  const showOverview = loadingOf("danh_gia") || !!overview || !!conclusion || (assessmentEmpty && hasAnyContent);
   const emptyNotice =
     allLoaded && !hasAnyContent && anyError.length === 0
       ? (activeGroups.map((g) => current(g)?.data?.notice).find(Boolean) ?? L.noResults)
@@ -509,7 +513,15 @@ export default function LiveOverview({
                 </p>
               </>
             ) : (
-              <p className="text-sm text-[#5B6472]">{L.noOverview}</p>
+              <>
+                {assessment?.notice && (
+                  <p className="mb-1.5 flex items-start gap-1.5 text-sm text-amber-700">
+                    <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                    {assessment.notice}
+                  </p>
+                )}
+                <p className="text-sm text-[#5B6472]">{L.noOverview}</p>
+              </>
             )}
             {followups.length > 0 && (
               <div className="mt-3 pt-3 border-t border-[#EAE5D8]">

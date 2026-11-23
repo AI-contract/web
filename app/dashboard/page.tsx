@@ -1610,10 +1610,34 @@ export default function Home() {
   const [lang, setLang] = useLang();
   const ui = UI_TEXT[lang];
 
-  const [contractType, setContractType] = useState<string>("service");
+  // Liên kết sâu từ "Tư vấn pháp lý AI": /dashboard?tab=generate&type=labor chọn sẵn loại hợp đồng.
+  // Chỉ nhận mã có trong CONTRACT_TYPES; mã lạ bị bỏ qua (giữ hành vi cũ: chưa chọn loại nào).
+  const [contractType, setContractType] = useState<string>(() => {
+    if (typeof window === "undefined") return "service";
+    const t = new URLSearchParams(window.location.search).get("type");
+    return CONTRACT_TYPES.some((c) => c.value === t) ? (t as string) : "service";
+  });
   // false = người dùng chưa chọn loại hợp đồng: ô chọn hiện dòng gợi ý và
   // form bên dưới được ẩn cho tới khi chọn.
-  const [typeChosen, setTypeChosen] = useState(false);
+  const [typeChosen, setTypeChosen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const t = new URLSearchParams(window.location.search).get("type");
+    return CONTRACT_TYPES.some((c) => c.value === t);
+  });
+  // Chuyển trang mềm (bấm <Link> từ trang khác, vd "Nâng cấp gói" hoặc "Tạo ngay hợp đồng" từ Tư vấn pháp lý AI):
+  // lúc state ở trên được khởi tạo, window.location vẫn là URL của trang cũ nên ?tab=/?type= bị bỏ qua
+  // (19/11/2026, lỗi thấy khi nghiệm thu L2). Effect chạy SAU khi URL mới đã cập nhật nên đọc lại ở đây.
+  // Chỉ nhận giá trị hợp lệ; không có tham số thì giữ nguyên trạng thái hiện tại.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("tab");
+    if (t === "intro" || t === "generate" || t === "review") setTab(t);
+    const ty = params.get("type");
+    if (ty && CONTRACT_TYPES.some((c) => c.value === ty)) {
+      setContractType(ty);
+      setTypeChosen(true);
+    }
+  }, []);
   const [form, setForm] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);

@@ -1269,4 +1269,131 @@ export function getLegalDocument(id: number) {
   return request<LegalDocumentDetail>(`/legal/documents/${id}`);
 }
 
+// ---------------------------------------------------------------
+// Tư vấn pháp lý AI (IRAC) — POST /legal/research, POST /legal/research/export
+// Hợp đồng dữ liệu theo CLAUDE.md mục 3 (đường dẫn không có /api/v1, xem mục 7.6).
+// Gọi TRỰC TIẾP FastAPI qua NEXT_PUBLIC_API_URL kèm JWT (không qua API route của
+// Vercel) để không dính giới hạn timeout của Serverless Function (CLAUDE.md mục 2.5).
+// ---------------------------------------------------------------
+export type ResearchLang = "VI" | "EN" | "ZH" | "KO" | "JA";
+
+// Vòng đời hiệu lực theo hợp đồng dữ liệu (ACTIVE = còn hiệu lực).
+export type CitedArticleStatus = "ACTIVE" | "EXPIRED" | "AMENDED";
+
+export interface CitedArticle {
+  // Khoá dùng trong thẻ [cite:<cite_key>] của answer_markdown, vd "art_1".
+  cite_key: string;
+  doc_number: string;
+  doc_title: string;
+  article_number: string; // vd "Điều 35"
+  article_title: string | null;
+  // Nguyên văn Điều lấy từ PostgreSQL.
+  content: string;
+  status: CitedArticleStatus;
+  effective_date: string | null; // "YYYY-MM-DD"
+  // 1–2 câu trích nguyên văn từ content để tô sáng; null = không có.
+  highlight_snippet: string | null;
+}
+
+export type SuggestedContractType = "SERVICE" | "LABOR" | "SALES" | "NDA" | "PROBATION";
+
+export interface SuggestedAction {
+  type: "CREATE_CONTRACT";
+  contract_type: SuggestedContractType;
+  label: string;
+}
+
+export interface LegalResearchData {
+  query_id: string;
+  detected_language: ResearchLang;
+  answer_markdown: string;
+  cited_articles: CitedArticle[];
+  missing_info_questions: string[];
+  suggested_action: SuggestedAction | null;
+}
+
+// Pipeline gọi 2 LLM + 1 embedding nên có thể mất vài chục giây.
+const RESEARCH_TIMEOUT_MS = 120000;
+
+export async function researchLegal(
+  userQuery: string,
+  signal?: AbortSignal
+): Promise<LegalResearchData> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), RESEARCH_TIMEOUT_MS);
+  const onAbort = () => controller.abort();
+  signal?.addEventListener("abort", onAbort);
+  try {
+    return await request<LegalResearchData>("/legal/research", {
+      method: "POST",
+      body: JSON.stringify({ user_query: userQuery }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      // Người dùng chủ động huỷ (gửi câu hỏi mới) thì giữ nguyên lỗi để nơi gọi bỏ qua.
+      if (signal?.aborted) throw err;
+      throw new ApiError(0, "Yêu cầu tư vấn quá thời gian chờ, vui lòng thử lại.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener("abort", onAbort);
+  }
+}
+
+// Giống downloadFile nhưng dùng POST + thân JSON (xuất tư vấn kèm phụ lục điều luật).
+async function downloadFilePost(path: string, body: unknown, filename: string) {
+  const token = getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    let detail = "Download failed";
+    try {
+      const b = await res.json();
+      detail = b.detail || detail;
+    } catch {
+      // response wasn't JSON — keep default
+    }
+    throw new ApiError(res.status, detail);
+  }
+
+  const blob = await res.blob();
+  // Server có thể trả DOCX khi yêu cầu PDF (ZH/KO/JA; quyết định 16/11/2026): đổi đuôi tên tệp theo Content-Type thực nhận được.
+  if (blob.type.includes("wordprocessingml") && filename.endsWith(".pdf")) {
+    filename = filename.replace(/\.pdf$/, ".docx");
+  }
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+// Thân yêu cầu của /legal/research/export (CHECKLIST 3.4, app/schemas/legal_research.py): backend không lưu kết quả tra cứu nên giao diện
+// gửi lại chính kết quả tư vấn. detected_language quyết định nhãn của tệp; PDF hỗ trợ VI/EN, ZH/KO/JA yêu cầu PDF sẽ nhận DOCX.
+export function exportLegalResearch(format: "docx" | "pdf", data: LegalResearchData) {
+  return downloadFilePost(
+    "/legal/research/export",
+    {
+      format,
+      query_id: data.query_id,
+      detected_language: data.detected_language,
+      answer_markdown: data.answer_markdown,
+      cited_articles: data.cited_articles,
+    },
+    `tu-van-phap-ly-${data.query_id.slice(0, 8)}.${format}`
+  );
+}
+
 export { ApiError };
