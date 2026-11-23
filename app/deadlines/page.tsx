@@ -224,8 +224,8 @@ export default function DeadlinesPage() {
       .catch(() => router.push("/login"));
   }, [router]);
 
-  function reload() {
-    setLoading(true);
+  // Tải danh sách (chỉ setState trong callback của promise — an toàn để gọi trực tiếp trong effect).
+  function fetchDeadlines() {
     listDeadlines(includeResolved)
       .then(setDeadlines)
       .catch((err) =>
@@ -234,9 +234,15 @@ export default function DeadlinesPage() {
       .finally(() => setLoading(false));
   }
 
+  // Tải lại sau khi thêm/xoá/đổi trạng thái (gọi từ trình xử lý sự kiện).
+  function reload() {
+    setLoading(true);
+    fetchDeadlines();
+  }
+
   useEffect(() => {
     if (!authChecked) return;
-    reload();
+    fetchDeadlines();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, includeResolved]);
 
@@ -320,7 +326,11 @@ export default function DeadlinesPage() {
             <input
               type="checkbox"
               checked={includeResolved}
-              onChange={(e) => setIncludeResolved(e.target.checked)}
+              onChange={(e) => {
+                // Đổi bộ lọc → hiện trạng thái đang tải (effect bên trên sẽ tải lại).
+                setLoading(true);
+                setIncludeResolved(e.target.checked);
+              }}
             />
             {t.showResolved}
           </label>

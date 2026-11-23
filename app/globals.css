@@ -24,3 +24,19 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ngăn kéo trượt từ dưới lên: cột "Đối chiếu nguồn" của Tư vấn pháp lý AI trên điện thoại (< lg). */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+  .animate-sheet-up {
+    animation: sheet-up 220ms ease-out;
+  }
+}

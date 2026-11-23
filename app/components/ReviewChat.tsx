@@ -32,9 +32,16 @@ export default function ReviewChat({ reviewId }: ReviewChatProps) {
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Đổi sang hợp đồng khác (reviewId đổi) thì quay lại trạng thái "đang tải" ngay trong lúc render
+  // (mẫu "điều chỉnh state khi prop đổi" của React) thay vì gọi setState đồng bộ trong effect.
+  const [loadedFor, setLoadedFor] = useState(reviewId);
+  if (loadedFor !== reviewId) {
+    setLoadedFor(reviewId);
+    setLoadingHistory(true);
+  }
+
   useEffect(() => {
     let cancelled = false;
-    setLoadingHistory(true);
     getReviewChatHistory(reviewId)
       .then((history) => {
         if (!cancelled) setMessages(history);

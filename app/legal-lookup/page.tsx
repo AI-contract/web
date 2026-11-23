@@ -40,6 +40,7 @@ import LegalCatalog from "./_components/catalog";
 import { LL, useLL } from "./_components/i18n";
 import { useLang } from "@/lib/lang";
 import { resultLabelLang } from "@/lib/queryLang";
+import { RS } from "@/app/components/legal-research-i18n";
 
 // Backend: "keyword" nhận tối đa 500 ký tự; dài hơn (vd dán cả điều khoản) → "clause".
 const KEYWORD_MAX = 500;
@@ -242,6 +243,15 @@ export default function LegalLookupPage() {
             <p className="mt-2 text-sm text-red-600">{formError === "short" ? L.errShort : L.errClause}</p>
           )}
         </form>
+
+        {/* Lối vào "Tư vấn pháp lý AI" (IRAC) — chỉ hiện khi bật NEXT_PUBLIC_LEGAL_RESEARCH_ENABLED=1 (backend /legal/research sẵn sàng) */}
+        {process.env.NEXT_PUBLIC_LEGAL_RESEARCH_ENABLED === "1" && (
+          <p className="mb-4 text-sm">
+            <Link href="/legal-lookup/research" className="text-[#9C7A3C] hover:underline">
+              {RS[uiLang].entryLink}
+            </Link>
+          </p>
+        )}
 
         {/* Tra cứu gần đây */}
         <div className="mb-4 space-y-3">
