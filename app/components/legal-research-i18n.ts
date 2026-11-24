@@ -17,6 +17,9 @@ export interface ResearchText {
   quotaTitle: string;
   quotaBody: string;
   upgrade: string;
+  recentTitle: string;
+  clearHistory: string;
+  removeFromHistory: string;
   entryLink: string;
   answerTitle: string;
   detectedLang: string;
@@ -50,8 +53,12 @@ export const RS: Record<Lang, ResearchText> = {
     loading: "Đang tìm điều luật còn hiệu lực và soạn tư vấn… (có thể mất vài chục giây)",
     unavailable: "Tính năng Tư vấn pháp lý AI chưa sẵn sàng. Vui lòng thử lại sau.",
     timeout: "Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại.",
-    quotaTitle: "Bạn đã dùng hết lượt Tư vấn pháp lý AI trong tháng này",
-    quotaBody: "Lượt tư vấn sẽ được làm mới vào đầu tháng sau. Nâng cấp gói để có thêm lượt tư vấn ngay bây giờ.",
+    quotaTitle: "Đã hết lượt Tra cứu pháp lý AI",
+    quotaBody:
+      "Chế độ demo giới hạn số lượt mỗi ngày cho mỗi tài khoản và ngân sách chung mỗi tháng. Hạn mức theo ngày được làm mới lúc 0 giờ (giờ Việt Nam); vui lòng quay lại sau.",
+    recentTitle: "Tra cứu gần đây",
+    clearHistory: "Xóa lịch sử",
+    removeFromHistory: "Xóa khỏi lịch sử",
     upgrade: "Nâng cấp gói",
     entryLink: "Thử Tư vấn pháp lý AI (phân tích IRAC, dẫn nguồn đối chiếu) →",
     answerTitle: "Tư vấn của Legal AI",
@@ -84,8 +91,12 @@ export const RS: Record<Lang, ResearchText> = {
     loading: "Finding in-force provisions and drafting the advice… (this may take a few dozen seconds)",
     unavailable: "AI Legal Advice is not available yet. Please try again later.",
     timeout: "The request took too long. Please try again.",
-    quotaTitle: "You have used all your AI Legal Advice requests for this month",
-    quotaBody: "Your quota resets at the start of next month. Upgrade your plan to get more requests right now.",
+    quotaTitle: "You have used up your AI legal research requests",
+    quotaBody:
+      "The demo limits each account to a number of requests per day, plus a shared monthly budget. The daily limit resets at 00:00 (Vietnam time); please come back later.",
+    recentTitle: "Recent searches",
+    clearHistory: "Clear history",
+    removeFromHistory: "Remove from history",
     upgrade: "Upgrade plan",
     entryLink: "Try AI Legal Advice (IRAC analysis with verifiable sources) →",
     answerTitle: "Legal AI advice",
@@ -118,8 +129,11 @@ export const RS: Record<Lang, ResearchText> = {
     loading: "正在查找现行有效条文并撰写咨询意见…（可能需要几十秒）",
     unavailable: "AI 法律咨询功能暂未开放，请稍后再试。",
     timeout: "请求耗时过长，请重试。",
-    quotaTitle: "您本月的 AI 法律咨询次数已用完",
-    quotaBody: "次数将在下月初重置。升级套餐即可立即获得更多咨询次数。",
+    quotaTitle: "AI 法律检索次数已用完",
+    quotaBody: "演示模式限制每个账户每日的检索次数，并设有每月共用预算。每日次数在越南时间 0 点重置，请稍后再来。",
+    recentTitle: "最近检索",
+    clearHistory: "清除历史",
+    removeFromHistory: "从历史中移除",
     upgrade: "升级套餐",
     entryLink: "试用 AI 法律咨询（IRAC 分析，来源可核对）→",
     answerTitle: "Legal AI 咨询意见",
@@ -152,8 +166,12 @@ export const RS: Record<Lang, ResearchText> = {
     loading: "현행 유효 조문을 찾고 자문을 작성하는 중… (수십 초가 걸릴 수 있습니다)",
     unavailable: "AI 법률 자문 기능을 아직 사용할 수 없습니다. 나중에 다시 시도해 주세요.",
     timeout: "요청 시간이 너무 오래 걸렸습니다. 다시 시도해 주세요.",
-    quotaTitle: "이번 달 AI 법률 자문 이용 횟수를 모두 사용했습니다",
-    quotaBody: "이용 횟수는 다음 달 초에 초기화됩니다. 요금제를 업그레이드하면 지금 바로 더 이용할 수 있습니다.",
+    quotaTitle: "AI 법률 조회 횟수를 모두 사용했습니다",
+    quotaBody:
+      "데모 모드에서는 계정당 일일 이용 횟수와 월 공동 예산이 제한됩니다. 일일 횟수는 베트남 시간 0시에 초기화되니 나중에 다시 이용해 주세요.",
+    recentTitle: "최근 조회",
+    clearHistory: "기록 삭제",
+    removeFromHistory: "기록에서 삭제",
     upgrade: "요금제 업그레이드",
     entryLink: "AI 법률 자문 체험 (IRAC 분석, 출처 대조 가능) →",
     answerTitle: "Legal AI 자문",
@@ -186,8 +204,12 @@ export const RS: Record<Lang, ResearchText> = {
     loading: "現行有効な条文を探して回答を作成中…（数十秒かかる場合があります）",
     unavailable: "AI法律相談はまだ利用できません。しばらくしてからお試しください。",
     timeout: "リクエストに時間がかかりすぎました。もう一度お試しください。",
-    quotaTitle: "今月のAI法律相談の利用回数を使い切りました",
-    quotaBody: "利用回数は来月初めにリセットされます。プランをアップグレードすると、今すぐ追加で利用できます。",
+    quotaTitle: "AI法律検索の利用回数を使い切りました",
+    quotaBody:
+      "デモモードではアカウントごとの1日の利用回数と、月間の共通予算が制限されています。1日の回数はベトナム時間0時にリセットされますので、後ほどお試しください。",
+    recentTitle: "最近の検索",
+    clearHistory: "履歴を削除",
+    removeFromHistory: "履歴から削除",
     upgrade: "プランをアップグレード",
     entryLink: "AI法律相談を試す（IRAC分析・出典照合つき）→",
     answerTitle: "Legal AI の回答",
