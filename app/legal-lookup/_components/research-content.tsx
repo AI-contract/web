@@ -24,6 +24,7 @@ import { PageHeader, useAuthGuard } from "./live";
 import { useLL } from "./i18n";
 import LegalCatalog from "./catalog";
 import ContributeBox from "./contribute";
+import AdminIngestPanel from "./admin-ingest";
 import { useLang } from "@/lib/lang";
 import { ApiError, researchLegal, type LegalResearchData } from "@/lib/api";
 
@@ -358,6 +359,7 @@ export default function LegalResearchPage() {
           <div className="mt-8 space-y-4">
             <LegalCatalog />
             <ContributeBox />
+            <AdminIngestPanel />
           </div>
         </main>
       </div>

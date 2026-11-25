@@ -1396,4 +1396,87 @@ export function exportLegalResearch(format: "docx" | "pdf", data: LegalResearchD
   );
 }
 
+// ---------------------------------------------------------------
+// Nạp văn bản từ vbpl.vn vào kho Tư vấn pháp lý AI (CHỈ quản trị viên) — app/schemas/legal_admin_ingest.py
+// ---------------------------------------------------------------
+export interface LegalIngestExisting {
+  document_id: number;
+  status: string;
+  status_label: string;
+  articles: number;
+  embedded: number;
+}
+
+export interface LegalIngestPreview {
+  url: string;
+  can_apply: boolean;
+  reason: string | null;
+  doc_id: string;
+  number: string | null;
+  title: string;
+  status: string;
+  status_label: string;
+  articles: number;
+  missing_articles: string[];
+  warnings: string[];
+  usable_by_research: boolean;
+  amended_registry_articles: number | null;
+  existing: LegalIngestExisting | null;
+  needs_acknowledge: boolean;
+}
+
+export interface LegalIngestJob {
+  job_id: string;
+  url: string;
+  state: "running" | "done" | "failed";
+  stage: string;
+  message: string;
+  number: string | null;
+  title: string | null;
+  status: string | null;
+  articles: number | null;
+  document_id: number | null;
+  created: boolean | null;
+  embed_done: number;
+  embed_total: number;
+  started_at: string;
+  finished_at: string | null;
+}
+
+export interface LegalIngestAccess {
+  admin: boolean;
+  jobs: LegalIngestJob[];
+}
+
+// Người dùng thường nhận admin=false (HTTP 200) nên giao diện ẩn ô nạp mà không có lỗi 403 ngoài console.
+export function getLegalIngestAccess() {
+  return request<LegalIngestAccess>("/legal/admin/ingest/access");
+}
+
+// Xem trước: tải trang vbpl.vn, dựng văn bản, kiểm tra — KHÔNG ghi dữ liệu.
+export function previewLegalIngest(url: string) {
+  return request<LegalIngestPreview>("/legal/admin/ingest/preview", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+}
+
+// Bắt đầu nạp nền (202). Các trường expected_* lấy từ bản xem trước: trang nguồn đổi so với lúc xem thì server hủy, không ghi gì.
+export function startLegalIngest(preview: LegalIngestPreview, acknowledgeWarnings: boolean) {
+  return request<LegalIngestJob>("/legal/admin/ingest/jobs", {
+    method: "POST",
+    body: JSON.stringify({
+      url: preview.url,
+      expected_number: preview.number,
+      expected_articles: preview.articles,
+      expected_status: preview.status,
+      acknowledge_warnings: acknowledgeWarnings,
+    }),
+  });
+}
+
+export function getLegalIngestJob(jobId: string) {
+  return request<LegalIngestJob>(`/legal/admin/ingest/jobs/${encodeURIComponent(jobId)}`);
+}
+
 export { ApiError };
