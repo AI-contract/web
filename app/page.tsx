@@ -54,7 +54,7 @@ const T: Record<Lang, Record<string, string>> = {
     ctaStart: "Bắt đầu ngay",
     ctaBottomTitle: "Bắt đầu tạo hợp đồng đầu tiên ngay hôm nay",
     ctaBottomSubtitle:
-      "Miễn phí soạn thảo hợp đồng không giới hạn, không cần thẻ thanh toán.",
+      "Miễn phí soạn thảo hợp đồng trong giai đoạn demo, không cần thẻ thanh toán.",
     footerTagline: "Nền tảng AI hỗ trợ soạn thảo & rà soát hợp đồng.",
     hotline: "Hotline",
   },
@@ -67,7 +67,7 @@ const T: Record<Lang, Record<string, string>> = {
     heroTag: "AI Legal Platform",
     heroTitle: "Draft & Review contracts compliant with Vietnamese law",
     heroSubtitle:
-      "Quickly generate 5 common contract types from a standard clause library; review legal risks and get a revised version — in minutes.",
+      "Quickly generate 14 common contract types from a standard clause library; review legal risks and get a revised version — in minutes.",
     ctaLearnFeatures: "Explore features",
     featuresTag: "Features",
     featuresTitle: "Legal AI's standout features",
@@ -79,7 +79,7 @@ const T: Record<Lang, Record<string, string>> = {
       "Only the FREE plan is currently available. PRO and ENTERPRISE are temporarily not open for signup.",
     ctaStart: "Get started",
     ctaBottomTitle: "Create your first contract today",
-    ctaBottomSubtitle: "Unlimited free contract drafting, no payment card required.",
+    ctaBottomSubtitle: "Free contract drafting during the demo period, no payment card required.",
     footerTagline: "AI platform for drafting & reviewing contracts.",
     hotline: "Hotline",
   },
@@ -92,7 +92,7 @@ const T: Record<Lang, Record<string, string>> = {
     heroTag: "AI 法律平台",
     heroTitle: "起草与审查符合越南法律的合同",
     heroSubtitle:
-      "通过标准条款库快速生成 5 种常见合同类型；审查法律风险并附修订版本——只需几分钟。",
+      "通过标准条款库快速生成 14 种常见合同类型；审查法律风险并附修订版本——只需几分钟。",
     ctaLearnFeatures: "了解功能",
     featuresTag: "功能",
     featuresTitle: "Legal AI 主要功能",
@@ -103,7 +103,7 @@ const T: Record<Lang, Record<string, string>> = {
     pricingPausedNote: "目前仅支持 FREE 套餐。PRO 与 ENTERPRISE 暂未开放注册。",
     ctaStart: "立即开始",
     ctaBottomTitle: "今天就创建您的第一份合同",
-    ctaBottomSubtitle: "免费不限次数起草合同，无需支付卡信息。",
+    ctaBottomSubtitle: "演示期间免费不限次数起草合同，无需支付卡信息。",
     footerTagline: "AI 平台，助您起草与审查合同。",
     hotline: "热线",
   },
@@ -116,7 +116,7 @@ const T: Record<Lang, Record<string, string>> = {
     heroTag: "AI 법률 플랫폼",
     heroTitle: "베트남 법률에 맞는 계약서 작성 & 검토",
     heroSubtitle:
-      "표준 조항 라이브러리로 5가지 계약서 유형을 빠르게 생성하고, 법적 리스크를 검토하여 수정본까지 몇 분 안에 받아보세요.",
+      "표준 조항 라이브러리로 14가지 계약서 유형을 빠르게 생성하고, 법적 리스크를 검토하여 수정본까지 몇 분 안에 받아보세요.",
     ctaLearnFeatures: "기능 알아보기",
     featuresTag: "기능",
     featuresTitle: "Legal AI의 주요 기능",
@@ -128,7 +128,7 @@ const T: Record<Lang, Record<string, string>> = {
       "현재 FREE 요금제만 제공됩니다. PRO 및 ENTERPRISE는 일시적으로 신청이 열려 있지 않습니다.",
     ctaStart: "지금 시작하기",
     ctaBottomTitle: "오늘 첫 계약서를 만들어보세요",
-    ctaBottomSubtitle: "계약서 작성 무제한 무료, 결제 카드 등록 불필요.",
+    ctaBottomSubtitle: "데모 기간 동안 계약서 작성 무료·무제한, 결제 카드 등록 불필요.",
     footerTagline: "계약서 작성 및 검토를 지원하는 AI 플랫폼.",
     hotline: "핫라인",
   },
@@ -141,7 +141,7 @@ const T: Record<Lang, Record<string, string>> = {
     heroTag: "AI法務プラットフォーム",
     heroTitle: "ベトナム法に準拠した契約書の作成・レビュー",
     heroSubtitle:
-      "標準条項ライブラリから5種類の一般的な契約書を素早く作成。法的リスクをレビューし、修正版も数分で取得できます。",
+      "標準条項ライブラリから14種類の一般的な契約書を素早く作成。法的リスクをレビューし、修正版も数分で取得できます。",
     ctaLearnFeatures: "機能を見る",
     featuresTag: "機能",
     featuresTitle: "Legal AIの主な機能",
@@ -153,7 +153,7 @@ const T: Record<Lang, Record<string, string>> = {
       "現在はFREEプランのみご利用いただけます。PRO・ENTERPRISEは一時的に申し込みを停止しています。",
     ctaStart: "今すぐ始める",
     ctaBottomTitle: "今日、最初の契約書を作成しましょう",
-    ctaBottomSubtitle: "契約書作成は無制限・無料、クレジットカード登録不要。",
+    ctaBottomSubtitle: "デモ期間中、契約書作成は無料・無制限、クレジットカード登録不要。",
     footerTagline: "契約書の作成・レビューを支援するAIプラットフォーム。",
     hotline: "ホットライン",
   },
@@ -173,12 +173,12 @@ const FEATURES: Record<
     {
       icon: Search,
       title: "Tra cứu pháp lý theo từ khóa/tình huống",
-      desc: "Nhập từ khóa hoặc mô tả tình huống, AI tra cứu và trích dẫn đúng điều luật, nghị định liên quan kèm giải thích dễ hiểu.",
+      desc: "Mô tả tình huống, AI tư vấn theo cấu trúc IRAC, trích dẫn nguyên văn điều luật, loại bỏ văn bản hết hiệu lực — hỗ trợ 5 ngôn ngữ: Việt, Anh, Trung, Hàn, Nhật.",
     },
     {
       icon: FileSignature,
       title: "Tạo hợp đồng từ thư viện điều khoản chuẩn",
-      desc: "Soạn nhanh 5 loại hợp đồng phổ biến: Dịch vụ, Lao động, Mua bán, NDA, Thử việc — điền thông tin, AI ghép đúng thứ tự Điều khoản chuẩn.",
+      desc: "Soạn nhanh 14 loại hợp đồng phổ biến: Dịch vụ, Lao động, Mua bán, NDA, Thử việc, Thuê nhà, Đặt cọc, Góp vốn... — điền thông tin, AI ghép đúng thứ tự Điều khoản chuẩn.",
     },
     {
       icon: ScanSearch,
@@ -200,12 +200,12 @@ const FEATURES: Record<
     {
       icon: Search,
       title: "Legal lookup by keyword or situation",
-      desc: "Enter a keyword or describe your situation — AI finds and cites the relevant laws and decrees with an easy-to-understand explanation.",
+      desc: "Describe your situation — AI answers in IRAC format, quotes the law verbatim, filters out expired legislation, and works in 5 languages.",
     },
     {
       icon: FileSignature,
       title: "Generate contracts from a standard clause library",
-      desc: "Quickly draft 5 common contract types: Service, Labor, Sale, NDA, Probation — fill in your info, AI assembles the correct standard clause order.",
+      desc: "Quickly draft 14 common contract types: Service, Labor, Sale, NDA, Probation, House lease, Deposit, Capital contribution and more — fill in your info, AI assembles the correct standard clause order.",
     },
     {
       icon: ScanSearch,
@@ -227,12 +227,12 @@ const FEATURES: Record<
     {
       icon: Search,
       title: "按关键词/情况检索法律",
-      desc: "输入关键词或描述情况，AI 检索并引用相关法律法规，并给出通俗易懂的解释。",
+      desc: "描述情况，AI 按 IRAC 结构作答，逐字引用法条原文，自动过滤已失效的法规，支持 5 种语言。",
     },
     {
       icon: FileSignature,
       title: "通过标准条款库生成合同",
-      desc: "快速起草 5 种常见合同：服务、劳动、买卖、保密协议、试用——填写信息，AI 按标准条款顺序自动组合。",
+      desc: "快速起草 14 种常见合同：服务、劳动、买卖、保密协议、试用、租房、定金、出资等——填写信息，AI 按标准条款顺序自动组合。",
     },
     {
       icon: ScanSearch,
@@ -254,12 +254,12 @@ const FEATURES: Record<
     {
       icon: Search,
       title: "키워드/상황별 법률 검색",
-      desc: "키워드를 입력하거나 상황을 설명하면 AI가 관련 법률·시행령을 찾아 인용하고 이해하기 쉬운 설명을 제공합니다.",
+      desc: "상황을 설명하면 AI가 IRAC 구조로 답변하며, 법조문 원문을 그대로 인용하고 효력이 상실된 법령은 제외합니다. 5개 언어를 지원합니다.",
     },
     {
       icon: FileSignature,
       title: "표준 조항 라이브러리로 계약서 생성",
-      desc: "서비스, 근로, 매매, NDA, 수습 등 5가지 계약서를 빠르게 작성 — 정보만 입력하면 AI가 표준 조항 순서대로 조합합니다.",
+      desc: "서비스, 근로, 매매, NDA, 수습, 주택 임대, 계약금, 출자 등 14가지 계약서를 빠르게 작성 — 정보만 입력하면 AI가 표준 조항 순서대로 조합합니다.",
     },
     {
       icon: ScanSearch,
@@ -281,12 +281,12 @@ const FEATURES: Record<
     {
       icon: Search,
       title: "キーワード・状況別の法令検索",
-      desc: "キーワードを入力するか状況を説明すると、AIが関連する法律・政令を検索して引用し、分かりやすく説明します。",
+      desc: "状況を説明すると、AIがIRAC形式で回答し、条文を原文のまま引用します。失効した法令は除外し、5言語に対応しています。",
     },
     {
       icon: FileSignature,
       title: "標準条項ライブラリから契約書を作成",
-      desc: "サービス、労働、売買、NDA、試用の5種類の契約書を素早く作成。情報を入力するだけでAIが標準条項の正しい順序で組み立てます。",
+      desc: "サービス、労働、売買、NDA、試用、住宅賃貸、手付金、出資など14種類の契約書を素早く作成。情報を入力するだけでAIが標準条項の正しい順序で組み立てます。",
     },
     {
       icon: ScanSearch,
@@ -325,10 +325,10 @@ const PRICING: Record<
       period: "",
       desc: "Dùng thử tạo hợp đồng",
       features: [
-        "Soạn thảo hợp đồng không giới hạn",
-        "Đủ 5 loại hợp đồng",
-        "Review hợp đồng: 20 lần/tháng",
-        "Tra cứu pháp lý: 15 lời gọi/tháng (~3 lần tra cứu)",
+        "Soạn thảo hợp đồng không giới hạn (giai đoạn demo)",
+        "Đủ 14 loại hợp đồng",
+        "Review hợp đồng: tối đa 6 lần/tháng (demo, số lượt chung toàn hệ thống có hạn)",
+        "Tra cứu pháp lý IRAC: tối đa 10 lượt/tháng",
       ],
       highlight: false,
     },
@@ -340,7 +340,7 @@ const PRICING: Record<
       desc: "Cho cá nhân & doanh nghiệp nhỏ",
       features: [
         "Tạo hợp đồng không giới hạn",
-        "Review hợp đồng: 1 lần/tháng",
+        "Review hợp đồng: 20 lần/tháng",
         "Lưu hồ sơ Bên A/Bên B",
       ],
       highlight: true,
@@ -366,10 +366,10 @@ const PRICING: Record<
       period: "",
       desc: "Try out contract generation",
       features: [
-        "Unlimited contract drafting",
-        "All 5 contract types",
-        "Contract review: 20x/month",
-        "Legal lookup: 15 calls/month (~3 searches)",
+        "Unlimited contract drafting (demo period)",
+        "All 14 contract types",
+        "Contract review: up to 6x/month (demo; shared system-wide cap)",
+        "Legal lookup (IRAC): up to 10/month",
       ],
       highlight: false,
     },
@@ -381,7 +381,7 @@ const PRICING: Record<
       desc: "For individuals & small businesses",
       features: [
         "Unlimited contract generation",
-        "Contract review: 1x/month",
+        "Contract review: 20x/month",
         "Save Party A/Party B profiles",
       ],
       highlight: true,
@@ -407,10 +407,10 @@ const PRICING: Record<
       period: "",
       desc: "试用生成合同",
       features: [
-        "不限次数起草合同",
-        "支持全部 5 种合同类型",
-        "合同审查：每月 20 次",
-        "法律检索：每月 15 次调用（约 3 次检索）",
+        "不限次数起草合同（演示期）",
+        "支持全部 14 种合同类型",
+        "合同审查：每月最多 6 次（演示期，全站次数有限）",
+        "法律检索（IRAC）：每月最多 10 次",
       ],
       highlight: false,
     },
@@ -422,7 +422,7 @@ const PRICING: Record<
       desc: "适合个人及小型企业",
       features: [
         "无限次生成合同",
-        "合同审查：每月 1 次",
+        "合同审查：每月 20 次",
         "保存甲方/乙方信息",
       ],
       highlight: true,
@@ -448,10 +448,10 @@ const PRICING: Record<
       period: "",
       desc: "계약서 생성 체험",
       features: [
-        "계약서 작성 무제한",
-        "5가지 계약서 유형 모두 지원",
-        "계약서 검토: 월 20회",
-        "법률 검색: 월 15회 호출(약 3회 검색)",
+        "계약서 작성 무제한 (데모 기간)",
+        "14가지 계약서 유형 모두 지원",
+        "계약서 검토: 월 최대 6회 (데모, 전체 이용 횟수 한도 있음)",
+        "법률 검색(IRAC): 월 최대 10회",
       ],
       highlight: false,
     },
@@ -463,7 +463,7 @@ const PRICING: Record<
       desc: "개인 및 소규모 사업자용",
       features: [
         "계약서 무제한 생성",
-        "계약서 검토: 월 1회",
+        "계약서 검토: 월 20회",
         "갑/을 정보 저장",
       ],
       highlight: true,
@@ -489,10 +489,10 @@ const PRICING: Record<
       period: "",
       desc: "契約書作成を試す",
       features: [
-        "契約書作成は無制限",
-        "5種類の契約書すべてに対応",
-        "契約書レビュー：月20回",
-        "法的検索：月15回の呼び出し（約3回の検索）",
+        "契約書作成は無制限（デモ期間）",
+        "14種類の契約書すべてに対応",
+        "契約書レビュー：月最大6回（デモ、全体の利用回数に上限あり）",
+        "法的検索（IRAC）：月最大10回",
       ],
       highlight: false,
     },
@@ -504,7 +504,7 @@ const PRICING: Record<
       desc: "個人・小規模事業者向け",
       features: [
         "契約書作成無制限",
-        "契約書レビュー：月1回",
+        "契約書レビュー：月20回",
         "甲・乙情報を保存",
       ],
       highlight: true,
@@ -529,7 +529,7 @@ const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
   vi: [
     {
       title: "Chọn loại hợp đồng",
-      desc: "Dịch vụ, Lao động, Mua bán, NDA hoặc Thử việc.",
+      desc: "Dịch vụ, Lao động, Mua bán, NDA, Thử việc, Thuê nhà, Đặt cọc, Góp vốn... (14 loại).",
     },
     {
       title: "Điền thông tin",
@@ -547,7 +547,7 @@ const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
   en: [
     {
       title: "Choose a contract type",
-      desc: "Service, Labor, Sale, NDA, or Probation.",
+      desc: "Service, Labor, Sale, NDA, Probation, House lease, Deposit, Capital contribution and more (14 types).",
     },
     {
       title: "Fill in the details",
@@ -565,7 +565,7 @@ const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
   zh: [
     {
       title: "选择合同类型",
-      desc: "服务、劳动、买卖、保密协议或试用。",
+      desc: "服务、劳动、买卖、保密协议、试用、租房、定金、出资等（共 14 种）。",
     },
     {
       title: "填写信息",
@@ -583,7 +583,7 @@ const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
   ko: [
     {
       title: "계약서 유형 선택",
-      desc: "서비스, 근로, 매매, NDA, 수습 중 선택.",
+      desc: "서비스, 근로, 매매, NDA, 수습, 주택 임대, 계약금, 출자 등 14가지 중 선택.",
     },
     {
       title: "정보 입력",
@@ -601,7 +601,7 @@ const HOW_IT_WORKS: Record<Lang, { title: string; desc: string }[]> = {
   ja: [
     {
       title: "契約書の種類を選択",
-      desc: "サービス、労働、売買、NDA、試用のいずれかを選択。",
+      desc: "サービス、労働、売買、NDA、試用、住宅賃貸、手付金、出資など14種類から選択。",
     },
     {
       title: "情報を入力",
