@@ -55,7 +55,7 @@ export const RS: Record<Lang, ResearchText> = {
     timeout: "Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại.",
     quotaTitle: "Đã hết lượt Tra cứu pháp lý AI",
     quotaBody:
-      "Chế độ demo giới hạn số lượt mỗi ngày cho mỗi tài khoản và ngân sách chung mỗi tháng. Hạn mức theo ngày được làm mới lúc 0 giờ (giờ Việt Nam); vui lòng quay lại sau.",
+      "Số lượt được giới hạn theo tháng cho mỗi tài khoản, kèm ngân sách chung của hệ thống. Hạn mức được làm mới vào đầu tháng sau (giờ Việt Nam).",
     recentTitle: "Tra cứu gần đây",
     clearHistory: "Xóa lịch sử",
     removeFromHistory: "Xóa khỏi lịch sử",
@@ -93,7 +93,7 @@ export const RS: Record<Lang, ResearchText> = {
     timeout: "The request took too long. Please try again.",
     quotaTitle: "You have used up your AI legal research requests",
     quotaBody:
-      "The demo limits each account to a number of requests per day, plus a shared monthly budget. The daily limit resets at 00:00 (Vietnam time); please come back later.",
+      "Each account has a monthly number of requests, plus a shared system budget. Limits reset at the start of next month (Vietnam time).",
     recentTitle: "Recent searches",
     clearHistory: "Clear history",
     removeFromHistory: "Remove from history",
@@ -130,7 +130,7 @@ export const RS: Record<Lang, ResearchText> = {
     unavailable: "AI 法律咨询功能暂未开放，请稍后再试。",
     timeout: "请求耗时过长，请重试。",
     quotaTitle: "AI 法律检索次数已用完",
-    quotaBody: "演示模式限制每个账户每日的检索次数，并设有每月共用预算。每日次数在越南时间 0 点重置，请稍后再来。",
+    quotaBody: "每个账户的检索次数按月限制，系统另设共用预算。次数将在下月初（越南时间）重置。",
     recentTitle: "最近检索",
     clearHistory: "清除历史",
     removeFromHistory: "从历史中移除",
@@ -168,7 +168,7 @@ export const RS: Record<Lang, ResearchText> = {
     timeout: "요청 시간이 너무 오래 걸렸습니다. 다시 시도해 주세요.",
     quotaTitle: "AI 법률 조회 횟수를 모두 사용했습니다",
     quotaBody:
-      "데모 모드에서는 계정당 일일 이용 횟수와 월 공동 예산이 제한됩니다. 일일 횟수는 베트남 시간 0시에 초기화되니 나중에 다시 이용해 주세요.",
+      "계정별 월간 이용 횟수와 시스템 공동 예산이 제한됩니다. 횟수는 다음 달 초(베트남 시간)에 초기화됩니다.",
     recentTitle: "최근 조회",
     clearHistory: "기록 삭제",
     removeFromHistory: "기록에서 삭제",
@@ -206,7 +206,7 @@ export const RS: Record<Lang, ResearchText> = {
     timeout: "リクエストに時間がかかりすぎました。もう一度お試しください。",
     quotaTitle: "AI法律検索の利用回数を使い切りました",
     quotaBody:
-      "デモモードではアカウントごとの1日の利用回数と、月間の共通予算が制限されています。1日の回数はベトナム時間0時にリセットされますので、後ほどお試しください。",
+      "アカウントごとの月間利用回数と、システム共通の予算が制限されています。回数は翌月初め（ベトナム時間）にリセットされます。",
     recentTitle: "最近の検索",
     clearHistory: "履歴を削除",
     removeFromHistory: "履歴から削除",

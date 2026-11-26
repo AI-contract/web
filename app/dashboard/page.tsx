@@ -808,7 +808,7 @@ const UI_TEXT: Record<Lang, {
     reviewBlockedFree:
       "Tính năng review hợp đồng chỉ dành cho gói PRO trở lên. Nâng cấp để sử dụng.",
     reviewLimitReached:
-      "Bạn đã dùng hết lượt review hợp đồng trong tháng này. Vui lòng thử lại vào tháng sau hoặc nâng cấp gói.",
+      "Bạn đã dùng hết lượt review hợp đồng trong tháng này. Vui lòng thử lại vào tháng sau.",
     chooseFileLabel: "Chọn file hợp đồng (PDF hoặc DOCX, tối đa 10MB)",
     reviewRequestLabel: "Yêu cầu review",
     savedAsDefault: "Đã lưu làm mặc định",
@@ -837,7 +837,7 @@ const UI_TEXT: Record<Lang, {
     featuresTitle: "Tính năng nổi bật của Legal AI",
     featuresList: [
       "Tra cứu pháp lý theo tình huống/từ khóa, lĩnh vực.",
-      "Tạo hợp đồng từ thư viện điều khoản chuẩn, đủ 5 loại hợp đồng phổ biến (Dịch vụ, Lao động, Mua bán, NDA, Thử việc).",
+      "Tạo hợp đồng từ thư viện điều khoản chuẩn, đủ 14 loại hợp đồng phổ biến (Dịch vụ, Lao động, Mua bán, NDA, Thử việc, Thuê nhà, Đặt cọc, Góp vốn...).",
       "Rà soát rủi ro pháp lý của hợp đồng và tự soạn lại bản đã chỉnh sửa.",
       "Tùy chọn yêu cầu review theo mục tiêu bảo vệ quyền lợi và căn cứ pháp luật riêng.",
       "Lưu hồ sơ Bên A/Bên B, tự động điền sẵn cho các lần tạo hợp đồng sau.",
@@ -846,11 +846,11 @@ const UI_TEXT: Record<Lang, {
     ],
     generateSectionTitle: "Tạo hợp đồng",
     generateSectionDesc:
-      "Soạn nhanh 5 loại hợp đồng (Dịch vụ, Lao động, Mua bán, NDA, Thử việc) từ thư viện điều khoản chuẩn.",
+      "Soạn nhanh 14 loại hợp đồng (Dịch vụ, Lao động, Mua bán, NDA, Thử việc, Thuê nhà, Đặt cọc, Góp vốn...) từ thư viện điều khoản chuẩn.",
     generateSteps: [
       {
         title: "Chọn loại hợp đồng",
-        desc: 'Ở mục "Loại hợp đồng", chọn loại bạn cần soạn: Dịch vụ, Lao động, Mua bán, NDA hoặc Thử việc.',
+        desc: 'Ở mục "Loại hợp đồng", chọn loại bạn cần soạn trong 14 loại: Dịch vụ, Lao động, Mua bán, NDA, Thử việc, Thuê nhà, Đặt cọc, Góp vốn...',
       },
       {
         title: "Điền thông tin hai bên và các điều khoản",
@@ -961,7 +961,7 @@ const UI_TEXT: Record<Lang, {
     reviewBlockedFree:
       "The contract review feature is available on the PRO plan and above. Upgrade to use it.",
     reviewLimitReached:
-      "You've used all your contract reviews for this month. Please try again next month or upgrade your plan.",
+      "You've used all your contract reviews for this month. Please try again next month.",
     chooseFileLabel: "Choose a contract file (PDF or DOCX, max 10MB)",
     reviewRequestLabel: "Review request",
     savedAsDefault: "Saved as default",
@@ -986,10 +986,10 @@ const UI_TEXT: Record<Lang, {
     heroTag: "AI Legal Platform",
     heroTitle: "Draft & review contracts compliant with Vietnamese law",
     heroSubtitle:
-      "Quickly generate 5 common contract types from a standard clause library; review legal risks and get a revised version — in minutes.",
+      "Quickly generate 14 common contract types from a standard clause library; review legal risks and get a revised version — in minutes.",
     featuresTitle: "Legal AI's standout features",
     featuresList: [
-      "Generate contracts from a standard clause library, covering all 5 common contract types (Service, Labor, Sale, NDA, Probation).",
+      "Generate contracts from a standard clause library, covering all 14 common contract types (Service, Labor, Sale, NDA, Probation, House lease, Deposit, Capital contribution...).",
       "Review a contract's legal risks and automatically draft a revised version.",
       "Optionally request a review based on your protection goals and your own legal basis.",
       "Save Party A/Party B profiles, auto-filled for future contract generations.",
@@ -998,11 +998,11 @@ const UI_TEXT: Record<Lang, {
     ],
     generateSectionTitle: "Generate contract",
     generateSectionDesc:
-      "Quickly draft 5 contract types (Service, Labor, Sale, NDA, Probation) from the standard clause library.",
+      "Quickly draft 14 contract types (Service, Labor, Sale, NDA, Probation, House lease, Deposit, Capital contribution...) from the standard clause library.",
     generateSteps: [
       {
         title: "Choose a contract type",
-        desc: 'In the "Contract type" field, choose the type you need: Service, Labor, Sale, NDA, or Probation.',
+        desc: 'In the "Contract type" field, choose the type you need from 14 types: Service, Labor, Sale, NDA, Probation, House lease, Deposit, Capital contribution...',
       },
       {
         title: "Fill in both parties' details and the clauses",
@@ -1110,7 +1110,7 @@ const UI_TEXT: Record<Lang, {
     reviewTitle: "审查合同",
     reviewSubtitle: "上传合同（PDF 或 DOCX），AI 将评估法律风险并生成修订版本。",
     reviewBlockedFree: "合同审查功能仅限 PRO 及以上套餐使用，请升级后使用。",
-    reviewLimitReached: "您本月的合同审查次数已用完，请下月再试或升级套餐。",
+    reviewLimitReached: "您本月的合同审查次数已用完，请下月再试。",
     chooseFileLabel: "选择合同文件（PDF 或 DOCX，最大 10MB）",
     reviewRequestLabel: "审查要求",
     savedAsDefault: "已保存为默认设置",
@@ -1134,10 +1134,10 @@ const UI_TEXT: Record<Lang, {
     heroTag: "AI 法律平台",
     heroTitle: "起草与审查符合越南法律的合同",
     heroSubtitle:
-      "通过标准条款库快速生成 5 种常见合同；审查法律风险并附修订版本——只需几分钟。",
+      "通过标准条款库快速生成 14 种常见合同；审查法律风险并附修订版本——只需几分钟。",
     featuresTitle: "Legal AI 主要功能",
     featuresList: [
-      "通过标准条款库生成合同，涵盖全部 5 种常见合同类型（服务、劳动、买卖、保密协议、试用）。",
+      "通过标准条款库生成合同，涵盖全部 14 种常见合同类型（服务、劳动、买卖、保密协议、试用、租房、定金、出资等）。",
       "审查合同的法律风险，并自动生成修订版本。",
       "可选择按保护目标及自定义法律依据提出审查要求。",
       "保存甲方/乙方信息，供以后生成合同时自动填写。",
@@ -1145,11 +1145,11 @@ const UI_TEXT: Record<Lang, {
       "以 DOCX 或 PDF 格式下载合同，符合法律文本规范。",
     ],
     generateSectionTitle: "生成合同",
-    generateSectionDesc: "通过标准条款库快速起草 5 种合同（服务、劳动、买卖、保密协议、试用）。",
+    generateSectionDesc: "通过标准条款库快速起草 14 种合同（服务、劳动、买卖、保密协议、试用、租房、定金、出资等）。",
     generateSteps: [
       {
         title: "选择合同类型",
-        desc: "在“合同类型”中选择您需要起草的类型：服务、劳动、买卖、保密协议或试用。",
+        desc: "在“合同类型”中选择您需要起草的类型（共 14 种）：服务、劳动、买卖、保密协议、试用、租房、定金、出资等。",
       },
       {
         title: "填写双方信息及各项条款",
@@ -1256,7 +1256,7 @@ const UI_TEXT: Record<Lang, {
     reviewBlockedFree:
       "계약서 검토 기능은 PRO 요금제 이상에서만 이용할 수 있습니다. 업그레이드 후 이용해 주세요.",
     reviewLimitReached:
-      "이번 달 계약서 검토 횟수를 모두 사용하셨습니다. 다음 달에 다시 시도하거나 요금제를 업그레이드해 주세요.",
+      "이번 달 계약서 검토 횟수를 모두 사용하셨습니다. 다음 달에 다시 시도해 주세요.",
     chooseFileLabel: "계약서 파일 선택 (PDF 또는 DOCX, 최대 10MB)",
     reviewRequestLabel: "검토 요청",
     savedAsDefault: "기본값으로 저장됨",
@@ -1281,10 +1281,10 @@ const UI_TEXT: Record<Lang, {
     heroTag: "AI 법률 플랫폼",
     heroTitle: "베트남 법률에 맞는 계약서 작성 & 검토",
     heroSubtitle:
-      "표준 조항 라이브러리로 5가지 계약서 유형을 빠르게 생성하고, 법적 리스크를 검토하여 수정본까지 몇 분 안에 받아보세요.",
+      "표준 조항 라이브러리로 14가지 계약서 유형을 빠르게 생성하고, 법적 리스크를 검토하여 수정본까지 몇 분 안에 받아보세요.",
     featuresTitle: "Legal AI의 주요 기능",
     featuresList: [
-      "표준 조항 라이브러리를 통해 5가지 일반 계약서 유형(용역, 근로, 매매, NDA, 수습)을 모두 생성.",
+      "표준 조항 라이브러리를 통해 14가지 일반 계약서 유형(용역, 근로, 매매, NDA, 수습, 주택 임대, 계약금, 출자 등)을 모두 생성.",
       "계약서의 법적 리스크를 검토하고 수정본을 자동으로 작성.",
       "보호 목표와 자체 법적 근거에 따라 맞춤 검토 요청 가능.",
       "갑(A)/을(B) 정보를 저장해 다음 계약서 생성 시 자동으로 채워줌.",
@@ -1293,11 +1293,11 @@ const UI_TEXT: Record<Lang, {
     ],
     generateSectionTitle: "계약서 생성",
     generateSectionDesc:
-      "표준 조항 라이브러리로 5가지 계약서(용역, 근로, 매매, NDA, 수습)를 빠르게 작성.",
+      "표준 조항 라이브러리로 14가지 계약서(용역, 근로, 매매, NDA, 수습, 주택 임대, 계약금, 출자 등)를 빠르게 작성.",
     generateSteps: [
       {
         title: "계약서 유형 선택",
-        desc: "'계약서 유형'에서 필요한 유형을 선택하세요: 용역, 근로, 매매, NDA 또는 수습.",
+        desc: "'계약서 유형'에서 필요한 유형을 선택하세요(14가지): 용역, 근로, 매매, NDA, 수습, 주택 임대, 계약금, 출자 등.",
       },
       {
         title: "양 당사자 정보 및 조항 입력",
@@ -1407,7 +1407,7 @@ const UI_TEXT: Record<Lang, {
     reviewBlockedFree:
       "契約書レビュー機能はPROプラン以上でご利用いただけます。アップグレードしてご利用ください。",
     reviewLimitReached:
-      "今月のレビュー利用回数の上限に達しました。来月あらためてお試しいただくか、プランをアップグレードしてください。",
+      "今月のレビュー利用回数の上限に達しました。来月あらためてお試しください。",
     chooseFileLabel: "契約書ファイルを選択（PDFまたはDOCX、最大10MB）",
     reviewRequestLabel: "レビュー要件",
     savedAsDefault: "デフォルトとして保存済み",
@@ -1432,10 +1432,10 @@ const UI_TEXT: Record<Lang, {
     heroTag: "AI法務プラットフォーム",
     heroTitle: "ベトナム法に準拠した契約書の作成・レビュー",
     heroSubtitle:
-      "標準条項ライブラリから5種類の一般的な契約書を素早く作成。法的リスクをレビューし、修正版も数分で取得できます。",
+      "標準条項ライブラリから14種類の一般的な契約書を素早く作成。法的リスクをレビューし、修正版も数分で取得できます。",
     featuresTitle: "Legal AIの主な機能",
     featuresList: [
-      "標準条項ライブラリから、5種類の一般的な契約書（サービス、労働、売買、NDA、試用）をすべて作成。",
+      "標準条項ライブラリから、14種類の一般的な契約書（サービス、労働、売買、NDA、試用、住宅賃貸、手付金、出資など）をすべて作成。",
       "契約書の法的リスクをレビューし、修正版を自動で作成。",
       "保護したい目的や独自の法的根拠に応じたレビュー要件を指定可能。",
       "甲・乙の情報を保存し、次回の契約書作成時に自動入力。",
@@ -1444,11 +1444,11 @@ const UI_TEXT: Record<Lang, {
     ],
     generateSectionTitle: "契約書を作成",
     generateSectionDesc:
-      "標準条項ライブラリから5種類の契約書（サービス、労働、売買、NDA、試用）を素早く作成。",
+      "標準条項ライブラリから14種類の契約書（サービス、労働、売買、NDA、試用、住宅賃貸、手付金、出資など）を素早く作成。",
     generateSteps: [
       {
         title: "契約書の種類を選択",
-        desc: "「契約書の種類」で必要な種類を選択します：サービス、労働、売買、NDA、または試用。",
+        desc: "「契約書の種類」で必要な種類を選択します（14種類）：サービス、労働、売買、NDA、試用、住宅賃貸、手付金、出資など。",
       },
       {
         title: "双方の情報と条項を入力",
@@ -1512,7 +1512,6 @@ const UI_TEXT: Record<Lang, {
   },
 };
 
-// ---- top-level tab ----
 // ---- văn bản của khối "Mẫu hợp đồng đã lưu" (tách riêng khỏi UI_TEXT
 // để không phải sửa 5 khối ngôn ngữ dài; văn bản hợp đồng vẫn tiếng Việt).
 const TEMPLATE_TEXT: Record<Lang, {
@@ -1574,6 +1573,7 @@ const TEMPLATE_TEXT: Record<Lang, {
   },
 };
 
+// ---- top-level tab ----
 type Tab = "generate" | "review" | "intro";
 
 // Nhãn hiển thị ở sidebar khi gói FREE không giới hạn lượt (chế độ demo —
@@ -1582,16 +1582,19 @@ type Tab = "generate" | "review" | "intro";
 const UNLIMITED_TEXT: Record<Lang, { contracts: string; reviews: string }> = {
   vi: {
     contracts: "Tạo hợp đồng: không giới hạn",
-    reviews: "Review hợp đồng: giới hạn theo tháng",
+    reviews: "Review hợp đồng: không giới hạn",
   },
   en: {
     contracts: "Contract generation: unlimited",
-    reviews: "Contract review: monthly limit",
+    reviews: "Contract review: unlimited",
   },
-  zh: { contracts: "生成合同：不限次数", reviews: "审查合同：每月有限次" },
-  ko: { contracts: "계약서 생성: 무제한", reviews: "계약서 검토: 월별 제한" },
-  ja: { contracts: "契約書作成：無制限", reviews: "契約書レビュー：月ごとに制限" },
+  zh: { contracts: "生成合同：不限次数", reviews: "审查合同：不限次数" },
+  ko: { contracts: "계약서 생성: 무제한", reviews: "계약서 검토: 무제한" },
+  ja: { contracts: "契約書作成：無制限", reviews: "契約書レビュー：無制限" },
 };
+
+// Backend trả số này khi gói không giới hạn (ENTERPRISE_REVIEW_LIMIT, PRO_PLAN_LIMIT...).
+const UNLIMITED_FROM = 999999;
 
 export default function Home() {
   const router = useRouter();
@@ -1646,7 +1649,7 @@ export default function Home() {
   );
 
   // ---- hồ sơ Bên A: lưu lại để tự điền cho các lần tạo hợp đồng sau
-  // (dùng chung được cho cả 5 loại vì tên field PARTY_A_* giống nhau) ----
+  // (dùng chung được cho mọi loại hợp đồng vì tên field PARTY_A_* giống nhau) ----
   const [partyAProfile, setPartyAProfile] = useState<Record<string, string>>(
     {}
   );
@@ -1841,12 +1844,17 @@ export default function Home() {
         ...prev,
         { role: "assistant", content: res.reply },
       ]);
-    } catch {
+    } catch (err) {
+      // 429 = hết hạn mức trợ lý (mỗi người/ngày hoặc trần hệ thống): hiện đúng thông báo của backend thay vì
+      // câu "trợ lý gặp sự cố" chung chung.
       setAssistantMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: ui.assistantErrorFallback,
+          content:
+            err instanceof ApiError && err.status === 429
+              ? err.message
+              : ui.assistantErrorFallback,
         },
       ]);
     } finally {
@@ -2303,8 +2311,9 @@ export default function Home() {
 
   const reviewLimitReached =
     !!user && user.review_used >= user.review_limit;
-  // Gói FREE nay cũng được review (xem FREE_REVIEW_LIMIT ở backend), nên
-  // không còn khóa cứng theo gói nữa.
+  // Không còn khóa cứng review theo gói: mọi tài khoản đều được review, chỉ bị chặn khi hết hạn mức
+  // tháng (user.review_limit từ /auth/me = settings.review_user_limit ở backend; backend còn có trần toàn hệ thống
+  // nên có thể trả 429 dù sidebar vẫn còn lượt). Các chuỗi reviewBlockedFree bên trên hiện không được dùng.
   const reviewBlockedForFree = false;
 
   return (
@@ -2472,12 +2481,14 @@ export default function Home() {
               </span>
             </div>
             <div>
-              {user.usage_unlimited
+              {user.usage_unlimited || user.requests_limit >= UNLIMITED_FROM
                 ? UNLIMITED_TEXT[lang].contracts
                 : ui.contractsUsed(user.requests_used, user.requests_limit)}
             </div>
             <div>
-              {ui.reviewUsed(user.review_used, user.review_limit)}
+              {user.review_limit >= UNLIMITED_FROM
+                ? UNLIMITED_TEXT[lang].reviews
+                : ui.reviewUsed(user.review_used, user.review_limit)}
             </div>
             {upgradeError && (
               <p className="text-red-400 text-xs mt-1">{upgradeError}</p>
